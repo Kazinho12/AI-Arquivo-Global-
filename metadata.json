@@ -1,0 +1,6 @@
+{
+  "name": "Arquivo Global — Plataforma Editorial Independente",
+  "description": "Plataforma digital independente de publicação, descoberta e leitura de obras criativas: romances, contos, poesia, HQs e mangás.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
