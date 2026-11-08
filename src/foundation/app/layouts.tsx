@@ -30,8 +30,8 @@ export function Brand() {
 const publicLinks = [
   ["/explorar", "Explorar"],
   ["/catalogo", "Catálogo"],
-  ["/colecoes", "Coleções"],
-  ["/ajuda", "Sobre o AG"],
+  ["/categorias", "Categorias"],
+  ["/tendencias", "Tendências"],
 ];
 function Header() {
   const { theme, toggle } = useTheme();

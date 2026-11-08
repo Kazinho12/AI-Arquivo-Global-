@@ -14,10 +14,13 @@ import {
 } from "lucide-react";
 import { Cover, WorkCard } from "../components/WorkCard";
 import { ActionLink, SearchField } from "../components/ui";
-import { demoWorks } from "../data/works";
+import { worksRepository } from "../lib/worksRepository";
+import { getGenres, catalogUrl } from "../lib/discovery";
+import { TagLinks } from "../components/Discovery";
+import { editorialSelections, selectEditorialWorks } from "../data/editorial";
 const formatCards = [
   {
-    name: "Romances & contos",
+    name: "Romances",
     text: "Mundos inteiros em palavras.",
     format: "Romance",
     icon: BookOpen,
@@ -44,6 +47,8 @@ const formatCards = [
 export default function Home() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
+  const works = worksRepository.list();
+  const featured = selectEditorialWorks(works, editorialSelections[0]);
   return (
     <>
       <section className="hero container">
@@ -83,10 +88,10 @@ export default function Home() {
           <span className="star star-one">✧</span>
           <span className="star star-two">+</span>
           <div className="hero-book hero-book-back">
-            <Cover work={demoWorks[2]} />
+            {works[2] && <Cover work={works[2]} />}
           </div>
           <div className="hero-book hero-book-front">
-            <Cover work={demoWorks[0]} />
+            {works[0] && <Cover work={works[0]} />}
           </div>
           <div className="floating-note">
             <Sparkles size={16} />
@@ -140,8 +145,8 @@ export default function Home() {
           ))}
         </div>
         <div className="format-extra">
-          Também há espaço para{" "}
-          <Link to="/catalogo?formato=Fanfiction">fanfictions</Link>,{" "}
+          Também há espaço para <Link to="/catalogo?formato=Conto">contos</Link>
+          , <Link to="/catalogo?formato=Fanfiction">fanfictions</Link>,{" "}
           <Link to="/catalogo?formato=S%C3%A9rie+liter%C3%A1ria">
             séries literárias
           </Link>{" "}
@@ -151,7 +156,7 @@ export default function Home() {
       <section className="container section showcase">
         <div className="section-heading">
           <div>
-            <span className="eyebrow">UM PRIMEIRO OLHAR</span>
+            <span className="eyebrow">DESTAQUE EDITORIAL DEMONSTRATIVO</span>
             <h2>Abre uma nova possibilidade.</h2>
           </div>
           <Link className="text-link" to="/catalogo">
@@ -162,9 +167,98 @@ export default function Home() {
           Seleção demonstrativa · Todas as obras e autores abaixo são fictícios.
         </p>
         <div className="work-grid">
-          {demoWorks.slice(0, 4).map((work) => (
+          {featured.map((work) => (
             <WorkCard key={work.id} work={work} />
           ))}
+        </div>
+      </section>
+      <section className="container section home-pathways">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">DEIXA A CURIOSIDADE ESCOLHER</span>
+            <h2>Uma pista para a próxima leitura.</h2>
+          </div>
+          <Link className="text-link" to="/explorar">
+            Explorar todos os caminhos <ArrowRight size={16} />
+          </Link>
+        </div>
+        <div className="home-genre-grid">
+          {getGenres(works)
+            .slice(0, 3)
+            .map((genre) => (
+              <Link
+                className="home-genre"
+                key={genre.slug}
+                to={catalogUrl({ genero: genre.name })}
+              >
+                <span className="eyebrow">
+                  EXPLORAR {genre.name.toLocaleUpperCase("pt")}
+                </span>
+                <h3>{genre.description}</h3>
+                <span className="text-link">
+                  Conhecer as obras <ArrowRight size={15} />
+                </span>
+              </Link>
+            ))}
+        </div>
+        <div className="home-tag-row">
+          <span className="eyebrow">OU SEGUE UMA PALAVRA</span>
+          <TagLinks
+            works={works}
+            names={["Memória", "Aventura", "Cosmos", "Natureza"]}
+          />
+          <Link className="text-link" to="/tags">
+            Todas as tags →
+          </Link>
+        </div>
+      </section>
+      <section className="container section community-intro">
+        <div>
+          <span className="eyebrow">UM ARQUIVO, MUITAS VOZES</span>
+          <h2>
+            Feito para quem imagina.
+            <br />
+            Aberto a quem descobre.
+          </h2>
+          <p>
+            O Arquivo Global está a construir um lugar de encontro entre
+            leitores, escritores e artistas. Cada forma de criar tem espaço
+            nesta futura comunidade.
+          </p>
+        </div>
+        <div className="community-principles">
+          <article>
+            <BookOpen size={20} />
+            <div>
+              <h3>Ler sem fronteiras</h3>
+              <p>
+                Histórias de formatos e universos diferentes, reunidas num
+                catálogo gratuito.
+              </p>
+            </div>
+          </article>
+          <article>
+            <PenLine size={20} />
+            <div>
+              <h3>Criar com autonomia</h3>
+              <p>
+                A futura publicação será aberta, sem aprovação editorial prévia.
+              </p>
+            </div>
+          </article>
+          <article>
+            <Globe2 size={20} />
+            <div>
+              <h3>Conviver com respeito</h3>
+              <p>
+                Liberdade criativa acompanhada de regras claras para a
+                comunidade.
+              </p>
+              <Link className="text-link" to="/regras">
+                Conhecer as regras →
+              </Link>
+            </div>
+          </article>
         </div>
       </section>
       <section className="container">

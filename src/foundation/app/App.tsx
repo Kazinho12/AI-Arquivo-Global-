@@ -1,5 +1,11 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+  useLocation,
+  matchPath,
+} from "react-router-dom";
 import { Providers } from "./providers";
 import { productRoutes } from "./routes";
 import {
@@ -11,10 +17,30 @@ import {
   ModerationLayout,
   SystemLayout,
 } from "./layouts";
-import { DevelopmentPage, NotFound, WorkDetail } from "../pages/States";
+import { DevelopmentPage, NotFound } from "../pages/States";
 import { LoadingState } from "../components/ui";
 const Home = lazy(() => import("../pages/Home"));
 const Catalog = lazy(() => import("../pages/Catalog"));
+const Explore = lazy(() => import("../pages/Explore"));
+const Search = lazy(() => import("../pages/Search"));
+const Tags = lazy(() => import("../pages/Tags"));
+const TagPage = lazy(() =>
+  import("../pages/Tags").then((module) => ({ default: module.TagPage })),
+);
+const Categories = lazy(() => import("../pages/Categories"));
+const Trends = lazy(() => import("../pages/Trends"));
+const WorkDetail = lazy(() => import("../pages/Work"));
+const discoveryPages = {
+  "/": Home,
+  "/explorar": Explore,
+  "/catalogo": Catalog,
+  "/pesquisa": Search,
+  "/tags": Tags,
+  "/tags/:slug": TagPage,
+  "/categorias": Categories,
+  "/tendencias": Trends,
+  "/obras/:id": WorkDetail,
+};
 const DesignSystem = lazy(() => import("../pages/DesignSystem"));
 const layouts = {
   public: PublicLayout,
@@ -29,7 +55,9 @@ function RouteEffects() {
   const location = useLocation();
   const previous = useRef(location.pathname);
   useEffect(() => {
-    const route = productRoutes.find((r) => r.path === location.pathname);
+    const route = productRoutes.find((r) =>
+      matchPath({ path: r.path, end: true }, location.pathname),
+    );
     document.title = `${route?.title ?? "Arquivo Global"} — Arquivo Global`;
     if (previous.current !== location.pathname) {
       window.scrollTo(0, 0);
@@ -39,48 +67,47 @@ function RouteEffects() {
   }, [location.pathname]);
   return null;
 }
+function renderRoute(route: (typeof productRoutes)[number]) {
+  const Page = discoveryPages[route.path as keyof typeof discoveryPages];
+  return Page ? <Page /> : <DevelopmentPage route={route} />;
+}
+export function ApplicationRoutes() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container loading-page">
+          <LoadingState />
+        </div>
+      }
+    >
+      <RouteEffects />
+      <Routes>
+        {Object.entries(layouts).map(([name, Layout]) => (
+          <Route key={name} element={<Layout />}>
+            {productRoutes
+              .filter((r) => r.layout === name)
+              .map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={renderRoute(route)}
+                />
+              ))}
+          </Route>
+        ))}
+        <Route element={<PublicLayout />}>
+          <Route path="/dev/design-system" element={<DesignSystem />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </Suspense>
+  );
+}
 export function App() {
   return (
     <Providers>
       <BrowserRouter>
-        <Suspense
-          fallback={
-            <div className="container loading-page">
-              <LoadingState />
-            </div>
-          }
-        >
-          <RouteEffects />
-          <Routes>
-            {Object.entries(layouts).map(([name, Layout]) => (
-              <Route key={name} element={<Layout />}>
-                {productRoutes
-                  .filter((r) => r.layout === name)
-                  .map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path}
-                      element={
-                        route.path === "/" ? (
-                          <Home />
-                        ) : ["/catalogo", "/pesquisa"].includes(route.path) ? (
-                          <Catalog />
-                        ) : route.path === "/obras/:id" ? (
-                          <WorkDetail />
-                        ) : (
-                          <DevelopmentPage route={route} />
-                        )
-                      }
-                    />
-                  ))}
-              </Route>
-            ))}
-            <Route element={<PublicLayout />}>
-              <Route path="/dev/design-system" element={<DesignSystem />} />
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-        </Suspense>
+        <ApplicationRoutes />
       </BrowserRouter>
     </Providers>
   );

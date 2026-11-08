@@ -114,7 +114,7 @@ export function EmptyState({
     <div className="empty">
       <BookOpen size={32} />
       <h2>{title}</h2>
-      <p>{children}</p>
+      <div className="empty-description">{children}</div>
     </div>
   );
 }

@@ -23,9 +23,9 @@ React, TypeScript estrito, Vite, Tailwind CSS 4, React Router 6 e Lucide React. 
 
 ## Funcionalidades e limites
 
-As 57 rotas solicitadas constam de `src/foundation/app/routes.ts`; sete layouts são PublicLayout, AuthLayout, ReaderLayout, StudioLayout, AccountLayout, ModerationLayout e SystemLayout. `/dev/design-system` e o fallback 404 são adicionais. Início e catálogo têm conteúdo inicial. `/pesquisa` reutiliza o catálogo e `/obras/:id` apresenta apenas um resumo demonstrativo; um ID de obra inexistente apresenta 404. Todas as outras páginas mostram estados de desenvolvimento adequados. Áreas administrativas não apresentam ferramentas, dados nem permissões fictícias. Não existe uma barreira de segurança client-side apresentada como autorização real.
+As 57 rotas solicitadas constam de `src/foundation/app/routes.ts`; sete layouts são PublicLayout, AuthLayout, ReaderLayout, StudioLayout, AccountLayout, ModerationLayout e SystemLayout. `/dev/design-system` e o fallback 404 são adicionais. As nove páginas de Descoberta e Catálogo têm interfaces próprias: início, explorar, catálogo, pesquisa avançada, tags, página de tag, categorias, tendências editoriais e apresentação de obra. Um ID de obra inexistente apresenta 404 e uma tag desconhecida apresenta recuperação para o diretório. As restantes rotas de produto mantêm estados de desenvolvimento adequados. Áreas administrativas não apresentam ferramentas, dados nem permissões fictícias. Não existe uma barreira de segurança client-side apresentada como autorização real.
 
-Pesquisa, formato, género, ordenação e paginação usam `q`, `formato`, `genero`, `ordem` e `pagina` no URL. Ligações e histórico usam React Router. Tema segue a preferência inicial do sistema e pode ser alternado e guardado localmente. Sem localStorage disponível, a interface continua funcional.
+Pesquisa, formato, género, ordenação e paginação usam `q`, `formato`, `genero`, `ordem` e `pagina` no URL. A pesquisa avançada acrescenta `campo` (`todos`, `titulo`, `autor`, `sinopse`) e permite várias entradas `tag` com slugs canónicos, combinadas com AND. O diretório usa `q` e `grupo`; categorias usam `familia`, `genero` e `pagina`; tendências usam `selecao`. A paginação usa quatro obras por página, valida entradas e limita páginas fora dos resultados. Ligações e histórico usam React Router. Tema segue a preferência inicial do sistema e pode ser alternado e guardado localmente. Sem localStorage disponível, a interface continua funcional.
 
 O design system demonstra botões, campos, seletores, cartões, badges, dialog nativo com foco contido e Escape, dropdown nativo, paginação, estados vazio/carregamento/erro, notificações e confirmação. O protótipo não cria contas, não publica obras, não envia denúncias e não recolhe credenciais.
 
@@ -37,4 +37,12 @@ Adicionar adaptadores para Supabase (auth/base de dados), Workers (operações d
 
 ## Verificação e preservação
 
-Consultar `VALIDATION.md` para os resultados realmente executados e limitações. Estado inicial: branch `main`, árvore limpa, remoto `origin` em GitHub. Nenhum commit ou push deve ser feito sem confirmação do proprietário. A próxima etapa é rever esta fundação e aprovar o trabalho das nove interfaces completas de Descoberta e Catálogo.
+Consultar `VALIDATION.md` para os resultados realmente executados e limitações. Estado inicial: branch `main`, árvore limpa, remoto `origin` em GitHub. Nenhum commit ou push deve ser feito sem confirmação do proprietário. As nove interfaces de Descoberta e Catálogo estão implementadas; qualquer fase seguinte, commit ou push destas alterações exige nova aprovação.
+
+## Descoberta e Catálogo — Prompt 2
+
+Os sete layouts, o manifesto de 57 rotas, os tokens claro/escuro e a interface `WorksRepository` foram preservados. Oito obras continuam a ser a fonte única; não foram adicionados autores ou publicações. `data/editorial.ts` guarda apenas IDs de seleções manuais e texto editorial. `lib/discovery.ts` deriva tags, géneros e contagens, e concentra normalização, leitura do URL, paginação e obras relacionadas. `components/WorkCollection.tsx` partilha a interface de filtros entre catálogo, pesquisa e páginas de tags.
+
+As páginas são carregadas por importação dinâmica. `ApplicationRoutes` é a mesma árvore usada pela SPA e pelos testes de renderização, com `StaticRouter` apenas nos testes. Estes testes verificam o HTML real das nove rotas, ligações, filtros reproduzíveis, estados vazios e IDs desconhecidos. Não substituem testes interativos no navegador.
+
+As obras relacionadas usam coincidências de género, formato e tags; tendências são seleções editoriais demonstrativas. Não existem métricas de popularidade, personalização, capítulos, comentários ou avaliações fictícias apresentados como reais. O estado de publicação é explicitamente “Demonstração · sem publicação real”. As datas do conjunto são identificadas como fictícias.

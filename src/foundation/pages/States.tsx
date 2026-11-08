@@ -1,10 +1,8 @@
 import { Link, useParams } from "react-router-dom";
-import { Construction, LockKeyhole, ArrowLeft } from "lucide-react";
+import { Construction, LockKeyhole } from "lucide-react";
 import type { RouteDefinition } from "../app/routes";
 import { ActionLink, Badge, Button } from "../components/ui";
 import { useTheme } from "../app/providers";
-import { worksRepository } from "../lib/worksRepository";
-import { Cover } from "../components/WorkCard";
 export function DevelopmentPage({ route }: { route: RouteDefinition }) {
   const params = useParams();
   const { theme, toggle } = useTheme();
@@ -57,45 +55,6 @@ export function NotFound() {
       <h1>Esta página ainda não foi escrita.</h1>
       <p>O endereço pode ter mudado. Há outras histórias à tua espera.</p>
       <ActionLink to="/">Voltar ao início</ActionLink>
-    </section>
-  );
-}
-export function WorkDetail() {
-  const { id } = useParams();
-  const work = worksRepository.find(id ?? "");
-  if (!work) return <NotFound />;
-  return (
-    <section className="container work-preview">
-      <div>
-        <Cover work={work} />
-      </div>
-      <div>
-        <Link className="text-link" to="/catalogo">
-          <ArrowLeft size={16} /> Catálogo
-        </Link>
-        <p>
-          <Badge>Obra e autor fictícios · Demonstração</Badge>
-        </p>
-        <h1>{work.title}</h1>
-        <p>
-          {work.author} · {work.format} · {work.genre}
-        </p>
-        <p className="literary">{work.synopsis}</p>
-        <div className="work-tags">
-          {work.tags.map((tag) => (
-            <Link
-              key={tag}
-              to={`/tags/${encodeURIComponent(tag.toLocaleLowerCase("pt"))}`}
-            >
-              {tag}
-            </Link>
-          ))}
-        </div>
-        <div className="notice">
-          Pré-visualização demonstrativa. A página completa, os capítulos e as
-          funções de biblioteca serão desenvolvidos numa próxima etapa.
-        </div>
-      </div>
     </section>
   );
 }
