@@ -283,9 +283,7 @@ export default function Home() {
                 Conhecer as regras <ArrowRight size={16} />
               </Link>
             </div>
-            <small>
-              Publicação e criação de conta disponíveis numa próxima etapa.
-            </small>
+            <small>Publicação de obras disponível numa próxima etapa.</small>
           </div>
         </div>
       </section>

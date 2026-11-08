@@ -9,10 +9,11 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "tsx --test scripts/*.test.ts scripts/*.test.tsx",
-    "format": "prettier --write src/foundation src/main.tsx scripts vite.config.ts tsconfig.json package.json index.html vercel.json README.md VALIDATION.md",
-    "format:check": "prettier --check src/foundation src/main.tsx scripts vite.config.ts tsconfig.json package.json index.html vercel.json README.md VALIDATION.md"
+    "format": "prettier --write src/foundation src/main.tsx scripts vite.config.ts tsconfig.json package.json index.html vercel.json README.md VALIDATION.md docs",
+    "format:check": "prettier --check src/foundation src/main.tsx scripts vite.config.ts tsconfig.json package.json index.html vercel.json README.md VALIDATION.md docs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.49.8",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

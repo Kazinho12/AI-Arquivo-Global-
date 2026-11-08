@@ -1,3 +1,4 @@
+import { AuthHeaderLinks } from "../features/auth/components";
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
@@ -61,9 +62,9 @@ function Header() {
             >
               {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
             </Button>
-            <Link className="login-link" to="/entrar">
-              Entrar
-            </Link>
+            <div className="auth-desktop">
+              <AuthHeaderLinks />
+            </div>
             <Link className="button secondary publish-link" to="/estudio">
               <PenLine size={16} /> Começar a publicar
             </Link>
@@ -96,12 +97,12 @@ function Header() {
               ...publicLinks,
               ["/biblioteca", "Biblioteca"],
               ["/estudio", "Estúdio"],
-              ["/entrar", "Entrar"],
             ].map(([to, label]) => (
               <NavLink key={to} to={to}>
                 {label}
               </NavLink>
             ))}
+            <AuthHeaderLinks mobile />
           </nav>
         )}
       </header>

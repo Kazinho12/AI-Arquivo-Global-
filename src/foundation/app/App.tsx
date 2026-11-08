@@ -41,6 +41,30 @@ const discoveryPages = {
   "/tendencias": Trends,
   "/obras/:id": WorkDetail,
 };
+const authPages = {
+  "/entrar": lazy(() =>
+    import("../pages/Auth").then((module) => ({ default: module.LoginPage })),
+  ),
+  "/registar": lazy(() =>
+    import("../pages/Auth").then((module) => ({
+      default: module.RegisterPage,
+    })),
+  ),
+  "/recuperar-senha": lazy(() =>
+    import("../pages/Auth").then((module) => ({ default: module.RecoverPage })),
+  ),
+  "/redefinir-senha": lazy(() =>
+    import("../pages/Auth").then((module) => ({ default: module.ResetPage })),
+  ),
+  "/confirmar-email": lazy(() =>
+    import("../pages/Auth").then((module) => ({
+      default: module.ConfirmEmailPage,
+    })),
+  ),
+  "/boas-vindas": lazy(() =>
+    import("../pages/Auth").then((module) => ({ default: module.WelcomePage })),
+  ),
+};
 const DesignSystem = lazy(() => import("../pages/DesignSystem"));
 const layouts = {
   public: PublicLayout,
@@ -68,7 +92,9 @@ function RouteEffects() {
   return null;
 }
 function renderRoute(route: (typeof productRoutes)[number]) {
-  const Page = discoveryPages[route.path as keyof typeof discoveryPages];
+  const Page =
+    discoveryPages[route.path as keyof typeof discoveryPages] ??
+    authPages[route.path as keyof typeof authPages];
   return Page ? <Page /> : <DevelopmentPage route={route} />;
 }
 export function ApplicationRoutes() {

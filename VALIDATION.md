@@ -2,6 +2,31 @@
 
 Data: 8 de novembro de 2026 (Africa/Maputo).
 
+## Autenticação — Prompt 3
+
+### Preservação, ambiente e implementação
+
+Estado inicial: branch `main`, árvore limpa no commit `e98b3d7`. O SDK Supabase não estava instalado na fundação; as integrações legadas foram inspecionadas e preservadas. A auditoria de ambiente leu apenas presença/nomes: não existiam ficheiros de configuração real nem variáveis Supabase no processo. `.env.example` foi atualizado com valores ilustrativos; nenhum `.env` ou `.env.local` foi criado ou sobrescrito.
+
+As seis telas Auth, o provider único, os métodos do SDK e o estado do cabeçalho foram integrados. PKCE, confirmação por hash, limpeza de callbacks, destinos internos, validação e cooldown local estão documentados em `docs/AUTHENTICATION.md`. Persistência e refresh são responsabilidade do SDK; não há armazenamento próprio de senhas ou tokens. Nenhum serviço externo foi configurado.
+
+### Testes e revisão
+
+- `npm run typecheck`: passou.
+- `npm test`: **118 testes passaram, 0 falharam** — 88 de regressão e 30 novos testes de autenticação. Todos os testes Auth são simulados; um utiliza o SDK real com HTTP e armazenamento em memória. Não houve login, e-mail, recuperação ou Google contra um projeto real.
+- Cobertura nova: validação, configuração/chaves públicas, destinos e callbacks, recuperação da sessão, listener único, corrida com logout, atualizações de sessão/refresh, erros/revogação, submissão duplicada, registo pendente, recuperação/reenvio/cooldown, redefinição e renderização das seis telas.
+- `npm run build`: passou.
+- `npm run format:check`: passou.
+- `git diff --check`: passou.
+- Revisão no navegador local: seis telas verificadas em 320, 768 e 1440 px, sem transbordo horizontal observado. Tema escuro nas revisões móvel/tablet e tema claro na revisão desktop. Alternância e persistência do tema ao navegar verificadas; preferência original restaurada.
+- Controlo mostrar/ocultar senha e passagem de foco por Tab verificados na tela de entrada; navegação para recuperação e voltar também exercitada. As operações remotas estavam desativadas por falta de configuração. As dimensões temporárias do navegador foram restauradas.
+
+### Limitações e Git
+
+Não foi validada persistência entre reinícios de um navegador real com um projeto Supabase, entrega de e-mails, Google OAuth real, todos os estados remotos no navegador ou leitores de ecrã. Dependem de configuração e contas de teste autorizadas; os passos estão na documentação Auth. Não foram implementados perfis completos, biblioteca, Estúdio, backend ou administração, nem iniciada a Fase 4.
+
+Alterações locais sem stage, commit ou push nesta fase. O registo das fases anteriores abaixo é histórico. A lista de ficheiros desta fase consta de `docs/AUTHENTICATION.md`.
+
 ## Descoberta e Catálogo — Prompt 2
 
 ### Preservação e escopo

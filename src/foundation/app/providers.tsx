@@ -1,3 +1,4 @@
+import { AuthProvider } from "../features/auth/AuthProvider";
 import {
   createContext,
   useContext,
@@ -44,7 +45,7 @@ export function Providers({ children }: { children: ReactNode }) {
       }}
     >
       <ToastContext.Provider value={setMessage}>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
         <div className="toast-region" role="status" aria-live="polite">
           {message && (
             <div className="toast">
