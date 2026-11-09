@@ -16,9 +16,7 @@ import { Button } from "../components/ui";
 export function Brand() {
   return (
     <Link className="brand" to="/" aria-label="Arquivo Global — início">
-      <span className="brand-mark">
-        <Globe2 size={28} />
-      </span>
+      <span className="brand-mark" aria-hidden="true" />
       <span>
         ARQUIVO
         <span>

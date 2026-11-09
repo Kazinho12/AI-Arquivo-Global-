@@ -65,6 +65,55 @@ const authPages = {
     import("../pages/Auth").then((module) => ({ default: module.WelcomePage })),
   ),
 };
+const profilePages = {
+  "/utilizadores/:username": lazy(() =>
+    import("../pages/Profile").then((module) => ({
+      default: module.PublicProfilePage,
+    })),
+  ),
+  "/perfil/editar": lazy(() =>
+    import("../pages/Profile").then((module) => ({
+      default: module.EditProfilePage,
+    })),
+  ),
+  "/utilizadores/:username/seguidores": lazy(() =>
+    import("../pages/Profile").then((module) => ({
+      default: module.FollowersPage,
+    })),
+  ),
+};
+const settingsPages = {
+  "/definicoes": lazy(() =>
+    import("../pages/Settings").then((module) => ({
+      default: module.SettingsOverviewPage,
+    })),
+  ),
+  "/definicoes/aparencia": lazy(() =>
+    import("../pages/Settings").then((module) => ({
+      default: module.SettingsAppearancePage,
+    })),
+  ),
+  "/definicoes/leitura": lazy(() =>
+    import("../pages/Settings").then((module) => ({
+      default: module.SettingsReadingPage,
+    })),
+  ),
+  "/definicoes/seguranca": lazy(() =>
+    import("../pages/Settings").then((module) => ({
+      default: module.SettingsSecurityPage,
+    })),
+  ),
+  "/definicoes/privacidade": lazy(() =>
+    import("../pages/Settings").then((module) => ({
+      default: module.SettingsPrivacyPage,
+    })),
+  ),
+  "/definicoes/acessibilidade": lazy(() =>
+    import("../pages/Settings").then((module) => ({
+      default: module.SettingsAccessibilityPage,
+    })),
+  ),
+};
 const DesignSystem = lazy(() => import("../pages/DesignSystem"));
 const layouts = {
   public: PublicLayout,
@@ -94,7 +143,9 @@ function RouteEffects() {
 function renderRoute(route: (typeof productRoutes)[number]) {
   const Page =
     discoveryPages[route.path as keyof typeof discoveryPages] ??
-    authPages[route.path as keyof typeof authPages];
+    authPages[route.path as keyof typeof authPages] ??
+    profilePages[route.path as keyof typeof profilePages] ??
+    settingsPages[route.path as keyof typeof settingsPages];
   return Page ? <Page /> : <DevelopmentPage route={route} />;
 }
 export function ApplicationRoutes() {
