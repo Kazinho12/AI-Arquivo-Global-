@@ -69,8 +69,8 @@ export default function Tags() {
         )}
       </div>
       <p className="directory-count" role="status">
-        {results.length} de {tags.length} tags demonstrativas · Contagens
-        derivadas das oito obras
+        {results.length} de {tags.length} tags editoriais · Contagens derivadas
+        das oito obras
       </p>
       {results.length ? (
         groups.map((name) => {
@@ -89,7 +89,7 @@ export default function Tags() {
                       <Hash size={18} />
                       <span>
                         {tag.count}{" "}
-                        {tag.count === 1 ? "obra demo" : "obras demo"}
+                        {tag.count === 1 ? "obra local" : "obras locais"}
                       </span>
                     </div>
                     <h3>{tag.name}</h3>
@@ -128,7 +128,7 @@ export function TagPage() {
         <PageIntro
           eyebrow="PISTA NÃO ENCONTRADA"
           title="Esta tag ainda não faz parte do arquivo."
-          description="Não encontramos uma tag com este endereço no catálogo demonstrativo. Explora as palavras disponíveis para seguir outro caminho."
+          description="Não encontramos uma tag com este endereço no catálogo inaugural. Explora as palavras disponíveis para seguir outro caminho."
         />
         <Link className="button secondary" to="/tags">
           Voltar ao diretório
@@ -160,7 +160,7 @@ export function TagPage() {
         <DemoNotice />
         <span className="count-label">
           {tag.count} {tag.count === 1 ? "obra associada" : "obras associadas"}{" "}
-          no catálogo demo
+          no catálogo local
         </span>
       </div>
       <WorkCollection works={works} fixedTag={tag.slug} />

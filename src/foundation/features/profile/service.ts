@@ -1,5 +1,6 @@
 import { getAuthClient } from "../auth/client";
-import { demoWorks, demoAuthors, type Work } from "../../data/works";
+import type { Work } from "../../data/works";
+import { inauguralWorks, editorialIdentity } from "../../data/inaugural";
 import { publishProfile, profileVersion, cachedProfile } from "./cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -9,23 +10,6 @@ import {
   validateUsername,
   type UserProfile,
 } from "./types";
-
-const demoAuthorBios: Record<string, string> = {
-  "lia-mavume":
-    "Cartógrafa e escritora fascinada por marés, ilhas desabitadas e memórias que resistem ao esquecimento.",
-  "tomas-nilo":
-    "Ilustrador e criador de histórias em quadrinhos focado em futuros urbanos, arquitetura e tecnologia.",
-  "iris-vale":
-    "Poeta contemporânea. Escreve sobre distâncias cósmicas, silêncios compartilhados e pequenos encontros cotidianos.",
-  "ren-aoki":
-    "Mangaká e contista. Apaixonado por folclore, botânica fantástica e viagens noturnas.",
-  "eduardo-moraes":
-    "Ficcionista e ensaísta explorando mundos sonhados e ruínas da imaginação.",
-  "sofia-luz":
-    "Escritora de ficção científica especulativa e inteligência sintética.",
-  "clara-bastos":
-    "Autora independente de romances de formação e narrativas costeiras.",
-};
 
 export interface FetchProfileResult {
   profile: UserProfile | null;
@@ -41,7 +25,7 @@ export interface SaveProfileResult {
 }
 
 export function findAuthorWorks(authorId: string): Work[] {
-  return demoWorks.filter((work) => work.authorId === authorId);
+  return inauguralWorks.filter((work) => work.authorId === authorId);
 }
 export async function fetchUserProfile(
   username: string,
@@ -258,17 +242,6 @@ export async function saveUserProfile(
 }
 
 export function resolveDemoProfile(username: string): UserProfile | null {
-  const author = demoAuthors.find(
-    (item) => item.username === normalizeUsername(username),
-  );
-  if (!author) return null;
-  const firstWork = demoWorks.find((work) => work.authorId === author.id);
-  return {
-    ...author,
-    bio:
-      demoAuthorBios[author.username] ??
-      "Autor(a) fictício(a) do catálogo demonstrativo.",
-    avatarUrl: null,
-    createdAt: (firstWork?.createdAt ?? "2026-01-01") + "T10:00:00Z",
-  };
+  if (normalizeUsername(username) !== editorialIdentity.username) return null;
+  return { ...editorialIdentity, avatarUrl: null };
 }

@@ -55,7 +55,7 @@ test("profile: display name validation requires non-empty string under 60 chars"
   assert.ok(validateDisplayName("   ") !== null);
   assert.ok(validateDisplayName("A".repeat(61)) !== null);
 
-  assert.equal(validateDisplayName("Lia Mavume"), null);
+  assert.equal(validateDisplayName("Arquivo Global — Equipa Editorial"), null);
   assert.equal(validateDisplayName("Tomás Nilo"), null);
 });
 
@@ -66,14 +66,16 @@ test("profile: bio validation allows up to 500 characters", () => {
 });
 
 test("profile: findAuthorWorks associates published works to author correctly", () => {
-  const liaWorks = findAuthorWorks("demo-lia-mavume");
+  const liaWorks = findAuthorWorks("ag-editorial-team");
   assert.ok(liaWorks.length > 0);
-  assert.equal(liaWorks[0].title, "Atlas das marés esquecidas");
+  assert.equal(liaWorks[0].title, "Carta de abertura");
 
   // Slugified search
-  const tomasWorks = findAuthorWorks("demo-tomas-nilo");
+  const tomasWorks = findAuthorWorks("ag-editorial-team");
   assert.ok(tomasWorks.length > 0);
-  assert.equal(tomasWorks[0].title, "A cidade entre linhas");
+  assert.ok(
+    tomasWorks.some((work) => work.title === "Um arquivo em três gestos"),
+  );
 
   // Unknown author returns empty array
   const unknownWorks = findAuthorWorks("autor-desconhecido");
@@ -81,10 +83,10 @@ test("profile: findAuthorWorks associates published works to author correctly", 
 });
 
 test("profile: fetchUserProfile resolves demo author profile gracefully", async () => {
-  const result = await fetchUserProfile("lia-mavume");
+  const result = await fetchUserProfile("equipa-editorial");
   assert.ok(result.profile !== null);
-  assert.equal(result.profile.displayName, "Lia Mavume");
-  assert.equal(result.profile.username, "lia-mavume");
+  assert.equal(result.profile.displayName, "Arquivo Global — Equipa Editorial");
+  assert.equal(result.profile.username, "equipa-editorial");
   assert.ok(result.profile.bio.length > 0);
 
   // Unknown author returns null profile
@@ -121,12 +123,12 @@ test("profile: saveUserProfile never fakes success when database is unconfigured
   assert.ok(result.message && result.message.length > 0);
 });
 
-test("profile: render /utilizadores/lia-mavume delivers author profile with published works", async () => {
-  const html = await renderRoute("/utilizadores/lia-mavume");
-  assert.ok(html.includes("Lia Mavume"));
-  assert.ok(html.includes("@lia-mavume"));
-  assert.ok(html.includes("Atlas das marés esquecidas"));
-  assert.ok(html.includes("Obras publicadas"));
+test("profile: render /utilizadores/equipa-editorial delivers author profile with published works", async () => {
+  const html = await renderRoute("/utilizadores/equipa-editorial");
+  assert.ok(html.includes("Arquivo Global — Equipa Editorial"));
+  assert.ok(html.includes("@equipa-editorial"));
+  assert.ok(html.includes("Carta de abertura"));
+  assert.ok(html.includes("Obras no catálogo local"));
   // Must NOT expose emails or tokens
   assert.ok(!html.includes("@example."));
   assert.ok(!html.includes("access_token"));
@@ -149,10 +151,10 @@ test("profile: render /perfil/editar requires authentication for unauthenticated
   assert.ok(html.includes("/entrar"));
 });
 
-test("profile: render /utilizadores/lia-mavume/seguidores renders followers view", async () => {
-  const html = await renderRoute("/utilizadores/lia-mavume/seguidores");
+test("profile: render /utilizadores/equipa-editorial/seguidores renders followers view", async () => {
+  const html = await renderRoute("/utilizadores/equipa-editorial/seguidores");
   assert.ok(html.includes("Seguidores"));
-  assert.ok(html.includes("lia-mavume"));
+  assert.ok(html.includes("equipa-editorial"));
 });
 
 test("settings: render /definicoes renders overview and functional navigation", async () => {

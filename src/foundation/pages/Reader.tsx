@@ -132,40 +132,6 @@ interface CommentItem {
   likes: number;
 }
 
-const initialDemoComments: Record<string, CommentItem[]> = {
-  "atlas-das-mares": [
-    {
-      id: "c-1",
-      authorName: "Tomás Nilo",
-      authorUsername: "tomas_nilo",
-      createdAt: "Há 2 dias",
-      text: "A cadência da prosa é deslumbrante. A descrição da maré a recuar e a revelar os arcos de pedra submersos cria uma sensação de mistério muito tangível.",
-      chapterRef: "Capítulo 1",
-      likes: 14,
-    },
-    {
-      id: "c-2",
-      authorName: "Íris Vale",
-      authorUsername: "iris_vale",
-      createdAt: "Ontem",
-      text: "Gostei particularmente do rigor dos instrumentos náuticos. O compasso de latão e o sextante de bolso ancoram a ficção numa realidade concreta.",
-      chapterRef: "Capítulo 2",
-      likes: 8,
-    },
-  ],
-  "silencio-orbita": [
-    {
-      id: "c-3",
-      authorName: "Lia Mavume",
-      authorUsername: "lia-mavume",
-      createdAt: "Há 4 dias",
-      text: "A imagem da luz a cansar-se de atravessar a sala deserta é magnífica. A métrica livre preserva uma respiração muito controlada.",
-      chapterRef: "I. Equinócio",
-      likes: 19,
-    },
-  ],
-};
-
 // 3. Comments Page: /obras/:id/comentarios
 export function CommentsPage() {
   const { id } = useParams<{ id: string }>();
@@ -184,15 +150,10 @@ function CommentsForWork() {
     setItems: setComments,
     warning,
     exportCopy,
-  } = useValidatedItems<CommentItem>(
-    `ag_comments_${id}`,
-    initialDemoComments[id ?? ""] ?? [],
-    validComments,
-  );
+  } = useValidatedItems<CommentItem>(`ag_comments_${id}`, [], validComments);
 
   const [newComment, setNewComment] = useState("");
   const [authorName, setAuthorName] = useState("");
-  const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,18 +172,6 @@ function CommentsForWork() {
 
     setComments([item, ...comments]);
     setNewComment("");
-  };
-
-  const toggleLike = (commentId: string) => {
-    const isLiked = likedMap[commentId];
-    setLikedMap({ ...likedMap, [commentId]: !isLiked });
-    setComments((prev) =>
-      prev.map((c) =>
-        c.id === commentId
-          ? { ...c, likes: isLiked ? c.likes - 1 : c.likes + 1 }
-          : c,
-      ),
-    );
   };
 
   const isVisual =
@@ -269,9 +218,9 @@ function CommentsForWork() {
         <div className="form-info-callout">
           <Info size={16} />
           <span>
-            Os comentários são guardados no teu navegador durante a
-            demonstração. Mantém as tuas respostas construtivas e identifica
-            avisos de revelação de enredo (spoilers).
+            Estas notas são guardadas apenas neste navegador, sem publicação ou
+            identidade verificada. Mantém as tuas respostas construtivas e
+            identifica avisos de revelação de enredo (spoilers).
           </span>
         </div>
 
@@ -311,7 +260,7 @@ function CommentsForWork() {
               type="submit"
               disabled={!newComment.trim()}
             >
-              <Send size={15} className="inline mr-1" /> Publicar comentário
+              <Send size={15} className="inline mr-1" /> Guardar nota local
             </Button>
           </div>
         </form>
@@ -364,18 +313,7 @@ function CommentsForWork() {
                 </div>
 
                 <footer className="comment-card-footer">
-                  <button
-                    type="button"
-                    className={`comment-like-btn ${likedMap[comment.id] ? "liked" : ""}`}
-                    onClick={() => toggleLike(comment.id)}
-                    aria-label={`Gostar deste comentário (${comment.likes} gostos)`}
-                  >
-                    <Heart
-                      size={14}
-                      className={likedMap[comment.id] ? "fill-current" : ""}
-                    />
-                    <span>{comment.likes}</span>
-                  </button>
+                  <small>Nota local · sem contagem pública de gostos</small>
                 </footer>
               </article>
             ))}
@@ -398,31 +336,6 @@ interface ReviewItem {
   recommend: boolean;
 }
 
-const initialDemoReviews: Record<string, ReviewItem[]> = {
-  "atlas-das-mares": [
-    {
-      id: "r-1",
-      reviewerName: "Rui Alentejo",
-      reviewerHandle: "rui_critica",
-      createdAt: "Há 1 semana",
-      headline: "Cartografia lírica e precisão atmosférica",
-      body: "Uma narrativa rara no panorama contemporâneo: combina o rigor técnico da navegação costeira com uma sensibilidade quase arqueológica. A cada recuo da água, a cidade submersa ganha densidade física e moral.",
-      facets: ["Construção de mundo", "Prosa evocativa", "Rigor histórico"],
-      recommend: true,
-    },
-    {
-      id: "r-2",
-      reviewerName: "Clara Sampaio",
-      reviewerHandle: "clara_livros",
-      createdAt: "Há 3 dias",
-      headline: "O mar enquanto protagonista silencioso",
-      body: "O trabalho com o vocabulário das marés e das correntes marítimas é sublime. Uma leitura que exige tempo e recompensa com imagens indeléveis.",
-      facets: ["Linguagem apurada", "Atmosfera imersiva"],
-      recommend: true,
-    },
-  ],
-};
-
 export function ReviewsPage() {
   const { id } = useParams<{ id: string }>();
   return worksRepository.find(id ?? "") ? (
@@ -440,11 +353,7 @@ function ReviewsForWork() {
     setItems: setReviews,
     warning,
     exportCopy,
-  } = useValidatedItems<ReviewItem>(
-    `ag_reviews_${id}`,
-    initialDemoReviews[id ?? ""] ?? [],
-    validReviews,
-  );
+  } = useValidatedItems<ReviewItem>(`ag_reviews_${id}`, [], validReviews);
 
   const [headline, setHeadline] = useState("");
   const [body, setBody] = useState("");
@@ -464,7 +373,7 @@ function ReviewsForWork() {
       createdAt: "Hoje",
       headline: headline.trim(),
       body: body.trim(),
-      facets: ["Leitura demonstrativa"],
+      facets: ["Nota local de leitura"],
       recommend,
     };
 
@@ -515,7 +424,11 @@ function ReviewsForWork() {
       {/* Review Submission Section */}
       <section className="review-form-section">
         <form onSubmit={handleSubmit} className="review-submit-form">
-          <h2>Escrever uma avaliação</h2>
+          <h2>Escrever uma avaliação local</h2>
+          <p>
+            Guardada neste navegador. Não é enviada ao autor nem publicada na
+            plataforma.
+          </p>
           <div className="review-form-grid">
             <div>
               <label htmlFor="rev-author" className="field-label">
@@ -579,7 +492,8 @@ function ReviewsForWork() {
               type="submit"
               disabled={!headline.trim() || !body.trim()}
             >
-              <Sparkles size={15} className="inline mr-1" /> Publicar avaliação
+              <Sparkles size={15} className="inline mr-1" /> Guardar avaliação
+              local
             </Button>
           </div>
         </form>
@@ -597,7 +511,7 @@ function ReviewsForWork() {
         {reviews.length === 0 ? (
           <div className="empty-reviews-state">
             <Sparkles size={36} className="empty-icon" />
-            <p>Ainda não há avaliações publicadas para esta obra.</p>
+            <p>Ainda não há avaliações locais para esta obra.</p>
             <small>Depois de ler, contribui com a tua análise.</small>
           </div>
         ) : (

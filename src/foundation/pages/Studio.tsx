@@ -95,7 +95,8 @@ export function StudioDashboardPage() {
           <span className="stat-label">Total de Obras</span>
           <span className="stat-value font-mono">{stats.totalWorks}</span>
           <span className="stat-hint">
-            {stats.publishedCount} publicadas · {stats.draftsCount} rascunhos
+            {stats.publishedCount} com estado local publicado ·{" "}
+            {stats.draftsCount} rascunhos
           </span>
         </div>
 
@@ -116,11 +117,9 @@ export function StudioDashboardPage() {
         </div>
 
         <div className="studio-stat-card">
-          <span className="stat-label">Leituras Estimadas</span>
-          <span className="stat-value font-mono">
-            {stats.estimatedReads.toLocaleString("pt-PT")}
-          </span>
-          <span className="stat-hint">Amostra demonstrativa</span>
+          <span className="stat-label">Audiência</span>
+          <span className="stat-value font-mono">—</span>
+          <span className="stat-hint">Sem dados de audiência</span>
         </div>
       </section>
 
@@ -1521,8 +1520,7 @@ export function StudioStatsPage() {
           <span className="eyebrow">PLANEAMENTO EDITORIAL</span>
           <h1>Estatísticas do Autor</h1>
           <p className="studio-subtitle">
-            Métricas de produção literária, estimativa de retenção e
-            distribuição de formatos.
+            Contagens da produção local e distribuição de formatos.
           </p>
         </div>
       </header>
@@ -1530,9 +1528,8 @@ export function StudioStatsPage() {
       <div className="form-info-callout mb-4">
         <Info size={16} />
         <span>
-          Estas estatísticas baseiam-se na tua biblioteca local de rascunhos e
-          em dados demonstrativos preparados para avaliar o alcance e ritmo das
-          tuas publicações.
+          Estas contagens usam apenas os teus rascunhos locais. Não há métricas
+          de audiência, retenção ou publicação remota.
         </span>
       </div>
 
@@ -1558,13 +1555,15 @@ export function StudioStatsPage() {
           <span className="stat-value font-mono">
             ~{stats.avgReadTimeMinutes} min
           </span>
-          <span className="stat-hint">Por sessão estimada</span>
+          <span className="stat-hint">
+            Estimativa de duração do texto a 200 palavras/min
+          </span>
         </div>
 
         <div className="studio-stat-card">
-          <span className="stat-label">Taxa de Conclusão Estimada</span>
-          <span className="stat-value font-mono">78%</span>
-          <span className="stat-hint">Baseada na extensão dos capítulos</span>
+          <span className="stat-label">Conclusão por leitores</span>
+          <span className="stat-value font-mono">—</span>
+          <span className="stat-hint">Métrica indisponível</span>
         </div>
       </section>
 
@@ -1584,15 +1583,15 @@ export function StudioStatsPage() {
             </thead>
             <tbody>
               {works.map((w) => {
-                let wWords = 0;
-                w.chapters.forEach((c) => {
-                  if (c.content) {
-                    wWords += c.content
+                const wWords = w.chapters.reduce(
+                  (total, c) =>
+                    total +
+                    (c.content || c.stanzas?.flat().join(" ") || "")
                       .trim()
                       .split(/\s+/)
-                      .filter(Boolean).length;
-                  }
-                });
+                      .filter(Boolean).length,
+                  0,
+                );
 
                 return (
                   <tr key={w.id}>

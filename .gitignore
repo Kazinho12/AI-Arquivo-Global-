@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 .env.local
+
+# O exemplo contém apenas placeholders; os ficheiros reais continuam ignorados.
+!.env.example

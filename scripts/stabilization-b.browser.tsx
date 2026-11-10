@@ -294,8 +294,15 @@ await run(
   },
 );
 await run("AG-17: miniatura do sequenciador responde ao teclado", async () => {
-  selectScope("guest");
-  const visual = studioStore.getWork("cidade-entre-linhas")!;
+  selectScope("user:b-keyboard-fixture");
+  const visual = studioStore.createWork({
+    ...work,
+    id: "b-keyboard-visual",
+    title: "Fixture de teclado",
+    format: "HQ / Comic",
+    mode: "comic",
+    chapters: structuredClone(demoReadingLibrary["ag-tres-gestos"].chapters),
+  });
   await render(
     <MemoryRouter>
       <VisualSequencer
@@ -430,9 +437,9 @@ await run(
     await render(<RouterProvider router={router} />);
     for (const path of [
       "/obras/unknown/capitulos/cap-1",
-      "/obras/atlas-das-mares/capitulos/missing",
-      "/obras/cidade-entre-linhas/capitulos/cap-1",
-      "/obras/atlas-das-mares/paginas/cap-1",
+      "/obras/ag-carta-abertura/capitulos/missing",
+      "/obras/ag-tres-gestos/capitulos/cap-1",
+      "/obras/ag-carta-abertura/paginas/cap-1",
     ]) {
       await act(async () => {
         await router.navigate(path);
@@ -447,7 +454,7 @@ await run(
       "Leitor inválido escreveu no histórico",
     );
     await act(async () => {
-      await router.navigate("/obras/atlas-das-mares/capitulos/cap-1");
+      await router.navigate("/obras/ag-carta-abertura/capitulos/cap-1");
     });
     check(
       document.querySelector(".chapter-title"),

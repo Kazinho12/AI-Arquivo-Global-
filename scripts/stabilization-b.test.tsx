@@ -84,7 +84,7 @@ test("AG-11/14: lookup exato com underscore e associação apenas por ID estáve
                   data: {
                     id: "real-author",
                     username: value,
-                    display_name: "Lia Mavume",
+                    display_name: "Arquivo Global — Equipa Editorial",
                     bio: "",
                     avatar_url: null,
                     created_at: "2026-01-01",
@@ -102,8 +102,8 @@ test("AG-11/14: lookup exato com underscore e associação apenas por ID estáve
   assert.equal(compared, "alice_b");
   assert.equal(result.profile?.username, "alice_b");
   assert.deepEqual(findAuthorWorks("real-author"), []);
-  assert.deepEqual(findAuthorWorks("Lia Mavume"), []);
-  assert.ok(findAuthorWorks("demo-lia-mavume").length > 0);
+  assert.deepEqual(findAuthorWorks("Arquivo Global — Equipa Editorial"), []);
+  assert.ok(findAuthorWorks("ag-editorial-team").length > 0);
 });
 
 import {

@@ -17,7 +17,7 @@ import {
   ModerationLayout,
   SystemLayout,
 } from "./layouts";
-import { DevelopmentPage, NotFound } from "../pages/States";
+import { NotFound } from "../pages/States";
 import { LoadingState } from "../components/ui";
 const Home = lazy(() => import("../pages/Home"));
 const Catalog = lazy(() => import("../pages/Catalog"));
@@ -77,7 +77,7 @@ const profilePages = {
     })),
   ),
   "/utilizadores/:username/seguidores": lazy(() =>
-    import("../pages/Profile").then((module) => ({
+    import("../pages/Community").then((module) => ({
       default: module.FollowersPage,
     })),
   ),
@@ -205,6 +205,88 @@ const studioPages = {
     })),
   ),
 };
+const completionPages = {
+  "/atividade": lazy(() =>
+    import("../pages/Community").then((module) => ({
+      default: module.ActivityPage,
+    })),
+  ),
+  "/colecoes": lazy(() =>
+    import("../pages/Community").then((module) => ({
+      default: module.CollectionsPage,
+    })),
+  ),
+  "/notificacoes": lazy(() =>
+    import("../pages/Communication").then((module) => ({
+      default: module.NotificationsPage,
+    })),
+  ),
+  "/denunciar": lazy(() =>
+    import("../pages/Communication").then((module) => ({
+      default: module.ReportPage,
+    })),
+  ),
+  "/ajuda": lazy(() =>
+    import("../pages/Information").then((module) => ({
+      default: module.HelpPage,
+    })),
+  ),
+  "/regras": lazy(() =>
+    import("../pages/Information").then((module) => ({
+      default: module.RulesPage,
+    })),
+  ),
+  "/privacidade": lazy(() =>
+    import("../pages/Information").then((module) => ({
+      default: module.PrivacyPage,
+    })),
+  ),
+  "/moderacao": lazy(() =>
+    import("../pages/Moderation").then((module) => ({
+      default: module.ModerationPage,
+    })),
+  ),
+  "/moderacao/denuncias": lazy(() =>
+    import("../pages/Moderation").then((module) => ({
+      default: module.ModerationReportsPage,
+    })),
+  ),
+  "/sistema": lazy(() =>
+    import("../pages/System").then((module) => ({
+      default: module.SystemPage,
+    })),
+  ),
+  "/sistema/logs": lazy(() =>
+    import("../pages/System").then((module) => ({
+      default: module.SystemLogsPage,
+    })),
+  ),
+  "/sistema/logs/:id": lazy(() =>
+    import("../pages/System").then((module) => ({
+      default: module.SystemLogDetailPage,
+    })),
+  ),
+  "/sistema/servicos": lazy(() =>
+    import("../pages/System").then((module) => ({
+      default: module.SystemServicesPage,
+    })),
+  ),
+  "/sistema/monitorizacao": lazy(() =>
+    import("../pages/System").then((module) => ({
+      default: module.SystemMonitoringPage,
+    })),
+  ),
+  "/sistema/informacoes": lazy(() =>
+    import("../pages/System").then((module) => ({
+      default: module.SystemInformationPage,
+    })),
+  ),
+  "/sistema/testes": lazy(() =>
+    import("../pages/System").then((module) => ({
+      default: module.SystemTestsPage,
+    })),
+  ),
+};
 const DesignSystem = lazy(() => import("../pages/DesignSystem"));
 const layouts = {
   public: PublicLayout,
@@ -239,8 +321,9 @@ function renderRoute(route: (typeof productRoutes)[number]) {
     settingsPages[route.path as keyof typeof settingsPages] ??
     readerPages[route.path as keyof typeof readerPages] ??
     libraryPages[route.path as keyof typeof libraryPages] ??
-    studioPages[route.path as keyof typeof studioPages];
-  return Page ? <Page /> : <DevelopmentPage route={route} />;
+    studioPages[route.path as keyof typeof studioPages] ??
+    completionPages[route.path as keyof typeof completionPages];
+  return Page ? <Page /> : <NotFound />;
 }
 export function ApplicationRoutes() {
   return (

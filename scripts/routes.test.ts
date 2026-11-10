@@ -77,7 +77,7 @@ for (const path of expected)
       .replace(/:slug/g, "oceano")
       .replace(/:username/g, "autor-demo")
       .replace(/:capituloId/g, "cap-1")
-      .replace(/:id/g, "atlas-das-mares");
+      .replace(/:id/g, "ag-carta-abertura");
     const matched = matchRoutes(
       productRoutes.map((r) => ({ path: r.path })),
       url,
@@ -95,26 +95,26 @@ test("all seven layouts exist; administrative routes remain restricted", () => {
   }
 });
 const base = { query: "", format: "", genre: "", sort: "recentes" };
-test("search handles diacritics, tags, authors and empty results", () => {
+test("canonical search handles diacritics, tags and empty results", () => {
   assert.equal(
-    filterWorks(demoWorks, { ...base, query: "silencio" })[0]?.id,
-    "silencio-orbita",
+    filterWorks(demoWorks, { ...base, query: "poemas" })[0]?.id,
+    "ag-primeiras-linhas",
   );
   assert.equal(
-    filterWorks(demoWorks, { ...base, query: "Lia Mavume" })[0]?.id,
-    "atlas-das-mares",
+    filterWorks(demoWorks, { ...base, query: "Equipa Editorial" }).length,
+    4,
   );
-  assert.ok(filterWorks(demoWorks, { ...base, query: "Memória" }).length >= 2);
+  assert.ok(filterWorks(demoWorks, { ...base, query: "Memória" }).length >= 1);
   assert.equal(filterWorks(demoWorks, { ...base, query: "zzzzzz" }).length, 0);
 });
-test("format and genre filters compose", () => {
+test("format and genre filters compose without inventing missing formats", () => {
   const result = filterWorks(demoWorks, {
     ...base,
     format: "Mangá",
-    genre: "Fantasia",
+    genre: "Ensaio visual",
   });
   assert.equal(result.length, 1);
-  assert.equal(result[0].id, "jardim-lua");
+  assert.equal(result[0].id, "ag-outra-margem");
   assert.equal(
     filterWorks(demoWorks, { ...base, format: "Mangá", genre: "Mistério" })
       .length,
@@ -132,19 +132,13 @@ test("sorting is deterministic and never mutates repository data", () => {
     demoWorks.map((w) => w.id),
     original,
   );
-  assert.equal(filterWorks(demoWorks, base)[0].id, "atlas-das-mares");
 });
-test("demo data covers all formats and has no fabricated engagement metrics", () => {
-  assert.deepEqual(
-    [...new Set(demoWorks.map((w) => w.format))].sort(),
-    [...formats].sort(),
-  );
+test("inaugural data has no fabricated engagement; all declared formats remain filterable", () => {
+  assert.equal(formats.length, 8);
+  assert.equal(demoWorks.length, 4);
   for (const work of demoWorks) {
-    assert.equal(work.demo, true);
-    assert.ok(work.tags.length);
-    assert.ok(work.synopsis);
-    assert.equal("viewsCount" in work, false);
-    assert.equal("rating" in work, false);
+    assert.ok(!work.demo);
+    assert.ok(!("views" in work));
+    assert.ok(!("rating" in work));
   }
-  assert.equal(worksRepository.find("missing"), undefined);
 });

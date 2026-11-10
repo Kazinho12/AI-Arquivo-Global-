@@ -1,8 +1,10 @@
-# Autenticação — Arquivo Global 2.0 / Fase 3
+# Autenticação — Arquivo Global 2.0
 
-## Auditoria e arquitetura
+Atualizado para o commit `a2d6ba1649d7c3cca57bf0128a6629a723f605d1`, em 10/11/2026. O historial das fases está em [VALIDATION](../VALIDATION.md) e nos relatórios [A](STABILIZATION-A.md) e [B](STABILIZATION-B.md). Este guia descreve o contrato ativo; não comprova a configuração de um projeto remoto.
 
-Estado inicial: branch `main`, árvore limpa, commit `e98b3d7`. O SDK Supabase não estava nas dependências ativas. As integrações antigas em `src/lib/supabase.ts` e `src/context/AuthContext.tsx` foram identificadas e preservadas, sem importação pela fundação. Não existiam `.env`, `.env.local`, `.env.development` ou `.env.development.local`, e as variáveis Supabase não estavam presentes no processo. Os valores não foram impressos.
+## Arquitetura ativa
+
+O código ativo está em `src/foundation/features/auth`. As integrações anteriores em `src/lib/supabase.ts` e `src/context/AuthContext.tsx` não são importadas pela entrada atual. O cliente é criado apenas no navegador; em SSR o provider usa snapshot neutro e não partilha um controlador de sessão entre pedidos.
 
 - `features/auth/config.ts`: valida apenas URL e chave públicas; rejeita chaves privadas reconhecíveis e valores ilustrativos.
 - `features/auth/client.ts`: cliente único, criado apenas no navegador e com configuração válida. O SDK foi fixado em `2.49.8`, compatível com o Node 18.19 existente; atualizações futuras devem ser validadas com a versão de Node adotada pelo projeto.
@@ -12,26 +14,28 @@ Estado inicial: branch `main`, árvore limpa, commit `e98b3d7`. O SDK Supabase n
 - `features/auth/components.tsx`: feedback, senha visível/oculta e navegação de conta.
 - `pages/Auth.tsx`: as seis interfaces reais, reutilizando `AuthLayout` e o design system. As restantes rotas e os sete layouts continuam a existir.
 
-Não foi criado backend, perfil, biblioteca, Estúdio funcional nem administração. Mostrar uma sessão no frontend não substitui autorização no servidor. Consultas futuras têm de respeitar políticas RLS e validação de autorização no backend.
+Existem serviços de consulta/upsert de `profiles` e ferramentas locais de biblioteca/Estúdio. Não existe backend ativo de obras ou administração. Mostrar uma sessão no frontend não substitui autorização no servidor. As políticas de perfis e as três migrações estão descritas em [ARCHITECTURE](ARCHITECTURE.md#migrações-sql-locais).
+
+`LocalDataBoundary` escolhe `guest` ou `user:<id>` após a inicialização Auth e remonta o conteúdo ao mudar de identidade. Uma falha operacional preserva a identidade que o controlador ainda mantém, ou o espaço visitante se não houver identidade; não oculta a aplicação para sempre. Logout não apaga automaticamente rascunhos/biblioteca locais. Essa separação local não é encriptação nem autorização do backend.
 
 ## Variáveis públicas
 
-Copiar `.env.example` para `.env.local` manualmente e substituir os exemplos:
+Criar `.env.local` a partir de [`.env.example`](../.env.example) apenas se ainda não existir. Se já existir, preservá-lo e editar os valores públicos necessários:
 
 ```dotenv
-VITE_SUPABASE_URL=https://SEU_PROJETO.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=CHAVE_PUBLICA_DO_PROJETO
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_example_replace_me
 ```
 
 `VITE_*` é público e integra o bundle. Nunca usar service-role, `sb_secret_*`, segredos Google/OAuth ou credenciais administrativas. O cliente aceita `sb_publishable_*`. Um JWT público legado com `role: anon` pode ser usado **apenas na variável `VITE_SUPABASE_PUBLISHABLE_KEY`**; a compatibilidade é explícita em `readAuthConfig`, através de `legacyAnon`. `VITE_SUPABASE_ANON_KEY` não é lida. Essa classificação não verifica a assinatura nem concede autorização: o serviço valida a chave e as sessões.
 
-Nenhum `.env` real foi criado ou sobrescrito. Sem configuração válida, as telas continuam utilizáveis para navegação, mostram indisponibilidade e bloqueiam operações remotas. Não são criados utilizadores ou sessões fictícias. Reiniciar Vite após configurar variáveis. Em hospedagem futura, definir as duas variáveis públicas antes do build.
+Os placeholders são recusados pela configuração. Nesta revisão de documentação, o `.env.local` existente não foi alterado. Sem configuração válida, as telas continuam utilizáveis para navegação, mostram indisponibilidade e bloqueiam operações remotas. Não são criados utilizadores ou sessões fictícias. Reiniciar Vite após configurar variáveis. Em hospedagem futura, definir as duas variáveis públicas antes do build.
 
 ## Site URL e URLs de redirecionamento
 
-No projeto Supabase, o proprietário deverá configurar Authentication / URL Configuration. Nada foi alterado externamente nesta fase.
+No projeto Supabase, o responsável deverá confirmar Authentication / URL Configuration. As instruções seguintes são de configuração manual; nenhum serviço remoto foi alterado ou inspecionado nesta revisão.
 
-- Site URL de desenvolvimento: `http://127.0.0.1:3000` (ou `http://localhost:3000`, conforme o endereço efetivamente utilizado).
+- Site URL de desenvolvimento: `http://127.0.0.1:3000`. O Vite liga apenas ao loopback. Se a porta/origem mudar, rever os redirecionamentos; usar `--strictPort` para impedir troca silenciosa de porta.
 - Callbacks da SPA: `/confirmar-email` para confirmação e Google; `/redefinir-senha` para recuperação.
 - São enviados parâmetros `next` seguros e, para Google, `fluxo=oauth`. A allowlist deve contemplar esses URLs com query string.
 - Durante desenvolvimento pode ser autorizado `http://127.0.0.1:3000/**`. Se usares `localhost`, autoriza também essa origem; os armazenamentos de `localhost` e `127.0.0.1` são diferentes.
@@ -58,7 +62,7 @@ O verificador PKCE é gerido pelo SDK. Normalmente, o link tem de ser aberto no 
 
 ## Google OAuth
 
-No painel Supabase, ativar o fornecedor Google e configurar as credenciais no próprio serviço. No Google Cloud, configurar o ecrã de consentimento e o cliente OAuth; a URI autorizada de callback é a URI fornecida pelo Supabase, habitualmente `https://SEU_PROJETO.supabase.co/auth/v1/callback`. Os segredos Google ficam no Supabase/Google Cloud, nunca na SPA.
+No painel Supabase, ativar o fornecedor Google e configurar o cliente OAuth. No Google Cloud, adicionar como URI autorizada a callback do projeto apresentada pelo painel Supabase, normalmente `https://SEU_PROJETO.supabase.co/auth/v1/callback`. Essa é a callback do fornecedor; a callback da aplicação continua em `/confirmar-email`. Os segredos Google ficam nos serviços, nunca na SPA. Ver o [guia oficial Google/Supabase](https://supabase.com/docs/guides/auth/social-sign-in/auth-google).
 
 A aplicação usa apenas `signInWithOAuth({ provider: 'google', options: { redirectTo } })`. O Google volta ao Supabase e este devolve o utilizador para `/confirmar-email?fluxo=oauth&next=…`. A aplicação só afirma sucesso após a troca e validação da sessão. Se o fornecedor estiver desativado, o acesso não funciona; o SDK pode devolver erro ou o serviço mostrar o erro depois do redirecionamento. Essa dependência está indicada na tela de entrada.
 
@@ -90,28 +94,10 @@ Executar apenas com contas de teste autorizadas; não usar dados pessoais de ter
 
 Os testes de `scripts/auth.test.tsx` usam mocks do serviço e armazenamento em memória. Há um teste que executa o SDK oficial com HTTP simulado para verificar escrita/restauração da sessão, refresh e remoção no logout. Não são chamadas reais a um projeto Supabase, não enviam e-mails e não validam Google externamente. A renderização das seis telas usa a mesma árvore React Router da SPA.
 
-Sem configuração real neste ambiente, a entrega não comprova login, persistência entre processos de um navegador real ou entrega de mensagens contra um projeto Supabase. Esses passos permanecem na checklist manual. Nenhuma configuração Supabase ou Google Cloud foi modificada.
+Os testes automáticos são isolados do projeto real, mesmo quando existe `.env.local`. Não comprovam entrega de e-mail, login/Google reais, políticas remotas ou sessões reais entre reinícios. Esses passos permanecem na checklist manual. Nenhuma configuração Supabase ou Google Cloud foi modificada nesta revisão. Resultados atuais e limites estão em [VALIDATION](../VALIDATION.md).
 
-Referências oficiais consultadas: [sessões](https://supabase.com/docs/guides/auth/sessions), [PKCE](https://supabase.com/docs/guides/auth/sessions/pkce-flow), [eventos Auth](https://supabase.com/docs/reference/javascript/auth-onauthstatechange), [senhas](https://supabase.com/docs/guides/auth/passwords), [redirecionamentos](https://supabase.com/docs/guides/auth/redirect-urls), [Google](https://supabase.com/docs/guides/auth/social-login/auth-google).
+Referências de configuração consultadas nesta revisão: [URLs de redirecionamento](https://supabase.com/docs/guides/auth/redirect-urls) e [Google](https://supabase.com/docs/guides/auth/social-sign-in/auth-google). O suporte a padrões locais e a recomendação de caminhos específicos em produção seguem essas fontes. O comportamento PKCE, limpeza e validação descrito acima foi conferido no código/testes do projeto.
 
-## Ficheiros da entrega
+## Perfis após autenticação
 
-- `.env.example`
-- `README.md`
-- `VALIDATION.md`
-- `docs/AUTHENTICATION.md`
-- `package-lock.json`
-- `package.json`
-- `scripts/auth.test.tsx`
-- `src/foundation/app/App.tsx`
-- `src/foundation/app/layouts.tsx`
-- `src/foundation/app/providers.tsx`
-- `src/foundation/features/auth/AuthProvider.tsx`
-- `src/foundation/features/auth/client.ts`
-- `src/foundation/features/auth/components.tsx`
-- `src/foundation/features/auth/config.ts`
-- `src/foundation/features/auth/controller.ts`
-- `src/foundation/features/auth/security.ts`
-- `src/foundation/pages/Auth.tsx`
-- `src/foundation/pages/Home.tsx`
-- `src/foundation/styles/global.css`
+`features/profile/service.ts` consulta `profiles` por ID ou username normalizado exato e grava por `upsert`. As definições utilizam a cache canónica por ID, atualizada depois de guardar, sem reescrever a sessão ou metadata Auth. Obras demo são associadas a IDs fictícios explícitos, não ao nome de uma conta real. A operação real exige esquema/RLS corretos; tabela ausente ou erro de serviço não é tratado como gravação bem-sucedida. O [guia de arquitetura](ARCHITECTURE.md#perfis-e-identidade) detalha o contrato e os [passos SQL](ARCHITECTURE.md#migrações-sql-locais).

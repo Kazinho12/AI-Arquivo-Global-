@@ -128,6 +128,9 @@ export function PoetryEditor({
     <div
       className={`poetry-editor-root ${distractionFree ? "editor-focus-mode" : ""}`}
     >
+      <h1 className="sr-only">
+        Editar {work.title} — {currentChapter.title}
+      </h1>
       {/* Top Header */}
       <header className="editor-top-bar">
         <div className="editor-top-left">

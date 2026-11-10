@@ -58,26 +58,26 @@ function renderComponent(node: React.ReactNode): Promise<string> {
 }
 
 test("reader: getWorkReadingData returns correct mode and chapters for known works", () => {
-  const atlas = getWorkReadingData("atlas-das-mares")!;
+  const atlas = getWorkReadingData("ag-carta-abertura")!;
   assert.equal(atlas.mode, "prose");
-  assert.equal(atlas.chapters.length, 3);
-  assert.equal(atlas.chapters[0].title, "A carta náutica sem nome");
+  assert.equal(atlas.chapters.length, 2);
+  assert.equal(atlas.chapters[0].title, "Uma porta entreaberta");
 
-  const silencio = getWorkReadingData("silencio-orbita")!;
+  const silencio = getWorkReadingData("ag-primeiras-linhas")!;
   assert.equal(silencio.mode, "poetry");
   assert.ok(silencio.chapters[0].stanzas);
 
-  const cidade = getWorkReadingData("cidade-entre-linhas")!;
+  const cidade = getWorkReadingData("ag-tres-gestos")!;
   assert.equal(cidade.mode, "comic");
   assert.ok(cidade.chapters[0].pages);
 
-  const jardim = getWorkReadingData("jardim-lua")!;
+  const jardim = getWorkReadingData("ag-outra-margem")!;
   assert.equal(jardim.mode, "manga");
   assert.ok(jardim.chapters[0].pages);
 });
 
 test("reader: ProseReader renders chapter heading, text, and typography affordances", async () => {
-  const data = demoReadingLibrary["atlas-das-mares"];
+  const data = demoReadingLibrary["ag-carta-abertura"];
   const html = await renderComponent(
     <ProseReader
       workId={data.workId}
@@ -87,8 +87,8 @@ test("reader: ProseReader renders chapter heading, text, and typography affordan
       currentChapter={data.chapters[0]}
     />,
   );
-  assert.ok(html.includes("A carta náutica sem nome"));
-  assert.ok(html.includes("Lia Mavume"));
+  assert.ok(html.includes("Uma porta entreaberta"));
+  assert.ok(html.includes("Arquivo Global — Equipa Editorial"));
   assert.ok(html.includes("Capítulo 1"));
   assert.ok(html.includes("Tipografia"));
   assert.ok(html.includes("Modo foco"));
@@ -96,7 +96,7 @@ test("reader: ProseReader renders chapter heading, text, and typography affordan
 });
 
 test("reader: PoetryReader strictly preserves stanzas and verses", async () => {
-  const data = demoReadingLibrary["silencio-orbita"];
+  const data = demoReadingLibrary["ag-primeiras-linhas"];
   const html = await renderComponent(
     <PoetryReader
       workId={data.workId}
@@ -106,15 +106,15 @@ test("reader: PoetryReader strictly preserves stanzas and verses", async () => {
       currentChapter={data.chapters[0]}
     />,
   );
-  assert.ok(html.includes("I. Equinócio das distâncias"));
-  assert.ok(html.includes("Dois corpos em vazio não colidem por pressa:"));
+  assert.ok(html.includes("Página"));
+  assert.ok(html.includes("A página não pede pressa,"));
   assert.ok(html.includes("poetry-stanza"));
   assert.ok(html.includes("poetry-verse"));
   assert.ok(html.includes("Poema 1 de 3"));
 });
 
 test("reader: ComicReader renders illustrated plates with zoom controls", async () => {
-  const data = demoReadingLibrary["cidade-entre-linhas"];
+  const data = demoReadingLibrary["ag-tres-gestos"];
   const html = await renderComponent(
     <ComicReader
       workId={data.workId}
@@ -124,14 +124,14 @@ test("reader: ComicReader renders illustrated plates with zoom controls", async 
       currentChapter={data.chapters[0]}
     />,
   );
-  assert.ok(html.includes("Prólogo: O algoritmo cego"));
-  assert.ok(html.includes("comic-illustrated-plate"));
+  assert.ok(html.includes("Encontrar e abrir"));
+  assert.ok(html.includes("comic-reader-container"));
   assert.ok(html.includes("Vertical"));
   assert.ok(html.includes("Página"));
 });
 
 test("reader: MangaReader displays RTL directional cues and Japanese page count", async () => {
-  const data = demoReadingLibrary["jardim-lua"];
+  const data = demoReadingLibrary["ag-outra-margem"];
   const html = await renderComponent(
     <MangaReader
       workId={data.workId}
@@ -141,32 +141,33 @@ test("reader: MangaReader displays RTL directional cues and Japanese page count"
       currentChapter={data.chapters[0]}
     />,
   );
-  assert.ok(html.includes("Ato I: A flor que não adormece"));
+  assert.ok(html.includes("Um começo à direita"));
   assert.ok(html.includes("RTL (Direita ➔ Esquerda)"));
   assert.ok(html.includes("manga-reader-container"));
 });
 
 test("reader: route /obras/:id/capitulos/:capituloId renders via SSR", async () => {
-  const html = await renderRoute("/obras/atlas-das-mares/capitulos/cap-1");
-  assert.ok(html.includes("A carta náutica sem nome"));
-  assert.ok(html.includes("Atlas das marés esquecidas"));
+  const html = await renderRoute("/obras/ag-carta-abertura/capitulos/cap-1");
+  assert.ok(html.includes("Uma porta entreaberta"));
+  assert.ok(html.includes("Carta de abertura"));
 });
 
 test("reader: route /obras/:id/paginas/:capituloId renders via SSR", async () => {
-  const html = await renderRoute("/obras/cidade-entre-linhas/paginas/cap-1");
-  assert.ok(html.includes("A cidade entre linhas"));
+  const html = await renderRoute("/obras/ag-tres-gestos/paginas/cap-1");
+  assert.ok(html.includes("Um arquivo em três gestos"));
   assert.ok(html.includes("comic-reader-container"));
 });
 
 test("reader: route /obras/:id/comentarios renders comments feed", async () => {
-  const html = await renderRoute("/obras/atlas-das-mares/comentarios");
-  assert.ok(html.includes("Comentários sobre Atlas das marés esquecidas"));
-  assert.ok(html.includes("Publicar comentário"));
+  const html = await renderRoute("/obras/ag-carta-abertura/comentarios");
+  assert.ok(html.includes("Comentários sobre Carta de abertura"));
+  assert.ok(html.includes("Guardar nota local"));
 });
 
 test("reader: route /obras/:id/avaliacoes renders qualitative reviews", async () => {
-  const html = await renderRoute("/obras/atlas-das-mares/avaliacoes");
+  const html = await renderRoute("/obras/ag-carta-abertura/avaliacoes");
   assert.ok(html.includes("Avaliações e impressões críticas"));
   assert.ok(html.includes("Escrever uma avaliação"));
-  assert.ok(html.includes("Cartografia lírica e precisão atmosférica"));
+  assert.ok(!html.includes("Cartografia lírica e precisão atmosférica"));
+  assert.ok(html.includes("Ainda não há avaliações locais"));
 });

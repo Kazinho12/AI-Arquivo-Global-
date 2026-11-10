@@ -169,6 +169,30 @@ try {
           },
           sessionId,
         );
+      } else if (request.kind === "viewport") {
+        await send(
+          "Emulation.setDeviceMetricsOverride",
+          {
+            width: Math.max(320, Math.min(1920, Number(request.width) || 1024)),
+            height: 900,
+            deviceScaleFactor: 1,
+            mobile: false,
+          },
+          sessionId,
+        );
+      } else if (request.kind === "screenshot") {
+        const shot = await send(
+          "Page.captureScreenshot",
+          { format: "png" },
+          sessionId,
+        );
+        const label = String(request.label || "page")
+          .replace(/[^a-z0-9-]/g, "")
+          .slice(0, 60);
+        await writeFile(
+          `/tmp/ag-D-${label}.png`,
+          Buffer.from(shot.data, "base64"),
+        );
       } else if (request.kind === "media")
         await send(
           "Emulation.setEmulatedMedia",
@@ -193,7 +217,12 @@ try {
     },
     sessionId,
   );
-  const deadline = Date.now() + 90000;
+  const deadline =
+    Date.now() +
+    Math.min(
+      240000,
+      Math.max(90000, Number(process.env.AG_TEST_TIMEOUT_MS) || 90000),
+    );
   let status = "";
   while (Date.now() < deadline) {
     try {

@@ -1,3 +1,38 @@
+# Validação atual — Etapa C
+
+Data: 10/11/2026. Branch `main`, HEAD `a2d6ba1649d7c3cca57bf0128a6629a723f605d1`. Árvore inicialmente limpa; referência presente no histórico. Documentação atual: [encerramento](docs/AUDIT-CLOSURE.md), [arquitetura/matriz](docs/ARCHITECTURE.md), [instalação](README.md) e [Auth](docs/AUTHENTICATION.md).
+
+## Resultados executados nesta revisão
+
+Ambiente observado: Linux, Node 18.19.1, npm 9.2.0, Vite 6.4.5, Chrome headless. Esta é a versão efetivamente testada; consultar o README para requisitos e suporte do Node.
+
+| Verificação                               | Resultado                                      |
+| ----------------------------------------- | ---------------------------------------------- |
+| `npm run typecheck`                       | Aprovado, sem erros                            |
+| `npm test`                                | 186 aprovados, 0 falhas, 0 ignorados           |
+| `npm run build`                           | Aprovado, bundle Vite produzido                |
+| `npm run test:browser`                    | 14 verificações Chrome aprovadas               |
+| `npm run test:browser:b`                  | 12 verificações Chrome aprovadas               |
+| `scripts/validate-profile-migrations.mjs` | 2 cenários SQL locais aprovados                |
+| `scripts/validate-usernames.mjs`          | 3 cenários SQL locais aprovados                |
+| `npm run format:check`                    | Aprovado após formatação dos documentos atuais |
+| `git diff --check`                        | Aprovado                                       |
+| Manifesto/layouts                         | 57 rotas únicas, sete layouts preservados      |
+
+Os 26 cenários Chrome e cinco cenários SQL são adicionais aos 186 testes Node; não são 217 testes da mesma suite. Chrome usa uma aplicação de teste com credenciais vazias, incluindo IndexedDB, recarregamento e duas abas reais. O runner inicia o servidor de teste em loopback na porta 4178. Executar A e B sequencialmente.
+
+Os testes SQL usam PostgreSQL local via PGlite, papéis/Auth simulados e migrações do repositório. Para repetir, disponibilizar `@electric-sql/pglite` fora do runtime da aplicação e definir `PGLITE_PATH` para o módulo `dist/index.js` antes de executar `node scripts/validate-profile-migrations.mjs` e `node scripts/validate-usernames.mjs`. Não é uma dependência de produção nem uma execução no Supabase remoto. Os cinco cenários cobrem instalação nova, base original existente, reexecução, RLS, normalização e aborto seguro por colisão.
+
+## Alcance e preservação
+
+Os testes verificam as correções A/B no âmbito local; Auth/perfis usam mocks e HTTP simulado. Não certificam Google OAuth real, entrega de e-mail, recuperação de senha no serviço, migrações/RLS remotas, dispositivos físicos, todos os browsers, auditoria completa WCAG ou ausência de vulnerabilidades nas dependências. SSR/hidratação de componentes não significa que exista servidor SSR.
+
+Foram mantidos o código funcional, rotas/layouts, SQL, dependências/lockfiles, `.env.local` e relatórios A/B. Apenas documentação, exemplo de ambiente com placeholders e a exceção desse exemplo no `.gitignore` foram alterados. Nenhum commit, push, deploy ou comando SQL remoto nesta etapa.
+
+## Registo histórico — entregas anteriores
+
+As secções abaixo descrevem o estado nas datas originais. Contagens de testes, ausência de configuração e afirmações sobre funcionalidades dessas entregas não descrevem o estado atual. Os relatórios A/B também são históricos e permanecem intactos.
+
 > Etapa B (10/11/2026): consultar [docs/STABILIZATION-B.md](docs/STABILIZATION-B.md) para as verificações atuais. As entregas anteriores continuam registadas abaixo.
 
 > Atualização de 10/11/2026: consultar [Etapa A](docs/STABILIZATION-A.md) para o estado e os resultados atuais. As secções seguintes preservam o registo histórico das entregas anteriores.

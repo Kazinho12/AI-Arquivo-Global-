@@ -35,6 +35,7 @@ export function ProseReader({
   currentChapter,
   trackProgress = false,
 }: ProseReaderProps) {
+  const TitleHeading = trackProgress ? "h1" : "h2";
   const reading = useReadingProgress({
     workId,
     workTitle,
@@ -337,7 +338,9 @@ export function ProseReader({
           <span className="chapter-number">
             {`Capítulo ${currentChapter.number}`}
           </span>
-          <h1 className="chapter-title">{currentChapter.title}</h1>
+          <TitleHeading className="chapter-title">
+            {currentChapter.title}
+          </TitleHeading>
         </header>
 
         <div className={`chapter-body ${fontSizeClass} ${lineHeightClass}`}>

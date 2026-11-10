@@ -1,3 +1,7 @@
+import {
+  editorialTagDetails,
+  editorialGenreDescriptions,
+} from "../data/inaugural";
 import type { Work, WorkFormat } from "../data/works";
 export const normalizeText = (value: string): string =>
   value
@@ -73,72 +77,8 @@ export function catalogUrl(
   return params.size ? `${base}?${params}` : base;
 }
 export type TagGroup = "Mundos" | "Temas" | "Criação";
-const tagDetails: Record<string, { description: string; group: TagGroup }> = {
-  oceano: {
-    description:
-      "Marés, profundezas e viagens onde o oceano é também uma personagem.",
-    group: "Mundos",
-  },
-  memoria: {
-    description:
-      "Recordações, lugares e histórias que resistem ao esquecimento.",
-    group: "Temas",
-  },
-  cidades: {
-    description: "Ruas, encontros e os pequenos universos da vida urbana.",
-    group: "Mundos",
-  },
-  futuros: {
-    description: "Possibilidades para os mundos que ainda estão por vir.",
-    group: "Mundos",
-  },
-  silencio: {
-    description:
-      "O que se revela nas pausas, nos espaços e nas palavras por dizer.",
-    group: "Temas",
-  },
-  cosmos: {
-    description: "Constelações, órbitas e a nossa relação com o infinito.",
-    group: "Mundos",
-  },
-  natureza: {
-    description: "Jardins, paisagens e os laços entre os seres vivos.",
-    group: "Mundos",
-  },
-  aventura: {
-    description: "Travessias, descobertas e o impulso de seguir mais longe.",
-    group: "Temas",
-  },
-  casa: {
-    description: "Abrigos, regressos e os lugares a que chamamos nossos.",
-    group: "Mundos",
-  },
-  espaco: {
-    description: "Estações distantes e viagens para lá do horizonte conhecido.",
-    group: "Mundos",
-  },
-  descoberta: {
-    description: "Encontros com o desconhecido que mudam a forma de ver.",
-    group: "Temas",
-  },
-  arte: {
-    description: "O desenho, a criação e as histórias que nascem de um gesto.",
-    group: "Criação",
-  },
-  criaturas: {
-    description: "Seres imaginados que atravessam as fronteiras do possível.",
-    group: "Mundos",
-  },
-  "universo-aurora": {
-    description:
-      "Obras ligadas ao universo inteiramente fictício de demonstração Arquivo Aurora.",
-    group: "Criação",
-  },
-  viagem: {
-    description: "Partidas e percursos em que o destino é apenas o início.",
-    group: "Temas",
-  },
-};
+const tagDetails: Record<string, { description: string; group: TagGroup }> =
+  editorialTagDetails;
 export interface Tag {
   slug: string;
   name: string;
@@ -176,14 +116,7 @@ export const formatFamilies: Record<WorkFormat, "literaria" | "visual"> = {
   Mangá: "visual",
   "Obra ilustrada": "visual",
 };
-export const genreDescriptions: Record<string, string> = {
-  Fantasia: "Impossíveis que se tornam mundos habitáveis.",
-  "Ficção científica":
-    "Perguntas sobre futuros, tecnologia e a nossa humanidade.",
-  Contemporâneo: "Vozes que encontram o extraordinário no quotidiano.",
-  Mistério: "Pistas, segredos e perguntas que pedem mais uma página.",
-  Aventura: "Histórias movidas pela vontade de partir e descobrir.",
-};
+export const genreDescriptions = editorialGenreDescriptions;
 export function getGenres(works: readonly Work[]) {
   return [...new Set(works.map((w) => w.genre))]
     .sort((a, b) => a.localeCompare(b, "pt"))

@@ -1,20 +1,27 @@
 import { Link, useParams } from "react-router-dom";
-import { BookOpen, ArrowRight, Feather } from "lucide-react";
-import { Badge, Button } from "../components/ui";
+import { BookOpen, Feather } from "lucide-react";
+import { Badge } from "../components/ui";
 import { Cover } from "../components/WorkCard";
-import {
-  Breadcrumbs,
-  DemoNotice,
-  TagLinks,
-  WorkSection,
-} from "../components/Discovery";
+import { Breadcrumbs, TagLinks, WorkSection } from "../components/Discovery";
 import { worksRepository } from "../lib/worksRepository";
 import { catalogUrl, formatDemoDate, relatedWorks } from "../lib/discovery";
+import { inauguralWorks, editorialIdentity } from "../data/inaugural";
+import { getWorkReadingData } from "../features/reader/data";
+import { useLibrary } from "../features/library/store";
 import { NotFound } from "./States";
 export default function WorkDetail() {
   const { id } = useParams();
-  const work = worksRepository.find(id ?? "");
+  const { entries } = useLibrary();
+  const work = inauguralWorks.find((item) => item.id === id);
   if (!work) return <NotFound />;
+  const reading = getWorkReadingData(work.id);
+  const history = entries.find((entry) => entry.workId === work.id);
+  const resume =
+    reading?.chapters.find(
+      (chapter) => chapter.id === history?.lastReadChapterId,
+    ) ?? reading?.chapters[0];
+  const path = (chapter: string) =>
+    `/obras/${work.id}/${reading?.mode === "comic" || reading?.mode === "manga" ? "paginas" : "capitulos"}/${chapter}`;
   const related = relatedWorks(worksRepository.list(), work);
   return (
     <div className="container discovery-page work-page">
@@ -25,126 +32,120 @@ export default function WorkDetail() {
           { label: work.title },
         ]}
       />
-      <DemoNotice />
       <article className="work-presentation">
         <aside className="work-cover-column">
           <Cover work={work} />
-          <div className="cover-caption">
-            Capa gráfica de demonstração
-            <br />
-            Criada para este protótipo
-          </div>
+          <p className="cover-caption">
+            Composição gráfica original · edição inaugural
+          </p>
         </aside>
         <div className="work-information">
           <div className="work-classification">
             <Link to={catalogUrl({ formato: work.format })}>{work.format}</Link>
-            <Badge>Amostra demonstrativa</Badge>
+            <Badge>Preparado localmente</Badge>
           </div>
           <h1>{work.title}</h1>
           <div className="work-byline">
             <Feather size={16} />
-            <span>
-              por{" "}
-              <Link
-                to={catalogUrl({ q: work.author, campo: "autor" }, "/pesquisa")}
-              >
-                {work.author}
-              </Link>{" "}
-              <small>· autor fictício</small>
-            </span>
-          </div>
-          <div className="work-genre">
-            <Link to={catalogUrl({ genero: work.genre })}>
-              {work.genre}
-              <ArrowRight size={13} />
+            <Link
+              className="text-link"
+              to={`/utilizadores/${editorialIdentity.username}`}
+            >
+              {work.author}
             </Link>
           </div>
           <section className="synopsis">
-            <h2>Uma porta para a história</h2>
+            <h2>Uma porta para a leitura</h2>
             <p>{work.synopsis}</p>
           </section>
-          <section className="work-tag-section">
-            <h2>Entre temas e universos</h2>
-            <TagLinks names={work.tags} works={worksRepository.list()} />
-          </section>
+          <TagLinks names={work.tags} works={inauguralWorks} />
           <dl className="work-facts">
             <div>
-              <dt>Estado da publicação</dt>
-              <dd>Demonstração · sem publicação real</dd>
+              <dt>Estado</dt>
+              <dd>Preparado localmente · sem publicação remota</dd>
             </div>
             <div>
-              <dt>Data fictícia do exemplo</dt>
+              <dt>Preparação editorial</dt>
               <dd>
-                <time dateTime={work.createdAt}>
-                  {formatDemoDate(work.createdAt)}
+                <time dateTime={work.preparedAt}>
+                  {formatDemoDate(work.preparedAt)}
                 </time>
               </dd>
             </div>
             <div>
-              <dt>Formato</dt>
-              <dd>{work.format}</dd>
+              <dt>Autor original</dt>
+              <dd>{editorialIdentity.displayName}</dd>
             </div>
             <div>
-              <dt>Disponibilidade</dt>
-              <dd>Apenas apresentação e sinopse</dd>
+              <dt>Publicador editorial</dt>
+              <dd>{editorialIdentity.displayName}</dd>
+            </div>
+            <div>
+              <dt>Proprietário editorial</dt>
+              <dd>
+                Organização editorial do projeto · sem conta real associada
+              </dd>
+            </div>
+            <div>
+              <dt>Origem</dt>
+              <dd>
+                Texto/composição original criado para o projeto, em preparação
+                editorial
+              </dd>
             </div>
           </dl>
-          <div className="reading-availability">
+          <section className="reading-availability">
             <BookOpen size={23} />
             <div>
-              <h2>Leitura disponível no Arquivo Global</h2>
+              <h2>Leitura nesta versão local</h2>
               <p>
-                Acede aos capítulos e páginas demonstrativas com o novo leitor
-                adaptado ao formato desta obra.
+                {reading?.chapters.length ?? 0} unidades preparadas. Nenhum
+                capítulo é gerado para preencher ausências.
               </p>
-              <div className="flex flex-wrap items-center gap-2 mt-3">
-                <Link
-                  to={
-                    work.format === "HQ / Comic" ||
-                    work.format === "Mangá" ||
-                    work.format === "Obra ilustrada"
-                      ? `/obras/${work.id}/paginas/cap-1`
-                      : `/obras/${work.id}/capitulos/cap-1`
-                  }
-                  className="button primary"
-                >
-                  <BookOpen size={15} /> Iniciar leitura
+              {resume && (
+                <Link className="button primary" to={path(resume.id)}>
+                  {history ? "Continuar leitura" : "Iniciar leitura"}
                 </Link>
+              )}
+              <div className="completion-links">
                 <Link
+                  className="text-link"
                   to={`/obras/${work.id}/comentarios`}
-                  className="button secondary"
                 >
-                  Comentários
+                  Notas locais
                 </Link>
-                <Link
-                  to={`/obras/${work.id}/avaliacoes`}
-                  className="button secondary"
-                >
-                  Avaliações
+                <Link className="text-link" to={`/obras/${work.id}/avaliacoes`}>
+                  Avaliações locais
                 </Link>
               </div>
             </div>
-          </div>
+          </section>
+          <section className="editorial-chapters">
+            <h2>Conteúdo preparado</h2>
+            <ol>
+              {reading?.chapters.map((chapter) => (
+                <li key={chapter.id}>
+                  <Link to={path(chapter.id)}>
+                    <span>{String(chapter.number).padStart(2, "0")}</span>
+                    {chapter.title} →
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </section>
         </div>
       </article>
-      {related.length > 0 ? (
+      {related.length > 0 && (
         <WorkSection
-          title="Histórias que partilham um fio."
-          eyebrow="RELAÇÕES NO CATÁLOGO DEMO"
-          description="Obras que partilham género, formato ou tags. Uma associação por conteúdo, sem personalização ou métricas de popularidade."
+          title="Outros caminhos de leitura."
+          eyebrow="RELAÇÕES EDITORIAIS"
+          description="Peças do mesmo catálogo que partilham temas ou formato. Sem ranking de popularidade."
           works={related}
         />
-      ) : (
-        <div className="notice">
-          Ainda não há exemplos com género, formato ou tags em comum.{" "}
-          <Link className="text-link" to="/catalogo">
-            Explorar todo o catálogo →
-          </Link>
-        </div>
       )}
       <div className="work-context-nav">
         <Link to="/catalogo">← Voltar ao catálogo</Link>
-        <Link to="/explorar">Continuar a explorar →</Link>
+        <Link to="/colecoes">Explorar coleções →</Link>
       </div>
     </div>
   );

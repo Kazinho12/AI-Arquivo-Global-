@@ -47,7 +47,7 @@ export default function Categories() {
                   <span>{c.name}</span>
                   <span>
                     {c.count}
-                    <span className="sr-only"> obras demo</span>
+                    <span className="sr-only"> obras locais</span>
                   </span>
                 </Link>
               ))}
@@ -71,7 +71,7 @@ export default function Categories() {
                   <span>{c.name}</span>
                   <span>
                     {c.count}
-                    <span className="sr-only"> obras demo</span>
+                    <span className="sr-only"> obras locais</span>
                   </span>
                 </Link>
               ))}
@@ -154,8 +154,8 @@ export default function Categories() {
         <p className="directory-count" role="status">
           {result.total}{" "}
           {result.total === 1
-            ? "obra demonstrativa encontrada"
-            : "obras demonstrativas encontradas"}
+            ? "obra localnstrativa encontrada"
+            : "obras locaisnstrativas encontradas"}
           {result.total > 0 ? ` · ${result.start}–${result.end}` : ""}
         </p>
         <WorkGrid works={result.items} />

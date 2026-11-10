@@ -1,3 +1,4 @@
+import { seedStudioForTest } from "./fixtures/user-content";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { PassThrough } from "node:stream";
@@ -29,20 +30,13 @@ function renderRoute(url: string): Promise<string> {
   });
 }
 
-test("studio: store returns initial seed works, stats, and activities", () => {
-  const works = studioStore.getWorks();
-  assert.ok(works.length >= 4);
-  assert.ok(works.some((w) => w.id === "atlas-das-mares"));
-  assert.ok(works.some((w) => w.id === "silencio-orbita"));
-  assert.ok(works.some((w) => w.id === "cidade-entre-linhas"));
-
-  const stats = studioStore.getStats();
-  assert.ok(stats.totalWorks >= 4);
-  assert.ok(stats.totalChapters >= 8);
-  assert.ok(stats.totalWords > 0);
-
-  const activities = studioStore.getActivities();
-  assert.ok(activities.length > 0);
+test("studio: new workspace is empty; tests explicitly create their own data", () => {
+  assert.deepEqual(studioStore.getWorks(), []);
+  assert.deepEqual(studioStore.getActivities(), []);
+  assert.equal(studioStore.getStats().estimatedReads, null);
+  seedStudioForTest();
+  assert.equal(studioStore.getWorks().length, 4);
+  assert.ok(studioStore.getStats().totalChapters > 0);
 });
 
 test("studio: store supports creating, updating, and duplicating a work", () => {
@@ -81,47 +75,47 @@ test("studio: store supports creating, updating, and duplicating a work", () => 
 });
 
 test("studio: store supports chapter addition, editing, and reordering", () => {
-  const work = studioStore.getWork("o-porto-antigo");
+  const work = studioStore.getWork("ag-carta-abertura");
   assert.ok(work);
   const initialCount = work.chapters.length;
 
-  const added = studioStore.addChapter("o-porto-antigo", "Capítulo Extra");
+  const added = studioStore.addChapter("ag-carta-abertura", "Capítulo Extra");
   assert.ok(added);
 
-  const updatedWork = studioStore.getWork("o-porto-antigo");
+  const updatedWork = studioStore.getWork("ag-carta-abertura");
   assert.equal(updatedWork?.chapters.length, initialCount + 1);
 
   // Update chapter content
-  studioStore.updateChapter("o-porto-antigo", added.id, {
+  studioStore.updateChapter("ag-carta-abertura", added.id, {
     content: "Texto atualizado do capítulo",
   });
   const checkChap = studioStore
-    .getWork("o-porto-antigo")
+    .getWork("ag-carta-abertura")
     ?.chapters.find((c) => c.id === added.id);
   assert.equal(checkChap?.content, "Texto atualizado do capítulo");
 
   // Cleanup added chapter
-  studioStore.deleteChapter("o-porto-antigo", added.id);
+  studioStore.deleteChapter("ag-carta-abertura", added.id);
 });
 
 test("studio: store supports visual page addition, reordering, and deletion", () => {
-  const work = studioStore.getWork("cidade-entre-linhas");
+  const work = studioStore.getWork("ag-tres-gestos");
   assert.ok(work);
   const chap = work.chapters[0];
   const initialPages = chap.pages?.length || 0;
 
-  const newPage = studioStore.addPage("cidade-entre-linhas", chap.id, {
+  const newPage = studioStore.addPage("ag-tres-gestos", chap.id, {
     title: "Nova Prancha de Teste",
     description: "Cena de teste",
   });
   assert.ok(newPage);
 
-  const updatedChap = studioStore.getWork("cidade-entre-linhas")?.chapters[0];
+  const updatedChap = studioStore.getWork("ag-tres-gestos")?.chapters[0];
   assert.equal(updatedChap?.pages?.length, initialPages + 1);
 
   // Delete page
-  studioStore.deletePage("cidade-entre-linhas", chap.id, newPage.id);
-  const finalChap = studioStore.getWork("cidade-entre-linhas")?.chapters[0];
+  studioStore.deletePage("ag-tres-gestos", chap.id, newPage.id);
+  const finalChap = studioStore.getWork("ag-tres-gestos")?.chapters[0];
   assert.equal(finalChap?.pages?.length, initialPages);
 });
 
@@ -144,8 +138,8 @@ test("studio: route /estudio/obras/nova renders multi-step wizard", async () => 
 });
 
 test("studio: route /estudio/obras/:id renders work management overview", async () => {
-  const html = await renderRoute("/estudio/obras/atlas-das-mares");
-  assert.ok(html.includes("Atlas das marés esquecidas"));
+  const html = await renderRoute("/estudio/obras/ag-carta-abertura");
+  assert.ok(html.includes("Carta de abertura"));
   assert.ok(html.includes("Capítulos e Atos"));
   assert.ok(html.includes("Ficha Técnica e Definições"));
   assert.ok(html.includes("Escrever / Editar"));
@@ -153,9 +147,9 @@ test("studio: route /estudio/obras/:id renders work management overview", async 
 
 test("studio: route /estudio/obras/:id/capitulos/:capituloId/editar renders prose editor", async () => {
   const html = await renderRoute(
-    "/estudio/obras/atlas-das-mares/capitulos/cap-1/editar",
+    "/estudio/obras/ag-carta-abertura/capitulos/cap-1/editar",
   );
-  assert.ok(html.includes("Atlas das marés esquecidas"));
+  assert.ok(html.includes("Carta de abertura"));
   assert.ok(html.includes("palavras"));
   assert.ok(html.includes("Modo foco"));
   assert.ok(html.includes("Pré-visualizar no leitor"));
@@ -163,9 +157,9 @@ test("studio: route /estudio/obras/:id/capitulos/:capituloId/editar renders pros
 
 test("studio: route /estudio/obras/:id/capitulos/:capituloId/editar renders poetry editor for poetry works", async () => {
   const html = await renderRoute(
-    "/estudio/obras/silencio-orbita/capitulos/cap-1/editar",
+    "/estudio/obras/ag-primeiras-linhas/capitulos/cap-1/editar",
   );
-  assert.ok(html.includes("O silêncio em órbita"));
+  assert.ok(html.includes("Primeiras linhas"));
   assert.ok(html.includes("versos"));
   assert.ok(html.includes("estrofes"));
   assert.ok(html.includes("Pré-visualizar poema"));
@@ -173,9 +167,9 @@ test("studio: route /estudio/obras/:id/capitulos/:capituloId/editar renders poet
 
 test("studio: route /estudio/obras/:id/paginas/:capituloId/editar renders visual sequencer", async () => {
   const html = await renderRoute(
-    "/estudio/obras/cidade-entre-linhas/paginas/cap-1/editar",
+    "/estudio/obras/ag-tres-gestos/paginas/cap-1/editar",
   );
-  assert.ok(html.includes("A cidade entre linhas"));
+  assert.ok(html.includes("Um arquivo em três gestos"));
   assert.ok(html.includes("Sequência de Pranchas"));
   assert.ok(html.includes("Carregar imagem local"));
 });

@@ -49,7 +49,7 @@ export interface StudioStats {
   publishedCount: number;
   totalWords: number;
   totalChapters: number;
-  estimatedReads: number;
+  estimatedReads: null;
   avgReadTimeMinutes: number;
 }
 

@@ -105,7 +105,7 @@ if (reloadProbe) {
       );
       selectScope("user:browser-reader-manga");
       check(
-        libraryStore.getEntry("jardim-lua")?.lastReadChapterId === "cap-1",
+        libraryStore.getEntry("ag-outra-margem")?.lastReadChapterId === "cap-1",
         "Histórico perdido ao recarregar",
       );
       selectScope("user:browser-image-copy");
@@ -173,15 +173,15 @@ if (reloadProbe) {
     ],
   ] as const)
     await run(`AG-01: ${path} A → B → A sem recarregar`, async () => {
-      localStorage.setItem(key + "atlas-das-mares", JSON.stringify(dataA));
-      localStorage.setItem(key + "silencio-orbita", JSON.stringify(dataB));
+      localStorage.setItem(key + "ag-carta-abertura", JSON.stringify(dataA));
+      localStorage.setItem(key + "ag-primeiras-linhas", JSON.stringify(dataB));
       const router = createMemoryRouter(
         [{ path: `/obras/:id/${path}`, element: <Page /> }],
-        { initialEntries: [`/obras/atlas-das-mares/${path}`] },
+        { initialEntries: [`/obras/ag-carta-abertura/${path}`] },
       );
       await render(<RouterProvider router={router} />);
       await act(async () => {
-        await router.navigate(`/obras/silencio-orbita/${path}`);
+        await router.navigate(`/obras/ag-primeiras-linhas/${path}`);
       });
       check(
         document.body.textContent?.includes(
@@ -190,14 +190,16 @@ if (reloadProbe) {
         "Não carregou B",
       );
       check(
-        localStorage.getItem(key + "silencio-orbita") === JSON.stringify(dataB),
+        localStorage.getItem(key + "ag-primeiras-linhas") ===
+          JSON.stringify(dataB),
         "B foi sobrescrita",
       );
       await act(async () => {
-        await router.navigate(`/obras/atlas-das-mares/${path}`);
+        await router.navigate(`/obras/ag-carta-abertura/${path}`);
       });
       check(
-        localStorage.getItem(key + "atlas-das-mares") === JSON.stringify(dataA),
+        localStorage.getItem(key + "ag-carta-abertura") ===
+          JSON.stringify(dataA),
         "A foi sobrescrita",
       );
     });
@@ -377,10 +379,10 @@ if (reloadProbe) {
     },
   );
   for (const [id, segment, Page, mode] of [
-    ["atlas-das-mares", "capitulos", LiteraryReaderPage, "prose"],
-    ["silencio-orbita", "capitulos", LiteraryReaderPage, "poetry"],
-    ["cidade-entre-linhas", "paginas", VisualReaderPage, "comic"],
-    ["jardim-lua", "paginas", VisualReaderPage, "manga"],
+    ["ag-carta-abertura", "capitulos", LiteraryReaderPage, "prose"],
+    ["ag-primeiras-linhas", "capitulos", LiteraryReaderPage, "poetry"],
+    ["ag-tres-gestos", "paginas", VisualReaderPage, "comic"],
+    ["ag-outra-margem", "paginas", VisualReaderPage, "manga"],
   ] as const)
     await run(
       `AG-05: leitor ${mode}, histórico, conclusão e retoma`,

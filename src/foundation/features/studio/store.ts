@@ -19,245 +19,14 @@ import type {
   WorkFormat,
 } from "./types";
 import type { Chapter } from "../reader/types";
-import { demoReadingLibrary } from "../reader/data";
 
 const STORAGE_KEY_WORKS = "ag_studio_works_v1";
 const STORAGE_KEY_ACTIVITIES = "ag_studio_activities_v1";
 const STORAGE_KEY_MEDIA = "ag_studio_media_v1";
 
-const initialSeedWorks: StudioWork[] = [
-  {
-    id: "atlas-das-mares",
-    title: "Atlas das marés esquecidas",
-    subtitle: "Crónica de Porto-Vento",
-    synopsis:
-      "A cada maré-viva trinta anos depois do colapso, uma cidade submersa emerge ao largo de Porto-Vento. Uma cartógrafa desce ao cais para registar o que o mar esconde.",
-    format: "Romance",
-    mode: "prose",
-    genre: "Ficção especulativa",
-    language: "Português",
-    tags: ["mar", "cartografia", "memória", "ficção especulativa"],
-    ageRating: "Livre",
-    contentWarnings: [],
-    status: "published",
-    coverAccentColor: "#0E2A47",
-    coverStyle: "geometric",
-    createdAt: "2026-02-14",
-    updatedAt: "Hoje, às 09:30",
-    chapters: demoReadingLibrary["atlas-das-mares"]?.chapters || [],
-  },
-  {
-    id: "silencio-orbita",
-    title: "O silêncio em órbita",
-    subtitle: "Métrica das distâncias",
-    synopsis:
-      "Versos sobre distâncias astronómicas, corpos celestes e a lentidão com que a luz atravessa uma sala vazia.",
-    format: "Poesia",
-    mode: "poetry",
-    genre: "Poesia contemporânea",
-    language: "Português",
-    tags: ["astronomia", "solidão", "física", "versos livres"],
-    ageRating: "Livre",
-    contentWarnings: [],
-    status: "published",
-    coverAccentColor: "#1B2233",
-    coverStyle: "minimalist",
-    createdAt: "2026-02-20",
-    updatedAt: "Ontem",
-    chapters: demoReadingLibrary["silencio-orbita"]?.chapters || [],
-  },
-  {
-    id: "cidade-entre-linhas",
-    title: "A cidade entre linhas",
-    subtitle: "Volume 1: O código esquecido",
-    synopsis:
-      "No Setor 09 de uma metrópole cibernética, um ilustrador encontra um beco que não consta de nenhuma cartografia digital.",
-    format: "HQ / Comic",
-    mode: "comic",
-    genre: "Ficção urbana",
-    language: "Português",
-    tags: ["cyberpunk", "arquitetura", "ilustração", "mistério"],
-    ageRating: "+14",
-    contentWarnings: ["Violência moderada"],
-    status: "published",
-    coverAccentColor: "#14243B",
-    coverStyle: "illustrated",
-    createdAt: "2026-02-28",
-    updatedAt: "Há 3 dias",
-    chapters: demoReadingLibrary["cidade-entre-linhas"]?.chapters || [],
-  },
-  {
-    id: "jardim-lua",
-    title: "O jardim da última lua",
-    subtitle: "Ato I",
-    synopsis:
-      "Na colina dos cem pinheiros onde a noite se tornou eterna, uma jovem tenta proteger a seiva da flor primordial.",
-    format: "Mangá",
-    mode: "manga",
-    genre: "Fantasia",
-    language: "Português",
-    tags: ["mangá", "fantasia", "folclore", "lua"],
-    ageRating: "+12",
-    contentWarnings: [],
-    status: "published",
-    coverAccentColor: "#171F2C",
-    coverStyle: "monochrome",
-    createdAt: "2026-03-02",
-    updatedAt: "Há 5 dias",
-    chapters: demoReadingLibrary["jardim-lua"]?.chapters || [],
-  },
-  {
-    id: "o-porto-antigo",
-    title: "Memórias do Porto Antigo",
-    subtitle: "Rascunho de trabalho",
-    synopsis:
-      "Ensaio biográfico e ficcional sobre as antigas docas de madeira e os pescadores que guardavam histórias orais.",
-    format: "Conto",
-    mode: "prose",
-    genre: "Realismo mágico",
-    language: "Português",
-    tags: ["porto", "memória", "tradição"],
-    ageRating: "Livre",
-    contentWarnings: [],
-    status: "draft",
-    coverAccentColor: "#2C3E50",
-    coverStyle: "typographic",
-    createdAt: "2026-03-08",
-    updatedAt: "Hoje, às 08:15",
-    chapters: [
-      {
-        id: "cap-1",
-        number: 1,
-        title: "I. As tábuas de pinho",
-        content: `As tábuas do cais rangiam com o peso de passos lentos. Antes de o betão armado dominar a foz do rio, era sobre pinho resinoso que se descarregava o peixe salgado.\n\nManuel conhecia cada nó daquelas pranchas pelo nome do carpinteiro naval que as pregara com cavilhas de cobre.`,
-      },
-      {
-        id: "cap-2",
-        number: 2,
-        title: "II. O farol que não piscava",
-        content: `Na ponta do esporão, a lanterna de azeite dependia de vigia contínua. Não havia relógio automático: havia o cansaço dos olhos de quem sabia que uma bruma súbita podia encalhar uma chalupa em cinco minutos.`,
-      },
-    ],
-  },
-  {
-    id: "caderno-de-versos",
-    title: "Caderno das Horas Tardias",
-    subtitle: "Rascunho poético",
-    synopsis:
-      "Coleção de apontamentos e versos sobre o silêncio da madrugada na cidade.",
-    format: "Poesia",
-    mode: "poetry",
-    genre: "Poesia lírica",
-    language: "Português",
-    tags: ["noite", "silêncio", "urbano"],
-    ageRating: "Livre",
-    contentWarnings: [],
-    status: "draft",
-    coverAccentColor: "#1E2A38",
-    coverStyle: "minimalist",
-    createdAt: "2026-03-09",
-    updatedAt: "Ontem",
-    chapters: [
-      {
-        id: "cap-1",
-        number: 1,
-        title: "Primeira Vigília",
-        stanzas: [
-          [
-            "A cidade apaga-se lâmpada a lâmpada,",
-            "como quem recolhe as peças de um jogo cansado.",
-          ],
-          [
-            "Fica apenas o som da chuva fina",
-            "contra a folha de zinco da clarabóia.",
-          ],
-        ],
-      },
-      {
-        id: "cap-2",
-        number: 2,
-        title: "Segunda Vigília",
-        stanzas: [
-          [
-            "Escrever à noite é medir o peso",
-            "das palavras que ninguém teve coragem de dizer ao dia.",
-          ],
-        ],
-      },
-    ],
-  },
-];
-
-const initialSeedActivities: EditorialActivity[] = [
-  {
-    id: "act-1",
-    workId: "atlas-das-mares",
-    workTitle: "Atlas das marés esquecidas",
-    type: "chapter_edit",
-    description: "Capítulo 3 revisto e notas de cartografia adicionadas.",
-    timestamp: "Hoje, às 09:30",
-  },
-  {
-    id: "act-2",
-    workId: "o-porto-antigo",
-    workTitle: "Memórias do Porto Antigo",
-    type: "draft_created",
-    description: "Novo rascunho de conto iniciado.",
-    timestamp: "Hoje, às 08:15",
-  },
-  {
-    id: "act-3",
-    workId: "caderno-de-versos",
-    workTitle: "Caderno das Horas Tardias",
-    type: "chapter_added",
-    description: "Adicionado poema 'Segunda Vigília'.",
-    timestamp: "Ontem",
-  },
-  {
-    id: "act-4",
-    workId: "cidade-entre-linhas",
-    workTitle: "A cidade entre linhas",
-    type: "page_added",
-    description: "Prancha 4 (O Primeiro Traço) sequenciada.",
-    timestamp: "Há 3 dias",
-  },
-];
-
-const initialSeedMedia: MediaItem[] = [
-  {
-    id: "med-1",
-    name: "capa_atlas_mares_grafica.svg",
-    type: "cover",
-    url: "/assets/covers/atlas.svg",
-    size: "42 KB",
-    dimensions: "1200 x 1600",
-    workId: "atlas-das-mares",
-    workTitle: "Atlas das marés esquecidas",
-    createdAt: "2026-02-14",
-  },
-  {
-    id: "med-2",
-    name: "capa_silencio_orbita.svg",
-    type: "cover",
-    url: "/assets/covers/silencio.svg",
-    size: "28 KB",
-    dimensions: "1200 x 1600",
-    workId: "silencio-orbita",
-    workTitle: "O silêncio em órbita",
-    createdAt: "2026-02-20",
-  },
-  {
-    id: "med-3",
-    name: "prancha_metropole_setor09.svg",
-    type: "page",
-    url: "/assets/plates/comic-p1.svg",
-    size: "86 KB",
-    dimensions: "1600 x 2400",
-    workId: "cidade-entre-linhas",
-    workTitle: "A cidade entre linhas",
-    createdAt: "2026-02-28",
-  },
-];
+const initialSeedWorks: StudioWork[] = [];
+const initialSeedActivities: EditorialActivity[] = [];
+const initialSeedMedia: MediaItem[] = [];
 
 registerLocal(STORAGE_KEY_WORKS, initialSeedWorks, (value) =>
   validCollection("works", value),
@@ -334,7 +103,7 @@ export const studioStore = {
                     description: "Primeira cena da narrativa visual.",
                     aspectRatio: "3/4",
                     accentColor: "#1A2B44",
-                    caption: "Página inicial de demonstração.",
+                    caption: "",
                   },
                 ]
               : undefined,
@@ -740,8 +509,8 @@ export const studioStore = {
       });
     });
 
-    const estimatedReads = publishedCount * 480 + draftsCount * 12;
-    const avgReadTimeMinutes = Math.max(1, Math.round(totalWords / 200));
+    const estimatedReads = null;
+    const avgReadTimeMinutes = Math.ceil(totalWords / 200);
 
     const stats = {
       totalWorks,

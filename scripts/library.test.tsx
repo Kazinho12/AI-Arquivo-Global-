@@ -1,3 +1,4 @@
+import { seedLibraryForTest } from "./fixtures/user-content";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { PassThrough } from "node:stream";
@@ -29,26 +30,21 @@ function renderRoute(url: string): Promise<string> {
   });
 }
 
-test("library: store returns initial seed entries and lists", () => {
-  const entries = libraryStore.getEntries();
-  assert.ok(entries.length >= 3);
-  assert.ok(entries.some((e) => e.workId === "atlas-das-mares"));
-  assert.ok(entries.some((e) => e.workId === "silencio-orbita"));
-
-  const lists = libraryStore.getLists();
-  assert.ok(lists.length >= 2);
-  assert.ok(lists.some((l) => l.id === "lista-ficcao"));
+test("library: new workspace is empty; lists and progress require user action", () => {
+  assert.deepEqual(libraryStore.getEntries(), []);
+  assert.deepEqual(libraryStore.getLists(), []);
+  seedLibraryForTest();
 });
 
 test("library: store toggleFavorite inverts favorite status", () => {
-  const entry = libraryStore.getEntry("cidade-entre-linhas");
+  const entry = libraryStore.getEntry("ag-tres-gestos");
   const initialFav = entry?.isFavorite ?? false;
 
-  const newFav = libraryStore.toggleFavorite("cidade-entre-linhas");
+  const newFav = libraryStore.toggleFavorite("ag-tres-gestos");
   assert.equal(newFav, !initialFav);
 
   // Restore
-  libraryStore.toggleFavorite("cidade-entre-linhas");
+  libraryStore.toggleFavorite("ag-tres-gestos");
 });
 
 test("library: route /biblioteca renders overview with tabs and search", async () => {
@@ -57,14 +53,14 @@ test("library: route /biblioteca renders overview with tabs and search", async (
   assert.ok(html.includes("A TUA COLEÇÃO"));
   assert.ok(html.includes("A ler"));
   assert.ok(html.includes("Concluídas"));
-  assert.ok(html.includes("Atlas das marés esquecidas"));
+  assert.ok(html.includes("Carta de abertura"));
   assert.ok(html.includes("Continuar leitura"));
 });
 
 test("library: route /biblioteca/favoritos renders favorite works", async () => {
   const html = await renderRoute("/biblioteca/favoritos");
   assert.ok(html.includes("Obras Favoritas"));
-  assert.ok(html.includes("Atlas das marés esquecidas"));
+  assert.ok(html.includes("Carta de abertura"));
 });
 
 test("library: route /biblioteca/historico renders reading history", async () => {
@@ -84,6 +80,6 @@ test("library: route /biblioteca/listas renders reading lists overview", async (
 test("library: route /biblioteca/listas/:id renders list detail and contained works", async () => {
   const html = await renderRoute("/biblioteca/listas/lista-ficcao");
   assert.ok(html.includes("Ficção e Narrativas Especulativas"));
-  assert.ok(html.includes("Atlas das marés esquecidas"));
+  assert.ok(html.includes("Carta de abertura"));
   assert.ok(html.includes("Eliminar lista"));
 });

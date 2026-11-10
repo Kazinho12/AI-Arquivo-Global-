@@ -1,3 +1,4 @@
+import { editorialIdentity } from "../data/inaugural";
 import { useEffect, useState, useId, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -163,7 +164,7 @@ export function PublicProfilePage() {
           <div>
             <strong>Base de dados em preparação:</strong> A tabela{" "}
             <code>profiles</code> ainda não foi criada no Supabase. Os dados
-            apresentados provêm do registo local de demonstração.
+            apresentados provêm do catálogo editorial preparado localmente.
           </div>
         </div>
       )}
@@ -205,7 +206,11 @@ export function PublicProfilePage() {
             </span>
             <span className="profile-joined">
               <Calendar size={13} aria-hidden="true" />
-              <span>{formatJoinDate(profile.createdAt)}</span>
+              <span>
+                {profile.id === editorialIdentity.id
+                  ? "Identidade editorial local · sem conta administrativa"
+                  : formatJoinDate(profile.createdAt)}
+              </span>
             </span>
             <span className="meta-separator" aria-hidden="true">
               ·
@@ -237,7 +242,7 @@ export function PublicProfilePage() {
       >
         <div className="profile-works-header">
           <h2 id="obras-heading">
-            Obras publicadas{" "}
+            Obras no catálogo local{" "}
             <span className="profile-works-count">({works.length})</span>
           </h2>
           <span className="eyebrow">CATÁLOGO DO AUTOR</span>
@@ -338,6 +343,7 @@ export function EditProfilePage() {
   if (authState.status !== "authenticated" || !authState.user) {
     return (
       <section className="profile-edit-shell">
+        <h1>Editar perfil</h1>
         <div className="notice" role="alert">
           <UserRound size={20} />
           <div>
@@ -537,29 +543,5 @@ export function EditProfilePage() {
   );
 }
 
-export function FollowersPage() {
-  const { username } = useParams<{ username: string }>();
-
-  return (
-    <div className="container profile-page">
-      <div className="followers-header">
-        <Link to={`/utilizadores/${username}`} className="back-link">
-          <ArrowLeft size={16} /> Voltar ao perfil de @{username}
-        </Link>
-        <span className="eyebrow">COMUNIDADE</span>
-        <h1>Seguidores de @{username}</h1>
-        <p>Leitores e criadores que acompanham as publicações deste autor.</p>
-      </div>
-
-      <EmptyState title="Ainda sem seguidores registados">
-        <p>
-          As ferramentas de acompanhamento e comunidade direta serão integradas
-          na próxima fase do Arquivo Global.
-        </p>
-        <ActionLink to={`/utilizadores/${username}`}>
-          Voltar ao perfil
-        </ActionLink>
-      </EmptyState>
-    </div>
-  );
-}
+// Compatibility export: the followers interface is isolated from profile editing.
+export { FollowersPage } from "./Community";

@@ -15,7 +15,7 @@ import {
 import { Cover, WorkCard } from "../components/WorkCard";
 import { ActionLink, SearchField } from "../components/ui";
 import { worksRepository } from "../lib/worksRepository";
-import { getGenres, catalogUrl } from "../lib/discovery";
+import { getGenres, getTags, catalogUrl } from "../lib/discovery";
 import { TagLinks } from "../components/Discovery";
 import { editorialSelections, selectEditorialWorks } from "../data/editorial";
 const formatCards = [
@@ -101,7 +101,9 @@ export default function Home() {
               <strong>começa numa página.</strong>
             </span>
           </div>
-          <span className="visual-caption">CAPAS E OBRAS DE DEMONSTRAÇÃO</span>
+          <span className="visual-caption">
+            EDIÇÃO INAUGURAL · PREPARAÇÃO LOCAL
+          </span>
         </div>
       </section>
       <div className="manifesto-strip">
@@ -156,7 +158,7 @@ export default function Home() {
       <section className="container section showcase">
         <div className="section-heading">
           <div>
-            <span className="eyebrow">DESTAQUE EDITORIAL DEMONSTRATIVO</span>
+            <span className="eyebrow">DESTAQUE DA EQUIPA EDITORIAL</span>
             <h2>Abre uma nova possibilidade.</h2>
           </div>
           <Link className="text-link" to="/catalogo">
@@ -164,7 +166,8 @@ export default function Home() {
           </Link>
         </div>
         <p className="demo-notice">
-          Seleção demonstrativa · Todas as obras e autores abaixo são fictícios.
+          Peças originais criadas para o projeto, disponíveis nesta versão
+          local.
         </p>
         <div className="work-grid">
           {featured.map((work) => (
@@ -205,7 +208,9 @@ export default function Home() {
           <span className="eyebrow">OU SEGUE UMA PALAVRA</span>
           <TagLinks
             works={works}
-            names={["Memória", "Aventura", "Cosmos", "Natureza"]}
+            names={getTags(works)
+              .slice(0, 4)
+              .map((tag) => tag.name)}
           />
           <Link className="text-link" to="/tags">
             Todas as tags →
@@ -242,7 +247,8 @@ export default function Home() {
             <div>
               <h3>Criar com autonomia</h3>
               <p>
-                A futura publicação será aberta, sem aprovação editorial prévia.
+                A autoria local já está disponível. As regras de publicação
+                remota ainda serão definidas.
               </p>
             </div>
           </article>
@@ -274,8 +280,9 @@ export default function Home() {
               tem lugar aqui.
             </h2>
             <p>
-              Um arquivo aberto, feito de vozes diferentes. Publica sem
-              aprovação editorial prévia, respeitando as regras da comunidade.
+              Um arquivo aberto, feito de vozes diferentes. Escreve e organiza
+              os teus rascunhos locais; a publicação remota será integrada numa
+              fase futura.
             </p>
             <div className="actions">
               <ActionLink to="/estudio">Conhecer o Estúdio</ActionLink>

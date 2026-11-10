@@ -1,4 +1,5 @@
-import { demoWorks, type Work } from "../data/works";
+import type { Work } from "../data/works";
+import { inauguralWorks } from "../data/inaugural";
 import { normalizeText, slugify, type SearchScope } from "./discovery";
 /** Read-only boundary. A future Supabase adapter can implement this contract. No network or credentials. */
 export interface WorksRepository {
@@ -6,8 +7,8 @@ export interface WorksRepository {
   find(id: string): Work | undefined;
 }
 export const worksRepository: WorksRepository = {
-  list: () => demoWorks,
-  find: (id) => demoWorks.find((work) => work.id === id),
+  list: () => inauguralWorks,
+  find: (id) => inauguralWorks.find((work) => work.id === id),
 };
 export interface CatalogFilters {
   query: string;

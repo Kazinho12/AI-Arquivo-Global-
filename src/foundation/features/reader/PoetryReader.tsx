@@ -33,6 +33,7 @@ export function PoetryReader({
   currentChapter,
   trackProgress = false,
 }: PoetryReaderProps) {
+  const TitleHeading = trackProgress ? "h1" : "h2";
   const reading = useReadingProgress({
     workId,
     workTitle,
@@ -215,7 +216,9 @@ export function PoetryReader({
       >
         <header className="poetry-header">
           <span className="poetry-eyebrow">Poesia</span>
-          <h1 className="poetry-title">{currentChapter.title}</h1>
+          <TitleHeading className="poetry-title">
+            {currentChapter.title}
+          </TitleHeading>
         </header>
 
         <div

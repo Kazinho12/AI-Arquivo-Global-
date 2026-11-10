@@ -105,6 +105,9 @@ export function VisualSequencer({
 
   return (
     <div className="visual-sequencer-root">
+      <h1 className="sr-only">
+        Editar páginas de {work.title} — {currentChapter.title}
+      </h1>
       {uploadError && <p role="alert">{uploadError}</p>}
       {/* Top Bar */}
       <header className="editor-top-bar">

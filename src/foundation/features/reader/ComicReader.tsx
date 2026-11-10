@@ -96,6 +96,11 @@ export function ComicReader({
         distractionFree ? "distraction-free" : ""
       }`}
     >
+      {trackProgress && (
+        <h1 className="sr-only">
+          {workTitle} — {currentChapter.title}
+        </h1>
+      )}
       {!distractionFree && (
         <header className="reader-toolbar">
           <div className="reader-toolbar-meta">

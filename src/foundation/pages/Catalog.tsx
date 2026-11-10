@@ -19,8 +19,8 @@ export default function Catalog() {
       </div>
       <WorkCollection works={worksRepository.list()} />
       <div className="notice">
-        As datas e os conteúdos pertencem a exemplos fictícios. Ainda não
-        existem publicações reais nesta versão.
+        As datas indicam preparação editorial local. Ainda não existem
+        publicações reais nesta versão.
       </div>
     </div>
   );

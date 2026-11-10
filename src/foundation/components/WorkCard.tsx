@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
+import { inauguralWorks } from "../data/inaugural";
 import type { Work } from "../data/works";
 export function Cover({
   work,
@@ -8,6 +9,22 @@ export function Cover({
   work: Work;
   large?: boolean;
 }) {
+  const editorial = inauguralWorks.find((item) => item.id === work.id);
+  if (editorial)
+    return (
+      <div
+        aria-hidden="true"
+        className={`cover cover-${work.cover} ${large ? "cover-large" : ""}`}
+      >
+        <img
+          className="editorial-cover-asset"
+          src={editorial.coverAsset}
+          alt=""
+          width={600}
+          height={800}
+        />
+      </div>
+    );
   return (
     <div
       aria-hidden="true"
@@ -40,12 +57,10 @@ export function WorkCard({ work }: { work: Work }) {
           <ArrowUpRight size={17} />
         </div>
         <h3>{work.title}</h3>
-        <p>
-          {work.author} <span aria-hidden="true">·</span> Autor fictício
-        </p>
+        <p>{work.author}</p>
         <div className="work-tags">
           <span>{work.genre}</span>
-          <span>Demonstração</span>
+          <span>Preparação local</span>
         </div>
       </Link>
     </article>

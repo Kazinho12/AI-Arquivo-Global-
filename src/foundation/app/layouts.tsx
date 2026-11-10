@@ -144,7 +144,7 @@ function Footer() {
       <div className="container footer-bottom">
         <span>© {new Date().getFullYear()} Arquivo Global</span>
         <span>Aberto à imaginação. Livre para criar.</span>
-        <span className="demo-dot">Protótipo · dados demonstrativos</span>
+        <span className="demo-dot">Versão local · edição inaugural</span>
       </div>
     </footer>
   );

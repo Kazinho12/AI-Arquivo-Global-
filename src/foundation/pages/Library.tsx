@@ -1,3 +1,4 @@
+import { worksRepository } from "../lib/worksRepository";
 import { Modal } from "../components/ui";
 import { useState, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
@@ -102,6 +103,14 @@ export function LibraryOverviewPage() {
         </div>
       </header>
 
+      {entries.some((entry) => !worksRepository.find(entry.workId)) && (
+        <p className="notice">
+          Há referências de um catálogo anterior na tua biblioteca. Os títulos,
+          notas e progresso foram preservados; esses IDs não foram reatribuídos
+          a outras obras. A leitura de conteúdo retirado pode estar
+          indisponível.
+        </p>
+      )}
       {/* Tabs & Toolbar */}
       <div className="library-toolbar-strip">
         {/* Status Filter Tabs */}

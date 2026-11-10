@@ -15,7 +15,7 @@ export default function Trends() {
     <div className="container discovery-page">
       <div className="trends-intro">
         <PageIntro
-          eyebrow="TENDÊNCIAS / EDIÇÃO DEMONSTRATIVA"
+          eyebrow="SELEÇÕES / EDIÇÃO INAUGURAL"
           title="O que nos move a imaginar."
           description="Uma montra de afinidades, encontros e possibilidades. Percursos editoriais para descobrir o catálogo com outro olhar."
         />
@@ -27,8 +27,8 @@ export default function Trends() {
           <h2>Seleções editoriais, sem rankings.</h2>
           <p>
             Ainda não existem métricas reais de leitura, avaliações ou
-            popularidade. Estas seleções são montadas manualmente com obras
-            fictícias para demonstrar a experiência. A ordem não representa
+            popularidade. Estas seleções são preparadas pela Equipa Editorial
+            com peças originais criadas para o projeto. A ordem não representa
             desempenho nem preferência de utilizadores.
           </p>
         </div>
@@ -54,7 +54,7 @@ export default function Trends() {
             <WorkSection
               title={s.title}
               eyebrow={s.label}
-              description={`${s.description} Seleção de demonstração.`}
+              description={`${s.description}`}
               works={selectEditorialWorks(works, s)}
               to="/explorar"
               linkLabel="Outros caminhos"

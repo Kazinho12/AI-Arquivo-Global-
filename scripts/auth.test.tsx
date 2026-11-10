@@ -245,8 +245,8 @@ test("redirect destinations reject external, encoded, unknown and auth loop dest
   ])
     assert.equal(safeDestination(target), "/catalogo", target);
   assert.equal(
-    safeDestination("/obras/atlas-das-mares"),
-    "/obras/atlas-das-mares",
+    safeDestination("/obras/ag-carta-abertura"),
+    "/obras/ag-carta-abertura",
   );
   assert.equal(
     safeDestination("/catalogo?genero=Fantasia"),

@@ -107,8 +107,8 @@ export function WorkCollection({
             value={filters.sort}
             onChange={(e) => update("ordem", e.target.value)}
           >
-            <option value="recentes">Mais recentes (demo)</option>
-            <option value="antigas">Mais antigas (demo)</option>
+            <option value="recentes">Preparação mais recente</option>
+            <option value="antigas">Preparação mais antiga</option>
             <option value="titulo">Título: A–Z</option>
             <option value="autor">Autor: A–Z</option>
           </Select>
@@ -128,7 +128,7 @@ export function WorkCollection({
             </legend>
             <p className="filter-help">
               A obra deve incluir todas as tags selecionadas. As contagens
-              referem-se ao catálogo demonstrativo completo.
+              referem-se ao catálogo inaugural completo.
             </p>
             <div className="tag-options">
               {tags.map((tag) => (
@@ -187,7 +187,7 @@ export function WorkCollection({
         <p role="status" aria-live="polite">
           {result.total === 0
             ? "Nenhuma obra encontrada"
-            : `${result.start}–${result.end} de ${result.total} ${result.total === 1 ? "obra demonstrativa" : "obras demonstrativas"}`}
+            : `${result.start}–${result.end} de ${result.total} ${result.total === 1 ? "obra editorial" : "obras editoriais"}`}
         </p>
         {active && (
           <Button variant="ghost" onClick={() => setParams({})}>

@@ -1,3 +1,4 @@
+import { institutionalContent } from "../data/inaugural";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { WorkCard } from "./WorkCard";
@@ -24,8 +25,8 @@ export function PageIntro({
 export function DemoNotice() {
   return (
     <p className="discovery-demo">
-      <span className="status-dot" /> Catálogo de demonstração · Obras e autores
-      fictícios · Acesso gratuito
+      <span className="status-dot" />
+      {institutionalContent.catalogNotice}
     </p>
   );
 }
@@ -93,7 +94,7 @@ export function TagLinks({
           {!names && (
             <span className="tag-count">
               {tag.count}
-              <span className="sr-only"> obras demonstrativas</span>
+              <span className="sr-only"> obras no catálogo</span>
             </span>
           )}
         </Link>

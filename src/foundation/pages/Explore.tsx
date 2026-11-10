@@ -47,7 +47,7 @@ export default function Explore() {
               )}
               <span>
                 <strong>{format.name}</strong>
-                <small>{format.count} exemplo demonstrativo</small>
+                <small>{format.count} obra preparada</small>
               </span>
               <ArrowRight size={16} />
             </Link>
@@ -56,7 +56,7 @@ export default function Explore() {
       </section>
       <WorkSection
         title={selection.title}
-        eyebrow="PERCURSO EDITORIAL DEMONSTRATIVO"
+        eyebrow="PERCURSO EDITORIAL"
         description={selection.description}
         works={selectEditorialWorks(works, selection)}
         to={`/tendencias#${selection.id}`}
@@ -74,7 +74,8 @@ export default function Explore() {
             <Link key={genre.slug} to={catalogUrl({ genero: genre.name })}>
               <span>{genre.name}</span>
               <small>
-                {genre.count} {genre.count === 1 ? "obra demo" : "obras demo"}
+                {genre.count}{" "}
+                {genre.count === 1 ? "obra local" : "obras locais"}
               </small>
               <ArrowRight size={16} />
             </Link>
@@ -82,9 +83,9 @@ export default function Explore() {
         </div>
       </section>
       <WorkSection
-        title="Novas páginas no universo demo."
-        eyebrow="RECÉM-CHEGADAS À DEMONSTRAÇÃO"
-        description="Exemplos ordenados pela data fictícia do catálogo. Um primeiro encontro com quatro vozes diferentes."
+        title="As primeiras páginas do Arquivo."
+        eyebrow="EDIÇÃO INAUGURAL"
+        description="Conteúdo original preparado pela Equipa Editorial. A data indica preparação local, não publicação."
         works={filterWorks(works, {
           query: "",
           format: "",
