@@ -246,6 +246,7 @@ export function AccountLayout() {
       links={[
         ["/biblioteca", "Biblioteca"],
         ["/biblioteca/favoritos", "Favoritos"],
+        ["/biblioteca/historico", "Histórico"],
         ["/biblioteca/listas", "Listas"],
         ["/notificacoes", "Notificações"],
         ["/definicoes", "Definições"],

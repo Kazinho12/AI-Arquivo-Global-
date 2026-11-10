@@ -50,7 +50,9 @@ export function SettingsOverviewPage() {
       <div className="settings-header">
         <span className="eyebrow">A TUA CONTA</span>
         <h1>Definições e preferências</h1>
-        <p>Gere a tua conta, preferências de leitura e as opções da plataforma.</p>
+        <p>
+          Gere a tua conta, preferências de leitura e as opções da plataforma.
+        </p>
       </div>
 
       <div className="settings-card account-summary-card">
@@ -85,10 +87,7 @@ export function SettingsOverviewPage() {
               <Link to="/perfil/editar" className="button secondary">
                 Editar perfil público
               </Link>
-              <Link
-                to={`/utilizadores/${username}`}
-                className="button ghost"
-              >
+              <Link to={`/utilizadores/${username}`} className="button ghost">
                 Ver perfil público →
               </Link>
             </>
@@ -171,7 +170,9 @@ export function SettingsAppearancePage() {
       <div className="settings-header">
         <span className="eyebrow">DEFINIÇÕES</span>
         <h1>Aparência da interface</h1>
-        <p>Escolhe o tema visual que melhor se adapta ao teu ambiente de leitura.</p>
+        <p>
+          Escolhe o tema visual que melhor se adapta ao teu ambiente de leitura.
+        </p>
       </div>
 
       <div className="theme-selector-grid">
@@ -191,7 +192,9 @@ export function SettingsAppearancePage() {
             <Moon size={18} />
             <strong>Tema Escuro</strong>
           </div>
-          <p>Fundo azul profundo com texto claro, ideal para leitura noturna.</p>
+          <p>
+            Fundo azul profundo com texto claro, ideal para leitura noturna.
+          </p>
         </button>
 
         <button
@@ -210,7 +213,10 @@ export function SettingsAppearancePage() {
             <Sun size={18} />
             <strong>Tema Claro</strong>
           </div>
-          <p>Fundo suave com tipografia de alto contraste para ambientes iluminados.</p>
+          <p>
+            Fundo suave com tipografia de alto contraste para ambientes
+            iluminados.
+          </p>
         </button>
       </div>
     </section>
@@ -218,17 +224,22 @@ export function SettingsAppearancePage() {
 }
 
 export function SettingsReadingPage() {
-  const [fontSize, setFontSize] = useState<"normal" | "medium" | "large">(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
-      return "normal";
-    }
-    return (
-      (localStorage.getItem("ag_reading_font_size") as
-        | "normal"
-        | "medium"
-        | "large") || "normal"
-    );
-  });
+  const [fontSize, setFontSize] = useState<"normal" | "medium" | "large">(
+    () => {
+      if (
+        typeof window === "undefined" ||
+        typeof localStorage === "undefined"
+      ) {
+        return "normal";
+      }
+      return (
+        (localStorage.getItem("ag_reading_font_size") as
+          | "normal"
+          | "medium"
+          | "large") || "normal"
+      );
+    },
+  );
   const [measure, setMeasure] = useState<"comfortable" | "wide">(() => {
     if (typeof window === "undefined" || typeof localStorage === "undefined") {
       return "comfortable";
@@ -275,10 +286,8 @@ export function SettingsReadingPage() {
       : fontSize === "medium"
         ? "text-base"
         : "text-sm";
-  const sampleFontClass =
-    fontFamily === "serif" ? "font-serif" : "font-sans";
-  const sampleMeasureClass =
-    measure === "wide" ? "max-w-3xl" : "max-w-xl";
+  const sampleFontClass = fontFamily === "serif" ? "font-serif" : "font-sans";
+  const sampleMeasureClass = measure === "wide" ? "max-w-3xl" : "max-w-xl";
 
   return (
     <section className="settings-page">
@@ -290,7 +299,9 @@ export function SettingsReadingPage() {
 
       <div className="settings-card">
         <h3>Tamanho do texto</h3>
-        <p className="card-desc">Ajusta o corpo do texto nos capítulos literários.</p>
+        <p className="card-desc">
+          Ajusta o corpo do texto nos capítulos literários.
+        </p>
         <div className="choice-buttons">
           <Button
             variant={fontSize === "normal" ? "primary" : "secondary"}
@@ -315,7 +326,9 @@ export function SettingsReadingPage() {
 
       <div className="settings-card">
         <h3>Família de fonte</h3>
-        <p className="card-desc">Opta por uma fonte clássica literária ou moderna sem serifa.</p>
+        <p className="card-desc">
+          Opta por uma fonte clássica literária ou moderna sem serifa.
+        </p>
         <div className="choice-buttons">
           <Button
             variant={fontFamily === "serif" ? "primary" : "secondary"}
@@ -334,7 +347,9 @@ export function SettingsReadingPage() {
 
       <div className="settings-card">
         <h3>Largura de linha</h3>
-        <p className="card-desc">Controla o comprimento da linha de leitura para maior conforto ocular.</p>
+        <p className="card-desc">
+          Controla o comprimento da linha de leitura para maior conforto ocular.
+        </p>
         <div className="choice-buttons">
           <Button
             variant={measure === "comfortable" ? "primary" : "secondary"}
@@ -442,7 +457,9 @@ export function SettingsSecurityPage() {
               onClick={handleRequestPasswordReset}
               disabled={sendingReset || resetSent}
             >
-              {sendingReset ? "A enviar…" : "Enviar e-mail de redefinição de senha"}
+              {sendingReset
+                ? "A enviar…"
+                : "Enviar e-mail de redefinição de senha"}
             </Button>
           </div>
 

@@ -143,7 +143,9 @@ test("profile: render /utilizadores/autor-desconhecido shows empty / not-found s
 
 test("profile: render /perfil/editar requires authentication for unauthenticated visitors", async () => {
   const html = await renderRoute("/perfil/editar");
-  assert.ok(html.includes("Autenticação necessária") || html.includes("Iniciar sessão"));
+  assert.ok(
+    html.includes("Autenticação necessária") || html.includes("Iniciar sessão"),
+  );
   assert.ok(html.includes("/entrar"));
 });
 

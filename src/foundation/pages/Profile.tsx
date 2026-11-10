@@ -27,12 +27,7 @@ import {
   type UserProfile,
 } from "../features/profile/types";
 import { WorkCard } from "../components/WorkCard";
-import {
-  ActionLink,
-  Button,
-  LoadingState,
-  EmptyState,
-} from "../components/ui";
+import { ActionLink, Button, LoadingState, EmptyState } from "../components/ui";
 import type { Work } from "../data/works";
 
 function formatJoinDate(isoDate: string): string {
@@ -237,7 +232,10 @@ export function PublicProfilePage() {
         </div>
       </header>
 
-      <section className="profile-works-section" aria-labelledby="obras-heading">
+      <section
+        className="profile-works-section"
+        aria-labelledby="obras-heading"
+      >
         <div className="profile-works-header">
           <h2 id="obras-heading">
             Obras publicadas{" "}
@@ -268,7 +266,9 @@ export function PublicProfilePage() {
 
 export function EditProfilePage() {
   const { state: authState } = useAuth();
-  const [loading, setLoading] = useState(() => authState.status === "authenticated");
+  const [loading, setLoading] = useState(
+    () => authState.status === "authenticated",
+  );
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -347,7 +347,9 @@ export function EditProfilePage() {
           </div>
         </div>
         <div className="profile-actions-bar">
-          <ActionLink to="/entrar?next=/perfil/editar">Iniciar sessão</ActionLink>
+          <ActionLink to="/entrar?next=/perfil/editar">
+            Iniciar sessão
+          </ActionLink>
           <Link to="/" className="text-link">
             Voltar ao início
           </Link>
@@ -470,9 +472,7 @@ export function EditProfilePage() {
               value={username}
               onChange={(e) =>
                 setUsername(
-                  e.target.value
-                    .toLowerCase()
-                    .replace(/[^a-zA-Z0-9_]/g, ""),
+                  e.target.value.toLowerCase().replace(/[^a-zA-Z0-9_]/g, ""),
                 )
               }
               placeholder="exemplo_autor"
@@ -491,8 +491,7 @@ export function EditProfilePage() {
 
         <div className="field">
           <label htmlFor={bioId}>
-            Biografia{" "}
-            <span className="char-count">({bio.length}/500)</span>
+            Biografia <span className="char-count">({bio.length}/500)</span>
           </label>
           <textarea
             id={bioId}

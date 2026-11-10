@@ -118,3 +118,19 @@ CREATE POLICY "Utilizador pode atualizar o seu próprio perfil"
   TO authenticated
   USING (auth.uid() = id)
   WITH CHECK (auth.uid() = id);
+
+-- 6. Povoamento retroativo para contas já existentes em auth.users
+INSERT INTO public.profiles (id, username, display_name, bio, created_at, updated_at)
+SELECT
+  u.id,
+  CASE
+    WHEN char_length(regexp_replace(COALESCE(u.raw_user_meta_data->>'username', split_part(u.email, '@', 1)), '[^a-zA-Z0-9_]', '', 'g')) >= 3
+    THEN regexp_replace(COALESCE(u.raw_user_meta_data->>'username', split_part(u.email, '@', 1)), '[^a-zA-Z0-9_]', '', 'g')
+    ELSE 'autor_' || substr(u.id::text, 1, 8)
+  END AS username,
+  COALESCE(u.raw_user_meta_data->>'display_name', u.raw_user_meta_data->>'name', split_part(u.email, '@', 1)) AS display_name,
+  '',
+  COALESCE(u.created_at, timezone('utc'::text, now())),
+  timezone('utc'::text, now())
+FROM auth.users u
+ON CONFLICT (id) DO NOTHING;

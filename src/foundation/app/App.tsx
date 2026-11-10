@@ -114,6 +114,97 @@ const settingsPages = {
     })),
   ),
 };
+const readerPages = {
+  "/obras/:id/capitulos/:capituloId": lazy(() =>
+    import("../pages/Reader").then((module) => ({
+      default: module.LiteraryReaderPage,
+    })),
+  ),
+  "/obras/:id/paginas/:capituloId": lazy(() =>
+    import("../pages/Reader").then((module) => ({
+      default: module.VisualReaderPage,
+    })),
+  ),
+  "/obras/:id/comentarios": lazy(() =>
+    import("../pages/Reader").then((module) => ({
+      default: module.CommentsPage,
+    })),
+  ),
+  "/obras/:id/avaliacoes": lazy(() =>
+    import("../pages/Reader").then((module) => ({
+      default: module.ReviewsPage,
+    })),
+  ),
+};
+const libraryPages = {
+  "/biblioteca": lazy(() =>
+    import("../pages/Library").then((module) => ({
+      default: module.LibraryOverviewPage,
+    })),
+  ),
+  "/biblioteca/favoritos": lazy(() =>
+    import("../pages/Library").then((module) => ({
+      default: module.FavoritesPage,
+    })),
+  ),
+  "/biblioteca/historico": lazy(() =>
+    import("../pages/Library").then((module) => ({
+      default: module.HistoryPage,
+    })),
+  ),
+  "/biblioteca/listas": lazy(() =>
+    import("../pages/Library").then((module) => ({
+      default: module.ListsPage,
+    })),
+  ),
+  "/biblioteca/listas/:id": lazy(() =>
+    import("../pages/Library").then((module) => ({
+      default: module.ListDetailPage,
+    })),
+  ),
+};
+const studioPages = {
+  "/estudio": lazy(() =>
+    import("../pages/Studio").then((module) => ({
+      default: module.StudioDashboardPage,
+    })),
+  ),
+  "/estudio/obras/nova": lazy(() =>
+    import("../pages/Studio").then((module) => ({
+      default: module.NewWorkWizardPage,
+    })),
+  ),
+  "/estudio/obras/:id": lazy(() =>
+    import("../pages/Studio").then((module) => ({
+      default: module.WorkManagePage,
+    })),
+  ),
+  "/estudio/obras/:id/capitulos/:capituloId/editar": lazy(() =>
+    import("../pages/Studio").then((module) => ({
+      default: module.ChapterEditPage,
+    })),
+  ),
+  "/estudio/obras/:id/paginas/:capituloId/editar": lazy(() =>
+    import("../pages/Studio").then((module) => ({
+      default: module.PagesEditPage,
+    })),
+  ),
+  "/estudio/publicacoes": lazy(() =>
+    import("../pages/Studio").then((module) => ({
+      default: module.PublicationsPage,
+    })),
+  ),
+  "/estudio/estatisticas": lazy(() =>
+    import("../pages/Studio").then((module) => ({
+      default: module.StudioStatsPage,
+    })),
+  ),
+  "/estudio/media": lazy(() =>
+    import("../pages/Studio").then((module) => ({
+      default: module.MediaLibraryPage,
+    })),
+  ),
+};
 const DesignSystem = lazy(() => import("../pages/DesignSystem"));
 const layouts = {
   public: PublicLayout,
@@ -145,7 +236,10 @@ function renderRoute(route: (typeof productRoutes)[number]) {
     discoveryPages[route.path as keyof typeof discoveryPages] ??
     authPages[route.path as keyof typeof authPages] ??
     profilePages[route.path as keyof typeof profilePages] ??
-    settingsPages[route.path as keyof typeof settingsPages];
+    settingsPages[route.path as keyof typeof settingsPages] ??
+    readerPages[route.path as keyof typeof readerPages] ??
+    libraryPages[route.path as keyof typeof libraryPages] ??
+    studioPages[route.path as keyof typeof studioPages];
   return Page ? <Page /> : <DevelopmentPage route={route} />;
 }
 export function ApplicationRoutes() {

@@ -62,7 +62,9 @@ export async function fetchUserProfile(
     try {
       const { data, error } = await client
         .from("profiles")
-        .select("id, username, display_name, bio, avatar_url, created_at, updated_at")
+        .select(
+          "id, username, display_name, bio, avatar_url, created_at, updated_at",
+        )
         .ilike("username", clean)
         .maybeSingle();
 
@@ -130,7 +132,9 @@ export async function fetchProfileById(
   try {
     const { data, error } = await client
       .from("profiles")
-      .select("id, username, display_name, bio, avatar_url, created_at, updated_at")
+      .select(
+        "id, username, display_name, bio, avatar_url, created_at, updated_at",
+      )
       .eq("id", userId)
       .maybeSingle();
 
@@ -223,10 +227,7 @@ export async function saveUserProfile(
             "Este username já está a ser utilizado por outro autor. Escolhe um diferente.",
         };
       }
-      if (
-        error.code === "42P01" ||
-        error.message?.includes("does not exist")
-      ) {
+      if (error.code === "42P01" || error.message?.includes("does not exist")) {
         return {
           ok: false,
           message:
