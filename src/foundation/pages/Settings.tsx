@@ -1,3 +1,10 @@
+import { useCanonicalProfile } from "../features/profile/cache";
+import {
+  usePreferences,
+  updateReadingPreferences,
+  updateAccessibility,
+  preferenceOriginals,
+} from "../features/preferences/store";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -36,14 +43,9 @@ export function SettingsOverviewPage() {
   const { theme } = useTheme();
 
   const isAuth = authState.status === "authenticated" && authState.user;
-  const username =
-    authState.user?.user_metadata?.username ||
-    authState.user?.email?.split("@")[0] ||
-    "autor";
-  const displayName =
-    authState.user?.user_metadata?.display_name ||
-    authState.user?.user_metadata?.name ||
-    username;
+  const profile = useCanonicalProfile(isAuth ? authState.user?.id : undefined);
+  const username = profile?.username;
+  const displayName = profile?.displayName ?? "A tua conta";
 
   return (
     <section className="settings-page">
@@ -65,7 +67,9 @@ export function SettingsOverviewPage() {
               <>
                 <h2>{displayName}</h2>
                 <p className="account-meta">
-                  <span>@{username}</span>
+                  <span>
+                    {username ? `@${username}` : "Perfil por configurar"}
+                  </span>
                   <span aria-hidden="true">·</span>
                   <span>{maskEmail(authState.user?.email || "")}</span>
                 </p>
@@ -87,9 +91,11 @@ export function SettingsOverviewPage() {
               <Link to="/perfil/editar" className="button secondary">
                 Editar perfil público
               </Link>
-              <Link to={`/utilizadores/${username}`} className="button ghost">
-                Ver perfil público →
-              </Link>
+              {username && (
+                <Link to={`/utilizadores/${username}`} className="button ghost">
+                  Ver perfil público →
+                </Link>
+              )}
             </>
           ) : (
             <ActionLink to="/entrar?next=/definicoes">
@@ -224,62 +230,14 @@ export function SettingsAppearancePage() {
 }
 
 export function SettingsReadingPage() {
-  const [fontSize, setFontSize] = useState<"normal" | "medium" | "large">(
-    () => {
-      if (
-        typeof window === "undefined" ||
-        typeof localStorage === "undefined"
-      ) {
-        return "normal";
-      }
-      return (
-        (localStorage.getItem("ag_reading_font_size") as
-          | "normal"
-          | "medium"
-          | "large") || "normal"
-      );
-    },
-  );
-  const [measure, setMeasure] = useState<"comfortable" | "wide">(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
-      return "comfortable";
-    }
-    return (
-      (localStorage.getItem("ag_reading_measure") as "comfortable" | "wide") ||
-      "comfortable"
-    );
-  });
-  const [fontFamily, setFontFamily] = useState<"serif" | "sans">(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
-      return "serif";
-    }
-    return (
-      (localStorage.getItem("ag_reading_font_family") as "serif" | "sans") ||
-      "serif"
-    );
-  });
-
-  const handleFontSizeChange = (val: "normal" | "medium" | "large") => {
-    setFontSize(val);
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem("ag_reading_font_size", val);
-    }
-  };
-
-  const handleMeasureChange = (val: "comfortable" | "wide") => {
-    setMeasure(val);
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem("ag_reading_measure", val);
-    }
-  };
-
-  const handleFontFamilyChange = (val: "serif" | "sans") => {
-    setFontFamily(val);
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem("ag_reading_font_family", val);
-    }
-  };
-
+  const preferences = usePreferences();
+  const { fontSize, measure, fontFamily } = preferences.global;
+  const handleFontSizeChange = (fontSize: "normal" | "medium" | "large") =>
+    updateReadingPreferences({ fontSize });
+  const handleMeasureChange = (measure: "comfortable" | "wide") =>
+    updateReadingPreferences({ measure });
+  const handleFontFamilyChange = (fontFamily: "serif" | "sans") =>
+    updateReadingPreferences({ fontFamily });
   const sampleSizeClass =
     fontSize === "large"
       ? "text-lg"
@@ -294,6 +252,7 @@ export function SettingsReadingPage() {
       <div className="settings-header">
         <span className="eyebrow">DEFINIÇÕES</span>
         <h1>Preferências de leitura</h1>
+        <PreferenceRecovery />
         <p>Personaliza a tipografia e o espaçamento para o modo de leitura.</p>
       </div>
 
@@ -307,19 +266,19 @@ export function SettingsReadingPage() {
             variant={fontSize === "normal" ? "primary" : "secondary"}
             onClick={() => handleFontSizeChange("normal")}
           >
-            Normal (14px)
+            Normal
           </Button>
           <Button
             variant={fontSize === "medium" ? "primary" : "secondary"}
             onClick={() => handleFontSizeChange("medium")}
           >
-            Médio (16px)
+            Médio
           </Button>
           <Button
             variant={fontSize === "large" ? "primary" : "secondary"}
             onClick={() => handleFontSizeChange("large")}
           >
-            Grande (18px)
+            Grande
           </Button>
         </div>
       </div>
@@ -510,19 +469,22 @@ export function SettingsPrivacyPage() {
       <div className="settings-card">
         <h3>Conteúdo público</h3>
         <p className="card-desc">
-          O teu nome de apresentação, username, biografia e todas as obras
-          marcadas como <strong>Publicadas</strong> são visíveis por qualquer
-          leitor, com ou sem conta.
+          O perfil pode ser consultado e guardado no Supabase quando o serviço
+          está configurado. A aplicação só pode confirmar as políticas do
+          servidor após verificação remota. O catálogo atual contém exemplos;
+          marcar uma obra local como Publicada não a publica remotamente.
         </p>
       </div>
 
       <div className="settings-card">
         <h3>Conteúdo privado</h3>
         <p className="card-desc">
-          O teu endereço de e-mail, os teus rascunhos em desenvolvimento no
-          Estúdio e o teu histórico pessoal de leitura são estritamente
-          privados, protegidos pelas políticas Row Level Security (RLS) da
-          plataforma.
+          Os rascunhos, a biblioteca, o histórico e as imagens ficam neste
+          navegador, separados entre o espaço de visitante e cada conta. Não são
+          sincronizados entre dispositivos. Esta separação na aplicação não é
+          encriptação: quem tiver acesso ao perfil do navegador pode aceder ao
+          armazenamento local. Limpar os dados do navegador pode apagar estas
+          cópias; exporta uma cópia de segurança.
         </p>
       </div>
     </section>
@@ -530,51 +492,25 @@ export function SettingsPrivacyPage() {
 }
 
 export function SettingsAccessibilityPage() {
-  const [reducedMotion, setReducedMotion] = useState(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
-      return false;
-    }
-    return localStorage.getItem("ag_reduced_motion") === "true";
-  });
-  const [highContrast, setHighContrast] = useState(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
-      return false;
-    }
-    return localStorage.getItem("ag_high_contrast") === "true";
-  });
-
-  const toggleReducedMotion = () => {
-    const next = !reducedMotion;
-    setReducedMotion(next);
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem("ag_reduced_motion", String(next));
-    }
-    if (typeof document !== "undefined") {
-      if (next) {
-        document.documentElement.classList.add("prefers-reduced-motion");
-      } else {
-        document.documentElement.classList.remove("prefers-reduced-motion");
-      }
-    }
-  };
-
-  const toggleHighContrast = () => {
-    const next = !highContrast;
-    setHighContrast(next);
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem("ag_high_contrast", String(next));
-    }
-    if (typeof document !== "undefined") {
-      if (next) {
-        document.documentElement.classList.add("high-contrast");
-      } else {
-        document.documentElement.classList.remove("high-contrast");
-      }
-    }
-  };
+  const preferences = usePreferences();
+  const reducedMotion = preferences.accessibility.reducedMotion;
+  const highContrast = preferences.accessibility.highContrast;
+  const toggleReducedMotion = () =>
+    updateAccessibility({ reducedMotion: !reducedMotion });
+  const toggleHighContrast = () =>
+    updateAccessibility({ highContrast: !highContrast });
 
   return (
     <section className="settings-page">
+      <PreferenceRecovery />
+      <Button
+        variant="ghost"
+        onClick={() =>
+          updateAccessibility({ reducedMotion: null, highContrast: null })
+        }
+      >
+        Seguir preferências do sistema
+      </Button>
       <div className="settings-header">
         <span className="eyebrow">DEFINIÇÕES</span>
         <h1>Acessibilidade</h1>
@@ -593,7 +529,11 @@ export function SettingsAccessibilityPage() {
             variant={reducedMotion ? "primary" : "secondary"}
             onClick={toggleReducedMotion}
           >
-            {reducedMotion ? "Ativado" : "Desativado"}
+            {reducedMotion === null
+              ? "Automático (sistema)"
+              : reducedMotion
+                ? "Ativado"
+                : "Desativado"}
           </Button>
         </div>
       </div>
@@ -610,10 +550,48 @@ export function SettingsAccessibilityPage() {
             variant={highContrast ? "primary" : "secondary"}
             onClick={toggleHighContrast}
           >
-            {highContrast ? "Ativado" : "Desativado"}
+            {highContrast === null
+              ? "Automático (sistema)"
+              : highContrast
+                ? "Ativado"
+                : "Desativado"}
           </Button>
         </div>
       </div>
     </section>
+  );
+}
+
+function PreferenceRecovery() {
+  const { warning } = usePreferences();
+  return (
+    <div>
+      {warning && <p role="alert">{warning}</p>}
+      <details>
+        <summary>Recuperação de preferências antigas</summary>
+        <p>
+          As escolhas globais aplicam-se a todos os leitores. Ajustes feitos num
+          leitor têm prioridade nesse formato até voltares a alterar a mesma
+          opção nas definições globais. Os originais antigos são preservados.
+        </p>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            const url = URL.createObjectURL(
+              new Blob([JSON.stringify(preferenceOriginals(), null, 2)], {
+                type: "application/json",
+              }),
+            );
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "arquivo-global-preferencias.json";
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          }}
+        >
+          Exportar preferências originais
+        </Button>
+      </details>
+    </div>
   );
 }

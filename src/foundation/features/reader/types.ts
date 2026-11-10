@@ -4,6 +4,7 @@ export interface Chapter {
   id: string;
   number: number;
   title: string;
+  alignment?: "left" | "center";
   content?: string; // Text for prose/poetry
   stanzas?: string[][]; // Preserved stanzas for poetry
   pages?: {

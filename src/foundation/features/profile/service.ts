@@ -1,7 +1,9 @@
 import { getAuthClient } from "../auth/client";
-import { demoWorks, type Work } from "../../data/works";
-import { normalizeText, slugify } from "../../lib/discovery";
+import { demoWorks, demoAuthors, type Work } from "../../data/works";
+import { publishProfile, profileVersion, cachedProfile } from "./cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  normalizeUsername,
   validateBio,
   validateDisplayName,
   validateUsername,
@@ -38,25 +40,17 @@ export interface SaveProfileResult {
   message?: string;
 }
 
-export function findAuthorWorks(authorQuery: string): Work[] {
-  const normQuery = normalizeText(authorQuery);
-  const slugQuery = slugify(authorQuery);
-  return demoWorks.filter((work) => {
-    const normAuthor = normalizeText(work.author);
-    const slugAuthor = slugify(work.author);
-    return (
-      normAuthor === normQuery ||
-      slugAuthor === slugQuery ||
-      normAuthor.includes(normQuery)
-    );
-  });
+export function findAuthorWorks(authorId: string): Work[] {
+  return demoWorks.filter((work) => work.authorId === authorId);
 }
-
 export async function fetchUserProfile(
   username: string,
+  client: SupabaseClient | null = getAuthClient(),
 ): Promise<FetchProfileResult> {
-  const clean = username.trim().toLowerCase();
-  const client = getAuthClient();
+  const clean = normalizeUsername(username);
+  const demo = resolveDemoProfile(clean);
+  if (demo) return { profile: demo };
+  if (validateUsername(clean)) return { profile: null };
 
   if (client) {
     try {
@@ -65,7 +59,7 @@ export async function fetchUserProfile(
         .select(
           "id, username, display_name, bio, avatar_url, created_at, updated_at",
         )
-        .ilike("username", clean)
+        .eq("username", clean)
         .maybeSingle();
 
       if (error) {
@@ -123,12 +117,13 @@ export async function fetchUserProfile(
 
 export async function fetchProfileById(
   userId: string,
+  client: SupabaseClient | null = getAuthClient(),
 ): Promise<FetchProfileResult> {
-  const client = getAuthClient();
   if (!client) {
     return { profile: null, unconfigured: true };
   }
 
+  const startedVersion = profileVersion(userId);
   try {
     const { data, error } = await client
       .from("profiles")
@@ -158,17 +153,20 @@ export async function fetchProfileById(
       return { profile: null };
     }
 
-    return {
-      profile: {
-        id: data.id,
-        username: data.username,
-        displayName: data.display_name,
-        bio: data.bio || "",
-        avatarUrl: data.avatar_url || null,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      },
+    const profile: UserProfile = {
+      id: data.id,
+      username: data.username,
+      displayName: data.display_name,
+      bio: data.bio || "",
+      avatarUrl: data.avatar_url || null,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
     };
+    const latest = cachedProfile(userId);
+    if (latest && profileVersion(userId) !== startedVersion)
+      return { profile: latest };
+    publishProfile(profile);
+    return { profile };
   } catch (err: unknown) {
     return {
       profile: null,
@@ -180,6 +178,7 @@ export async function fetchProfileById(
 export async function saveUserProfile(
   userId: string,
   payload: { username: string; displayName: string; bio: string },
+  client: SupabaseClient | null = getAuthClient(),
 ): Promise<SaveProfileResult> {
   const userErr = validateUsername(payload.username);
   if (userErr) return { ok: false, message: userErr };
@@ -190,7 +189,6 @@ export async function saveUserProfile(
   const bioErr = validateBio(payload.bio);
   if (bioErr) return { ok: false, message: bioErr };
 
-  const client = getAuthClient();
   if (!client) {
     return {
       ok: false,
@@ -199,7 +197,7 @@ export async function saveUserProfile(
     };
   }
 
-  const cleanUsername = payload.username.trim().toLowerCase();
+  const cleanUsername = normalizeUsername(payload.username);
   const cleanDisplayName = payload.displayName.trim();
   const cleanBio = payload.bio.trim();
 
@@ -237,18 +235,17 @@ export async function saveUserProfile(
       return { ok: false, message: error.message };
     }
 
-    return {
-      ok: true,
-      profile: {
-        id: data.id,
-        username: data.username,
-        displayName: data.display_name,
-        bio: data.bio || "",
-        avatarUrl: data.avatar_url || null,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      },
+    const profile: UserProfile = {
+      id: data.id,
+      username: data.username,
+      displayName: data.display_name,
+      bio: data.bio || "",
+      avatarUrl: data.avatar_url || null,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
     };
+    publishProfile(profile);
+    return { ok: true, profile };
   } catch (err: unknown) {
     return {
       ok: false,
@@ -260,41 +257,18 @@ export async function saveUserProfile(
   }
 }
 
-export function resolveDemoProfile(cleanUsername: string): UserProfile | null {
-  const matchedAuthor = demoWorks.find((work) => {
-    return (
-      slugify(work.author) === cleanUsername ||
-      normalizeText(work.author).replace(/\s+/g, "") === cleanUsername
-    );
-  });
-
-  if (!matchedAuthor) {
-    // Check direct slug in demoAuthorBios
-    const directBio = demoAuthorBios[cleanUsername];
-    if (!directBio) return null;
-    const displayName = cleanUsername
-      .split("-")
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
-    return {
-      id: `demo-${cleanUsername}`,
-      username: cleanUsername,
-      displayName,
-      bio: directBio,
-      avatarUrl: null,
-      createdAt: "2026-01-01T00:00:00Z",
-    };
-  }
-
-  const slug = slugify(matchedAuthor.author);
+export function resolveDemoProfile(username: string): UserProfile | null {
+  const author = demoAuthors.find(
+    (item) => item.username === normalizeUsername(username),
+  );
+  if (!author) return null;
+  const firstWork = demoWorks.find((work) => work.authorId === author.id);
   return {
-    id: `demo-${slug}`,
-    username: slug,
-    displayName: matchedAuthor.author,
+    ...author,
     bio:
-      demoAuthorBios[slug] ||
-      `Autor(a) de histórias publicadas no catálogo aberto do Arquivo Global.`,
+      demoAuthorBios[author.username] ??
+      "Autor(a) fictício(a) do catálogo demonstrativo.",
     avatarUrl: null,
-    createdAt: matchedAuthor.createdAt + "T10:00:00Z",
+    createdAt: (firstWork?.createdAt ?? "2026-01-01") + "T10:00:00Z",
   };
 }

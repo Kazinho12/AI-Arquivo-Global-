@@ -1,3 +1,7 @@
+import { InlineContent } from "./content";
+import { Modal } from "../../components/ui";
+import { useReadingPreferences } from "../preferences/store";
+import { useReadingProgress, savedPosition } from "./progress";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -13,6 +17,7 @@ import type { Chapter, ReadingPreferences } from "./types";
 import { Button } from "../../components/ui";
 
 interface PoetryReaderProps {
+  trackProgress?: boolean;
   workId: string;
   workTitle: string;
   author: string;
@@ -26,45 +31,20 @@ export function PoetryReader({
   author,
   chapters,
   currentChapter,
+  trackProgress = false,
 }: PoetryReaderProps) {
-  const [prefs, setPrefs] = useState<ReadingPreferences>(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
-      return {
-        fontSize: "medium",
-        lineHeight: "relaxed",
-        measure: "comfortable",
-        fontFamily: "literary",
-        distractionFree: false,
-        theme: "dark",
-      };
-    }
-    try {
-      const saved = localStorage.getItem("ag_reader_poetry_prefs");
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    return {
-      fontSize: "medium",
-      lineHeight: "relaxed",
-      measure: "comfortable",
-      fontFamily: "literary",
-      distractionFree: false,
-      theme: "dark",
-    };
+  const reading = useReadingProgress({
+    workId,
+    workTitle,
+    author,
+    chapters,
+    currentChapter,
+    mode: "poetry",
+    enabled: trackProgress,
   });
+  const [prefs, setPrefs] = useReadingPreferences("poetry");
 
   const [showSettings, setShowSettings] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined")
-      return;
-    try {
-      localStorage.setItem("ag_reader_poetry_prefs", JSON.stringify(prefs));
-    } catch {
-      // ignore
-    }
-  }, [prefs]);
 
   const currentIndex = chapters.findIndex((c) => c.id === currentChapter.id);
   const prevChapter = currentIndex > 0 ? chapters[currentIndex - 1] : null;
@@ -72,12 +52,11 @@ export function PoetryReader({
     currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
 
   // Stanzas: array of string[] representing lines of verse
-  const stanzas: string[][] = currentChapter.stanzas || [
-    (currentChapter.content || "")
+  const stanzas: string[][] =
+    currentChapter.stanzas ??
+    (currentChapter.content ?? "")
       .split("\n\n")
-      .map((s) => s.split("\n"))
-      .flat(),
-  ];
+      .map((stanza) => stanza.split("\n"));
 
   const fontSizeClass =
     prefs.fontSize === "small"
@@ -104,6 +83,7 @@ export function PoetryReader({
 
   return (
     <div
+      ref={reading.root}
       className={`poetry-reader-container ${themeStyle} ${
         prefs.distractionFree ? "distraction-free" : ""
       }`}
@@ -140,10 +120,10 @@ export function PoetryReader({
               </Button>
 
               {showSettings && (
-                <div
-                  className="reader-settings-dropdown"
-                  role="dialog"
-                  aria-label="Definições de leitura de poesia"
+                <Modal
+                  open
+                  onClose={() => setShowSettings(false)}
+                  title="Definições de leitura de poesia"
                 >
                   <div className="reader-settings-group">
                     <span className="reader-settings-label">
@@ -193,7 +173,7 @@ export function PoetryReader({
                       ))}
                     </div>
                   </div>
-                </div>
+                </Modal>
               )}
             </div>
 
@@ -224,14 +204,22 @@ export function PoetryReader({
         </button>
       )}
 
+      {trackProgress && (
+        <Button variant="secondary" onClick={reading.complete}>
+          Marcar poema como lido
+        </Button>
+      )}
       {/* Main Poetry Canvas */}
-      <article className="poetry-canvas">
+      <article
+        className={`poetry-canvas ${prefs.fontFamily === "sans" ? "font-sans" : "font-serif"} ${prefs.measure === "wide" ? "max-w-4xl" : prefs.measure === "compact" ? "max-w-xl" : "max-w-2xl"}`}
+      >
         <header className="poetry-header">
           <span className="poetry-eyebrow">Poesia</span>
           <h1 className="poetry-title">{currentChapter.title}</h1>
         </header>
 
         <div
+          style={{ textAlign: currentChapter.alignment ?? "left" }}
           className={`poetry-stanzas-container ${fontSizeClass} ${lineHeightClass}`}
         >
           {stanzas.map((stanza, sIdx) => (
@@ -243,7 +231,7 @@ export function PoetryReader({
             >
               {stanza.map((verse, vIdx) => (
                 <div key={vIdx} className="poetry-verse">
-                  {verse || "\u00A0"}
+                  <InlineContent text={verse || "\u00A0"} />
                 </div>
               ))}
             </div>

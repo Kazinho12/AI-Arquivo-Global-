@@ -21,11 +21,15 @@ function getController(): AuthController {
     },
     now: Date.now,
   };
-  return (browserController ??= new AuthController(
-    getAuthClient()?.auth ?? null,
-    env,
-    authConfig.ready ? undefined : authConfig.message,
-  ));
+  const create = () =>
+    new AuthController(
+      getAuthClient()?.auth ?? null,
+      env,
+      authConfig.ready ? undefined : authConfig.message,
+    );
+  return typeof window === "undefined"
+    ? create()
+    : (browserController ??= create());
 }
 export interface AuthContextValue {
   state: AuthState;
@@ -52,7 +56,7 @@ export function AuthProvider({
   const state = useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
-    store.getSnapshot,
+    controller ? store.getSnapshot : () => initialAuthState,
   );
   useEffect(() => {
     void store.start();

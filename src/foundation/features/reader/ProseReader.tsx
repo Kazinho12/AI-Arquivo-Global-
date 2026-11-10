@@ -1,3 +1,7 @@
+import { ProseContent } from "./content";
+import { Modal } from "../../components/ui";
+import { useReadingPreferences } from "../preferences/store";
+import { useReadingProgress, savedPosition } from "./progress";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -14,6 +18,7 @@ import type { Chapter, ReadingPreferences } from "./types";
 import { Button } from "../../components/ui";
 
 interface ProseReaderProps {
+  trackProgress?: boolean;
   workId: string;
   workTitle: string;
   author: string;
@@ -28,46 +33,21 @@ export function ProseReader({
   author,
   chapters,
   currentChapter,
+  trackProgress = false,
 }: ProseReaderProps) {
-  const [prefs, setPrefs] = useState<ReadingPreferences>(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
-      return {
-        fontSize: "normal",
-        lineHeight: "normal",
-        measure: "comfortable",
-        fontFamily: "serif",
-        distractionFree: false,
-        theme: "dark",
-      };
-    }
-    try {
-      const saved = localStorage.getItem("ag_reader_prose_prefs");
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    return {
-      fontSize: "normal",
-      lineHeight: "normal",
-      measure: "comfortable",
-      fontFamily: "serif",
-      distractionFree: false,
-      theme: "dark",
-    };
+  const reading = useReadingProgress({
+    workId,
+    workTitle,
+    author,
+    chapters,
+    currentChapter,
+    mode: "prose",
+    enabled: trackProgress,
   });
+  const [prefs, setPrefs] = useReadingPreferences("prose");
 
   const [showSettings, setShowSettings] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined")
-      return;
-    try {
-      localStorage.setItem("ag_reader_prose_prefs", JSON.stringify(prefs));
-    } catch {
-      // ignore
-    }
-  }, [prefs]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -137,6 +117,7 @@ export function ProseReader({
 
   return (
     <div
+      ref={reading.root}
       className={`prose-reader-container ${themeStyle} ${
         prefs.distractionFree ? "distraction-free" : ""
       }`}
@@ -188,10 +169,10 @@ export function ProseReader({
               </Button>
 
               {showSettings && (
-                <div
-                  className="reader-settings-dropdown"
-                  role="dialog"
-                  aria-label="Definições de leitura"
+                <Modal
+                  open
+                  onClose={() => setShowSettings(false)}
+                  title="Definições de leitura"
                 >
                   <div className="reader-settings-group">
                     <span className="reader-settings-label">
@@ -313,7 +294,7 @@ export function ProseReader({
                       ))}
                     </div>
                   </div>
-                </div>
+                </Modal>
               )}
             </div>
 
@@ -345,6 +326,11 @@ export function ProseReader({
         </button>
       )}
 
+      {trackProgress && (
+        <Button variant="secondary" onClick={reading.complete}>
+          Marcar capítulo como lido
+        </Button>
+      )}
       {/* Main Reading Canvas */}
       <article className={`prose-canvas ${measureClass} ${fontClass}`}>
         <header className="chapter-header">
@@ -355,11 +341,7 @@ export function ProseReader({
         </header>
 
         <div className={`chapter-body ${fontSizeClass} ${lineHeightClass}`}>
-          {paragraphs.map((p, idx) => (
-            <p key={idx} className="prose-paragraph">
-              {p}
-            </p>
-          ))}
+          <ProseContent text={currentChapter.content ?? ""} />
         </div>
 
         {/* Chapter Navigation Footer */}

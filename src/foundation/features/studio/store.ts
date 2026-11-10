@@ -1,4 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { localId } from "../local/id";
+import {
+  bindScope,
+  localSnapshot,
+  useLocalCollection,
+  notifyLocal,
+  currentScope,
+  readLocal,
+  registerLocal,
+  useLocalRevision,
+  writeLocal,
+} from "../local/persistence";
+import { validCollection } from "../local/validation";
 import type {
   StudioWork,
   EditorialActivity,
@@ -247,95 +259,29 @@ const initialSeedMedia: MediaItem[] = [
   },
 ];
 
-const listeners: Array<() => void> = [];
-function notifyListeners() {
-  listeners.forEach((listener) => listener());
-}
+registerLocal(STORAGE_KEY_WORKS, initialSeedWorks, (value) =>
+  validCollection("works", value),
+);
+export const getStoredWorks = () => readLocal<StudioWork>(STORAGE_KEY_WORKS);
+export const saveStoredWorks = (value: StudioWork[]) =>
+  writeLocal(STORAGE_KEY_WORKS, value);
 
-export function getStoredWorks(): StudioWork[] {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
-    return initialSeedWorks;
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_WORKS);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY_WORKS, JSON.stringify(initialSeedWorks));
-      return initialSeedWorks;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return initialSeedWorks;
-  }
-}
+registerLocal(STORAGE_KEY_ACTIVITIES, initialSeedActivities, (value) =>
+  validCollection("activities", value),
+);
+export const getStoredActivities = () =>
+  readLocal<EditorialActivity>(STORAGE_KEY_ACTIVITIES);
+export const saveStoredActivities = (value: EditorialActivity[]) =>
+  writeLocal(STORAGE_KEY_ACTIVITIES, value);
 
-export function saveStoredWorks(works: StudioWork[]) {
-  if (typeof window === "undefined" || typeof localStorage === "undefined")
-    return;
-  try {
-    localStorage.setItem(STORAGE_KEY_WORKS, JSON.stringify(works));
-    notifyListeners();
-  } catch {
-    // ignore
-  }
-}
+registerLocal(STORAGE_KEY_MEDIA, initialSeedMedia, (value) =>
+  validCollection("media", value),
+);
+export const getStoredMedia = () => readLocal<MediaItem>(STORAGE_KEY_MEDIA);
+export const saveStoredMedia = (value: MediaItem[]) =>
+  writeLocal(STORAGE_KEY_MEDIA, value);
 
-export function getStoredActivities(): EditorialActivity[] {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
-    return initialSeedActivities;
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_ACTIVITIES);
-    if (!raw) {
-      localStorage.setItem(
-        STORAGE_KEY_ACTIVITIES,
-        JSON.stringify(initialSeedActivities),
-      );
-      return initialSeedActivities;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return initialSeedActivities;
-  }
-}
-
-export function saveStoredActivities(activities: EditorialActivity[]) {
-  if (typeof window === "undefined" || typeof localStorage === "undefined")
-    return;
-  try {
-    localStorage.setItem(STORAGE_KEY_ACTIVITIES, JSON.stringify(activities));
-    notifyListeners();
-  } catch {
-    // ignore
-  }
-}
-
-export function getStoredMedia(): MediaItem[] {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
-    return initialSeedMedia;
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_MEDIA);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY_MEDIA, JSON.stringify(initialSeedMedia));
-      return initialSeedMedia;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return initialSeedMedia;
-  }
-}
-
-export function saveStoredMedia(media: MediaItem[]) {
-  if (typeof window === "undefined" || typeof localStorage === "undefined")
-    return;
-  try {
-    localStorage.setItem(STORAGE_KEY_MEDIA, JSON.stringify(media));
-    notifyListeners();
-  } catch {
-    // ignore
-  }
-}
-
+const statsCache = new WeakMap<StudioWork[], StudioStats>();
 export const studioStore = {
   getWorks: getStoredWorks,
 
@@ -349,7 +295,7 @@ export const studioStore = {
     },
   ): StudioWork {
     const works = getStoredWorks();
-    const id = workData.id || `obra-${Date.now()}`;
+    const id = workData.id || `obra-${localId()}`;
     const newWork: StudioWork = {
       ...workData,
       id,
@@ -437,7 +383,7 @@ export const studioStore = {
 
     const copy: StudioWork = {
       ...source,
-      id: `${source.id}-copia-${Date.now().toString().slice(-4)}`,
+      id: `${source.id}-copia-${localId()}`,
       title: `${source.title} (Cópia)`,
       status: "draft",
       createdAt: new Date().toISOString().split("T")[0],
@@ -482,7 +428,7 @@ export const studioStore = {
 
     const nextNumber = work.chapters.length + 1;
     const newChapter: Chapter = {
-      id: `cap-${Date.now()}`,
+      id: `cap-${localId()}`,
       number: nextNumber,
       title:
         title ||
@@ -495,7 +441,7 @@ export const studioStore = {
         work.mode === "comic" || work.mode === "manga"
           ? [
               {
-                id: `p-${Date.now()}`,
+                id: `p-${localId()}`,
                 number: 1,
                 title: "Nova Página",
                 description: "Descrição visual da cena.",
@@ -548,6 +494,12 @@ export const studioStore = {
     if (!work) return false;
 
     const map = new Map(work.chapters.map((c) => [c.id, c]));
+    if (
+      newOrderChapterIds.length !== work.chapters.length ||
+      new Set(newOrderChapterIds).size !== work.chapters.length ||
+      newOrderChapterIds.some((id) => !map.has(id))
+    )
+      return false;
     const reordered: Chapter[] = [];
     newOrderChapterIds.forEach((id, idx) => {
       const c = map.get(id);
@@ -572,7 +524,7 @@ export const studioStore = {
 
     const copy: Chapter = {
       ...JSON.parse(JSON.stringify(source)),
-      id: `cap-${Date.now()}`,
+      id: `cap-${localId()}`,
       number: work.chapters.length + 1,
       title: `${source.title} (Cópia)`,
     };
@@ -606,7 +558,7 @@ export const studioStore = {
 
     chapter.pages = chapter.pages || [];
     const newPage = {
-      id: `p-${Date.now()}`,
+      id: `p-${localId()}`,
       number: chapter.pages.length + 1,
       title: pageData?.title || `Página ${chapter.pages.length + 1}`,
       description:
@@ -670,6 +622,12 @@ export const studioStore = {
     if (!chapter || !chapter.pages) return false;
 
     const map = new Map(chapter.pages.map((p) => [p.id, p]));
+    if (
+      newOrderPageIds.length !== chapter.pages.length ||
+      new Set(newOrderPageIds).size !== chapter.pages.length ||
+      newOrderPageIds.some((id) => !map.has(id))
+    )
+      return false;
     const reordered: any[] = [];
     newOrderPageIds.forEach((id, idx) => {
       const p = map.get(id);
@@ -710,7 +668,7 @@ export const studioStore = {
   ) {
     const activities = getStoredActivities();
     const newAct: EditorialActivity = {
-      id: `act-${Date.now()}`,
+      id: `act-${localId()}`,
       workId,
       workTitle,
       type,
@@ -728,7 +686,7 @@ export const studioStore = {
     const media = getStoredMedia();
     const newItem: MediaItem = {
       ...item,
-      id: `med-${Date.now()}`,
+      id: `med-${localId()}`,
       createdAt: new Date().toISOString().split("T")[0],
     };
     media.unshift(newItem);
@@ -757,7 +715,9 @@ export const studioStore = {
   },
 
   getStats(): StudioStats {
-    const works = getStoredWorks();
+    const works = localSnapshot<StudioWork>(STORAGE_KEY_WORKS);
+    const cached = statsCache.get(works);
+    if (cached) return cached;
     const totalWorks = works.length;
     const draftsCount = works.filter((w) => w.status === "draft").length;
     const publishedCount = works.filter((w) => w.status === "published").length;
@@ -783,7 +743,7 @@ export const studioStore = {
     const estimatedReads = publishedCount * 480 + draftsCount * 12;
     const avgReadTimeMinutes = Math.max(1, Math.round(totalWords / 200));
 
-    return {
+    const stats = {
       totalWorks,
       draftsCount,
       publishedCount,
@@ -792,35 +752,23 @@ export const studioStore = {
       estimatedReads,
       avgReadTimeMinutes,
     };
+    statsCache.set(works, stats);
+    return stats;
   },
 };
 
 export function useStudio() {
-  const [works, setWorks] = useState<StudioWork[]>(getStoredWorks);
-  const [activities, setActivities] =
-    useState<EditorialActivity[]>(getStoredActivities);
-  const [media, setMedia] = useState<MediaItem[]>(getStoredMedia);
-
-  const refresh = useCallback(() => {
-    setWorks(getStoredWorks());
-    setActivities(getStoredActivities());
-    setMedia(getStoredMedia());
-  }, []);
-
-  useEffect(() => {
-    listeners.push(refresh);
-    return () => {
-      const idx = listeners.indexOf(refresh);
-      if (idx >= 0) listeners.splice(idx, 1);
-    };
-  }, [refresh]);
-
+  const works = useLocalCollection<StudioWork>(STORAGE_KEY_WORKS);
+  const activities = useLocalCollection<EditorialActivity>(
+    STORAGE_KEY_ACTIVITIES,
+  );
+  const media = useLocalCollection<MediaItem>(STORAGE_KEY_MEDIA);
   return {
     works,
     activities,
     media,
     stats: studioStore.getStats(),
-    store: studioStore,
-    refresh,
+    store: bindScope(studioStore, currentScope()),
+    refresh: notifyLocal,
   };
 }

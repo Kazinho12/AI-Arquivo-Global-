@@ -1,3 +1,7 @@
+> Etapa B (10/11/2026): consultar [docs/STABILIZATION-B.md](docs/STABILIZATION-B.md) para as verificações atuais. As entregas anteriores continuam registadas abaixo.
+
+> Atualização de 10/11/2026: consultar [Etapa A](docs/STABILIZATION-A.md) para o estado e os resultados atuais. As secções seguintes preservam o registo histórico das entregas anteriores.
+
 # Validação — Fundação 2.0
 
 Data: 8 de novembro de 2026 (Africa/Maputo).

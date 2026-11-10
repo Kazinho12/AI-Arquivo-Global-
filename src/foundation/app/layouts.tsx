@@ -1,3 +1,4 @@
+import { LocalDataTools } from "../features/local/LocalDataTools";
 import { AuthHeaderLinks } from "../features/auth/components";
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
@@ -184,6 +185,7 @@ function Workspace({
           )}
         </aside>
         <main id="conteudo" tabIndex={-1}>
+          {(name === "Estúdio" || name === "A tua conta") && <LocalDataTools />}
           <Outlet />
         </main>
       </div>

@@ -1,3 +1,9 @@
+import { Modal } from "../../components/ui";
+import {
+  localWarnings,
+  localPending,
+  useLocalRevision,
+} from "../local/persistence";
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -52,6 +58,8 @@ export function HybridProseEditor({
   onReorderChapters,
   onSelectChapter,
 }: HybridProseEditorProps) {
+  useLocalRevision();
+  const unsaved = localWarnings().length > 0;
   const [content, setContent] = useState(currentChapter.content || "");
   const [chapterTitle, setChapterTitle] = useState(currentChapter.title);
   const [distractionFree, setDistractionFree] = useState(false);
@@ -328,37 +336,35 @@ export function HybridProseEditor({
 
         {/* Delete Confirmation Modal */}
         {deleteConfirmId && (
-          <div className="modal-backdrop" role="dialog" aria-modal="true">
-            <div className="modal-content">
-              <h2>Eliminar capítulo?</h2>
-              <p className="mt-2 text-sm text-muted">
-                Esta ação removerá o capítulo e o seu texto durante esta sessão
-                de trabalho.
-              </p>
-              <div className="modal-actions mt-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setDeleteConfirmId(null)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="primary"
-                  className="bg-rose-600 hover:bg-rose-700"
-                  onClick={() => {
-                    onDeleteChapter(deleteConfirmId);
-                    setDeleteConfirmId(null);
-                  }}
-                >
-                  Sim, eliminar
-                </Button>
-              </div>
+          <Modal
+            open
+            onClose={() => setDeleteConfirmId(null)}
+            title="Eliminar capítulo?"
+          >
+            <p className="mt-2 text-sm text-muted">
+              Esta ação removerá o capítulo e o seu texto durante esta sessão de
+              trabalho.
+            </p>
+            <div className="modal-actions mt-4">
+              <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                className="bg-rose-600 hover:bg-rose-700"
+                onClick={() => {
+                  onDeleteChapter(deleteConfirmId);
+                  setDeleteConfirmId(null);
+                }}
+              >
+                Sim, eliminar
+              </Button>
             </div>
-          </div>
+          </Modal>
         )}
 
         {/* Main Content Area */}
-        <main className="editor-main-canvas">
+        <section aria-label="Área de edição" className="editor-main-canvas">
           {previewMode ? (
             /* Live ProseReader Preview */
             <div className="editor-live-preview-box">
@@ -511,7 +517,11 @@ export function HybridProseEditor({
 
                 <div className="saved-indicator font-mono text-xs">
                   <Check size={12} className="inline text-emerald-500 mr-1" />
-                  Rascunho local
+                  {unsaved
+                    ? "Alterações apenas em memória — exporta uma cópia"
+                    : localPending()
+                      ? "A guardar no dispositivo…"
+                      : "Rascunho local"}
                 </div>
               </div>
 
@@ -571,7 +581,7 @@ export function HybridProseEditor({
               </footer>
             </div>
           )}
-        </main>
+        </section>
       </div>
     </div>
   );

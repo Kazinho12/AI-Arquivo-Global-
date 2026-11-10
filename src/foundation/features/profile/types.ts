@@ -15,7 +15,7 @@ export interface ProfileFormValues {
 }
 
 export function validateUsername(username: string): string | null {
-  const trimmed = username.trim();
+  const trimmed = normalizeUsername(username);
   if (trimmed.length < 3) {
     return "O username deve conter pelo menos 3 caracteres.";
   }
@@ -45,3 +45,5 @@ export function validateBio(bio: string): string | null {
   }
   return null;
 }
+
+export const normalizeUsername = (value: string) => value.trim().toLowerCase();

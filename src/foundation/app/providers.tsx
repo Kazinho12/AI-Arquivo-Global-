@@ -1,3 +1,5 @@
+import { PreferenceEffects } from "../features/preferences/store";
+import { LocalDataBoundary } from "../features/local/LocalDataBoundary";
 import { AuthProvider } from "../features/auth/AuthProvider";
 import {
   createContext,
@@ -15,23 +17,32 @@ const ToastContext = createContext<(message: string) => void>(() => {});
 export const useTheme = () => useContext(ThemeContext);
 export const useToast = () => useContext(ToastContext);
 export function Providers({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [themeReady, setThemeReady] = useState(false);
+  useEffect(() => {
+    let stored: string | null = null;
     try {
-      const stored = localStorage.getItem("ag.v2.theme");
-      if (stored === "light" || stored === "dark") return stored;
+      stored = localStorage.getItem("ag.v2.theme");
     } catch {}
-    return matchMedia("(prefers-color-scheme: light)").matches
-      ? "light"
-      : "dark";
-  });
+    setTheme(
+      stored === "light" || stored === "dark"
+        ? stored
+        : typeof matchMedia !== "undefined" &&
+            matchMedia("(prefers-color-scheme: light)").matches
+          ? "light"
+          : "dark",
+    );
+    setThemeReady(true);
+  }, []);
   const [message, setMessage] = useState("");
   useEffect(() => {
+    if (!themeReady) return;
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
     try {
       localStorage.setItem("ag.v2.theme", theme);
     } catch {}
-  }, [theme]);
+  }, [theme, themeReady]);
   useEffect(() => {
     if (!message) return;
     const timer = setTimeout(() => setMessage(""), 5000);
@@ -45,7 +56,10 @@ export function Providers({ children }: { children: ReactNode }) {
       }}
     >
       <ToastContext.Provider value={setMessage}>
-        <AuthProvider>{children}</AuthProvider>
+        <PreferenceEffects />
+        <AuthProvider>
+          <LocalDataBoundary>{children}</LocalDataBoundary>
+        </AuthProvider>
         <div className="toast-region" role="status" aria-live="polite">
           {message && (
             <div className="toast">

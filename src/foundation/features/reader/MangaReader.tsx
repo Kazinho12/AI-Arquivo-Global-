@@ -1,3 +1,6 @@
+import { useReadingPreferences } from "../preferences/store";
+import { useReadingProgress, savedPosition } from "./progress";
+import { LocalImage } from "../local/images";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -14,6 +17,7 @@ import type { Chapter, VisualReaderPreferences } from "./types";
 import { Button } from "../../components/ui";
 
 interface MangaReaderProps {
+  trackProgress?: boolean;
   workId: string;
   workTitle: string;
   author: string;
@@ -27,44 +31,33 @@ export function MangaReader({
   author,
   chapters,
   currentChapter,
+  trackProgress = false,
 }: MangaReaderProps) {
   const pages = currentChapter.pages || [];
 
-  const [prefs, setPrefs] = useState<VisualReaderPreferences>(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
-      return {
-        fitMode: "height",
-        direction: "rtl", // Default for Manga
-        viewMode: "single",
-        zoom: 100,
-      };
-    }
-    try {
-      const saved = localStorage.getItem("ag_reader_manga_prefs");
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    return {
-      fitMode: "height",
-      direction: "rtl",
-      viewMode: "single",
-      zoom: 100,
-    };
+  const [prefs, setPrefs] = useReadingPreferences("manga");
+
+  const [currentPageIndex, setCurrentPageIndex] = useState(() =>
+    Math.min(
+      Math.max(0, pages.length - 1),
+      Math.floor(savedPosition(workId, currentChapter.id) * pages.length),
+    ),
+  );
+  const reading = useReadingProgress({
+    workId,
+    workTitle,
+    author,
+    chapters,
+    currentChapter,
+    mode: "manga",
+    enabled: trackProgress,
+    pageIndex: currentPageIndex,
+    vertical: prefs.viewMode === "vertical",
+    onVisiblePage: setCurrentPageIndex,
   });
-
-  const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [distractionFree, setDistractionFree] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined")
-      return;
-    try {
-      localStorage.setItem("ag_reader_manga_prefs", JSON.stringify(prefs));
-    } catch {
-      // ignore
-    }
-  }, [prefs]);
+  const distractionFree = prefs.distractionFree;
+  const setDistractionFree = (value: boolean) =>
+    setPrefs({ ...prefs, distractionFree: value });
 
   // Handle navigation in RTL mode vs LTR mode
   // In RTL mode:
@@ -105,6 +98,11 @@ export function MangaReader({
 
   return (
     <div
+      ref={reading.root}
+      data-reading-size={prefs.fontSize}
+      data-reading-family={prefs.fontFamily}
+      data-reading-measure={prefs.measure}
+      data-reading-theme={prefs.theme}
       className={`manga-reader-container ${
         distractionFree ? "distraction-free" : ""
       }`}
@@ -223,7 +221,7 @@ export function MangaReader({
 
                 <div className="manga-illustration-art">
                   {currentPage.imageUrl ? (
-                    <img
+                    <LocalImage
                       src={currentPage.imageUrl}
                       alt={currentPage.title}
                       className="manga-plate-img max-h-[500px] object-contain w-full rounded"
@@ -310,6 +308,7 @@ export function MangaReader({
           <div className="manga-vertical-stream">
             {pages.map((p) => (
               <article
+                data-reader-page
                 key={p.id}
                 className="manga-illustrated-plate vertical-item"
                 style={{ backgroundColor: p.accentColor }}
@@ -322,7 +321,7 @@ export function MangaReader({
 
                 <div className="manga-illustration-art">
                   {p.imageUrl ? (
-                    <img
+                    <LocalImage
                       src={p.imageUrl}
                       alt={p.title}
                       className="manga-plate-img max-h-[500px] object-contain w-full rounded"
@@ -346,6 +345,11 @@ export function MangaReader({
         </div>
       )}
 
+      {trackProgress && (
+        <Button variant="secondary" onClick={reading.complete}>
+          Marcar capítulo como lido
+        </Button>
+      )}
       {/* Reader Footer */}
       <footer className="manga-reader-footer" dir="ltr">
         <Link to={`/obras/${workId}`} className="text-link">

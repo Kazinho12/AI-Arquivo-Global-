@@ -1,3 +1,6 @@
+import { Modal } from "../components/ui";
+import { storeImage, LocalImage } from "../features/local/images";
+import { currentScope } from "../features/local/persistence";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
@@ -910,6 +913,7 @@ export function WorkManagePage() {
             variant="secondary"
             onClick={handleDuplicate}
             title="Duplicar obra"
+            aria-label="Duplicar obra"
           >
             <Copy size={15} /> Duplicar
           </Button>
@@ -918,6 +922,7 @@ export function WorkManagePage() {
             variant="ghost"
             onClick={() => store.archiveWork(work.id)}
             title="Arquivar ou desarquivar obra"
+            aria-label="Arquivar ou desarquivar obra"
           >
             <Archive size={15} />{" "}
             {work.status === "archived" ? "Desarquivar" : "Arquivar"}
@@ -928,6 +933,7 @@ export function WorkManagePage() {
             className="text-rose-500 hover:text-rose-600"
             onClick={() => setDeleteConfirm(true)}
             title="Eliminar obra"
+            aria-label="Eliminar obra"
           >
             <Trash2 size={15} /> Eliminar
           </Button>
@@ -936,27 +942,28 @@ export function WorkManagePage() {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true">
-          <div className="modal-content">
-            <h2>Eliminar a obra "{work.title}"?</h2>
-            <p className="mt-2 text-sm text-muted">
-              Esta ação removerá a obra e todos os seus capítulos/páginas
-              durante a sessão.
-            </p>
-            <div className="modal-actions mt-4">
-              <Button variant="ghost" onClick={() => setDeleteConfirm(false)}>
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                className="bg-rose-600 hover:bg-rose-700"
-                onClick={handleDelete}
-              >
-                Sim, eliminar obra
-              </Button>
-            </div>
+        <Modal
+          open
+          onClose={() => setDeleteConfirm(false)}
+          title={`Eliminar a obra "${work.title}"?`}
+        >
+          <p className="mt-2 text-sm text-muted">
+            Esta ação removerá a obra e todos os seus capítulos/páginas durante
+            a sessão.
+          </p>
+          <div className="modal-actions mt-4">
+            <Button variant="ghost" onClick={() => setDeleteConfirm(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              className="bg-rose-600 hover:bg-rose-700"
+              onClick={handleDelete}
+            >
+              Sim, eliminar obra
+            </Button>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Chapters / Structure Section */}
@@ -1067,10 +1074,9 @@ export function ChapterEditPage() {
   const navigate = useNavigate();
 
   const work = works.find((w) => w.id === id);
-  if (!work) return <NotFound />;
+  if (!work || !["prose", "poetry"].includes(work.mode)) return <NotFound />;
 
-  const currentChapter =
-    work.chapters.find((c) => c.id === capituloId) || work.chapters[0];
+  const currentChapter = work.chapters.find((c) => c.id === capituloId);
   if (!currentChapter) return <NotFound />;
 
   const handleUpdate = (chapId: string, partial: any) => {
@@ -1147,10 +1153,9 @@ export function PagesEditPage() {
   const navigate = useNavigate();
 
   const work = works.find((w) => w.id === id);
-  if (!work) return <NotFound />;
+  if (!work || !["comic", "manga"].includes(work.mode)) return <NotFound />;
 
-  const currentChapter =
-    work.chapters.find((c) => c.id === capituloId) || work.chapters[0];
+  const currentChapter = work.chapters.find((c) => c.id === capituloId);
   if (!currentChapter) return <NotFound />;
 
   const handleAddPage = (pageData?: any) => {
@@ -1298,30 +1303,31 @@ export function PublicationsPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteId && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true">
-          <div className="modal-content">
-            <h2>Eliminar esta obra?</h2>
-            <p className="mt-2 text-sm text-muted">
-              Esta ação removerá a obra do teu Estúdio durante esta sessão de
-              trabalho.
-            </p>
-            <div className="modal-actions mt-4">
-              <Button variant="ghost" onClick={() => setDeleteId(null)}>
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                className="bg-rose-600 hover:bg-rose-700"
-                onClick={() => {
-                  store.deleteWork(deleteId);
-                  setDeleteId(null);
-                }}
-              >
-                Sim, eliminar
-              </Button>
-            </div>
+        <Modal
+          open
+          onClose={() => setDeleteId(null)}
+          title="Eliminar esta obra?"
+        >
+          <p className="mt-2 text-sm text-muted">
+            Esta ação removerá a obra do teu Estúdio durante esta sessão de
+            trabalho.
+          </p>
+          <div className="modal-actions mt-4">
+            <Button variant="ghost" onClick={() => setDeleteId(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              className="bg-rose-600 hover:bg-rose-700"
+              onClick={() => {
+                store.deleteWork(deleteId);
+                setDeleteId(null);
+              }}
+            >
+              Sim, eliminar
+            </Button>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Results */}
@@ -1392,6 +1398,7 @@ export function PublicationsPage() {
                     variant="ghost"
                     onClick={() => store.duplicateWork(work.id)}
                     title="Duplicar"
+                    aria-label="Duplicar"
                   >
                     <Copy size={14} />
                   </Button>
@@ -1400,6 +1407,7 @@ export function PublicationsPage() {
                     className="text-rose-500"
                     onClick={() => setDeleteId(work.id)}
                     title="Eliminar"
+                    aria-label="Eliminar"
                   >
                     <Trash2 size={14} />
                   </Button>
@@ -1474,6 +1482,7 @@ export function PublicationsPage() {
                           variant="ghost"
                           onClick={() => store.duplicateWork(work.id)}
                           title="Duplicar"
+                          aria-label="Duplicar"
                         >
                           <Copy size={13} />
                         </Button>
@@ -1482,6 +1491,7 @@ export function PublicationsPage() {
                           className="text-rose-500"
                           onClick={() => setDeleteId(work.id)}
                           title="Eliminar"
+                          aria-label="Eliminar"
                         >
                           <Trash2 size={13} />
                         </Button>
@@ -1615,21 +1625,32 @@ export function MediaLibraryPage() {
   const { media, store } = useStudio();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUploadLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadError, setUploadError] = useState("");
+  const handleUploadLocal = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || typeof window === "undefined" || !window.URL) return;
-
-    const objUrl = window.URL.createObjectURL(file);
-    const sizeKb = Math.round(file.size / 1024);
-
-    store.addMediaItem({
-      name: file.name,
-      type: "illustration",
-      url: objUrl,
-      size: `${sizeKb} KB`,
-      dimensions: "Personalizada",
-      isLocalObjectUrl: true,
-    });
+    e.target.value = "";
+    if (!file) return;
+    const owner = currentScope();
+    try {
+      const image = await storeImage(file, owner);
+      if (owner !== currentScope()) return;
+      store.addMediaItem({
+        name: file.name,
+        type: "illustration",
+        url: image.reference,
+        size: `${Math.round(file.size / 1024)} KB`,
+        dimensions: "Personalizada",
+      });
+      setUploadError(
+        image.persisted
+          ? ""
+          : "Imagem apenas em memória. Exporta uma cópia antes de sair.",
+      );
+    } catch (error) {
+      setUploadError(
+        error instanceof Error ? error.message : "Falha ao guardar imagem.",
+      );
+    }
   };
 
   return (
@@ -1665,12 +1686,13 @@ export function MediaLibraryPage() {
       <div className="form-info-callout mb-4">
         <Info size={16} />
         <span>
-          As imagens carregadas através do teu computador permanecem ativas
-          apenas na memória da sessão local. A integração remota com o
-          Cloudflare R2 será implementada na respetiva fase.
+          As imagens são guardadas neste dispositivo através de IndexedDB. Não
+          há sincronização remota. Exporta uma cópia de segurança; se a gravação
+          falhar, a imagem ficará apenas em memória.
         </span>
       </div>
 
+      {uploadError && <p role="alert">{uploadError}</p>}
       {media.length === 0 ? (
         <div className="studio-empty-state">
           <Upload size={40} className="empty-icon" />
@@ -1682,8 +1704,9 @@ export function MediaLibraryPage() {
           {media.map((item) => (
             <article key={item.id} className="media-card">
               <div className="media-preview-box">
-                {item.isLocalObjectUrl ? (
-                  <img
+                {item.url.startsWith("local-image:") ||
+                item.isLocalObjectUrl ? (
+                  <LocalImage
                     src={item.url}
                     alt={item.name}
                     className="media-thumb-img"

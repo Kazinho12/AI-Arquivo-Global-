@@ -1,3 +1,8 @@
+import {
+  useValidatedItems,
+  validComments,
+  validReviews,
+} from "../features/local/items";
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -30,17 +35,21 @@ export function LiteraryReaderPage() {
     work?.author,
   );
 
-  const currentChapter =
-    readingData.chapters.find((c) => c.id === capituloId) ||
-    readingData.chapters[0];
+  const currentChapter = readingData?.chapters.find((c) => c.id === capituloId);
 
-  if (!currentChapter) {
+  if (
+    !readingData ||
+    !currentChapter ||
+    !["prose", "poetry"].includes(readingData.mode)
+  ) {
     return <NotFound />;
   }
 
   if (readingData.mode === "poetry") {
     return (
       <PoetryReader
+        key={`${id}:${capituloId}`}
+        trackProgress
         workId={readingData.workId}
         workTitle={readingData.title}
         author={readingData.author}
@@ -52,6 +61,8 @@ export function LiteraryReaderPage() {
 
   return (
     <ProseReader
+      key={`${id}:${capituloId}`}
+      trackProgress
       workId={readingData.workId}
       workTitle={readingData.title}
       author={readingData.author}
@@ -73,17 +84,21 @@ export function VisualReaderPage() {
     work?.author,
   );
 
-  const currentChapter =
-    readingData.chapters.find((c) => c.id === capituloId) ||
-    readingData.chapters[0];
+  const currentChapter = readingData?.chapters.find((c) => c.id === capituloId);
 
-  if (!currentChapter) {
+  if (
+    !readingData ||
+    !currentChapter ||
+    !["comic", "manga"].includes(readingData.mode)
+  ) {
     return <NotFound />;
   }
 
   if (readingData.mode === "manga") {
     return (
       <MangaReader
+        key={`${id}:${capituloId}`}
+        trackProgress
         workId={readingData.workId}
         workTitle={readingData.title}
         author={readingData.author}
@@ -95,6 +110,8 @@ export function VisualReaderPage() {
 
   return (
     <ComicReader
+      key={`${id}:${capituloId}`}
+      trackProgress
       workId={readingData.workId}
       workTitle={readingData.title}
       author={readingData.author}
@@ -152,34 +169,30 @@ const initialDemoComments: Record<string, CommentItem[]> = {
 // 3. Comments Page: /obras/:id/comentarios
 export function CommentsPage() {
   const { id } = useParams<{ id: string }>();
+  return worksRepository.find(id ?? "") ? (
+    <CommentsForWork key={id} />
+  ) : (
+    <NotFound />
+  );
+}
+function CommentsForWork() {
+  const { id } = useParams<{ id: string }>();
   const work = worksRepository.find(id ?? "");
 
-  const [comments, setComments] = useState<CommentItem[]>(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
-      return initialDemoComments[id ?? ""] || [];
-    }
-    try {
-      const stored = localStorage.getItem(`ag_comments_${id}`);
-      if (stored) return JSON.parse(stored);
-    } catch {
-      // ignore
-    }
-    return initialDemoComments[id ?? ""] || [];
-  });
+  const {
+    items: comments,
+    setItems: setComments,
+    warning,
+    exportCopy,
+  } = useValidatedItems<CommentItem>(
+    `ag_comments_${id}`,
+    initialDemoComments[id ?? ""] ?? [],
+    validComments,
+  );
 
   const [newComment, setNewComment] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined")
-      return;
-    try {
-      localStorage.setItem(`ag_comments_${id}`, JSON.stringify(comments));
-    } catch {
-      // ignore
-    }
-  }, [comments, id]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,6 +235,14 @@ export function CommentsPage() {
 
   return (
     <div className="container comments-container">
+      {warning && (
+        <p role="alert">
+          {warning}
+          <Button variant="ghost" onClick={exportCopy}>
+            Exportar uma cópia
+          </Button>
+        </p>
+      )}
       <nav className="comments-nav" aria-label="Navegação dos comentários">
         <Link to={`/obras/${id}`} className="text-link">
           <ArrowLeft size={15} className="inline mr-1" /> Voltar à obra
@@ -404,35 +425,31 @@ const initialDemoReviews: Record<string, ReviewItem[]> = {
 
 export function ReviewsPage() {
   const { id } = useParams<{ id: string }>();
+  return worksRepository.find(id ?? "") ? (
+    <ReviewsForWork key={id} />
+  ) : (
+    <NotFound />
+  );
+}
+function ReviewsForWork() {
+  const { id } = useParams<{ id: string }>();
   const work = worksRepository.find(id ?? "");
 
-  const [reviews, setReviews] = useState<ReviewItem[]>(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
-      return initialDemoReviews[id ?? ""] || [];
-    }
-    try {
-      const stored = localStorage.getItem(`ag_reviews_${id}`);
-      if (stored) return JSON.parse(stored);
-    } catch {
-      // ignore
-    }
-    return initialDemoReviews[id ?? ""] || [];
-  });
+  const {
+    items: reviews,
+    setItems: setReviews,
+    warning,
+    exportCopy,
+  } = useValidatedItems<ReviewItem>(
+    `ag_reviews_${id}`,
+    initialDemoReviews[id ?? ""] ?? [],
+    validReviews,
+  );
 
   const [headline, setHeadline] = useState("");
   const [body, setBody] = useState("");
   const [reviewerName, setReviewerName] = useState("");
   const [recommend, setRecommend] = useState(true);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined")
-      return;
-    try {
-      localStorage.setItem(`ag_reviews_${id}`, JSON.stringify(reviews));
-    } catch {
-      // ignore
-    }
-  }, [reviews, id]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -466,6 +483,14 @@ export function ReviewsPage() {
 
   return (
     <div className="container reviews-container">
+      {warning && (
+        <p role="alert">
+          {warning}
+          <Button variant="ghost" onClick={exportCopy}>
+            Exportar uma cópia
+          </Button>
+        </p>
+      )}
       <nav className="comments-nav" aria-label="Navegação das avaliações">
         <Link to={`/obras/${id}`} className="text-link">
           <ArrowLeft size={15} className="inline mr-1" /> Voltar à obra

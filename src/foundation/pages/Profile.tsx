@@ -58,7 +58,7 @@ export function PublicProfilePage() {
   const [works, setWorks] = useState<Work[]>(() => {
     if (!username) return [];
     const initial = resolveDemoProfile(username.toLowerCase());
-    return initial ? findAuthorWorks(initial.displayName) : [];
+    return initial ? findAuthorWorks(initial.id) : [];
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export function PublicProfilePage() {
           setError(res.error);
         }
         if (res.profile) {
-          const authorWorks = findAuthorWorks(res.profile.displayName);
+          const authorWorks = findAuthorWorks(res.profile.id);
           setWorks(authorWorks);
         } else {
           setWorks([]);
@@ -153,8 +153,7 @@ export function PublicProfilePage() {
   const isOwner =
     authState.status === "authenticated" &&
     authState.user &&
-    (authState.user.id === profile.id ||
-      authState.user.user_metadata?.username === profile.username);
+    authState.user.id === profile.id;
 
   return (
     <div className="container profile-page">

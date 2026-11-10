@@ -58,20 +58,20 @@ function renderComponent(node: React.ReactNode): Promise<string> {
 }
 
 test("reader: getWorkReadingData returns correct mode and chapters for known works", () => {
-  const atlas = getWorkReadingData("atlas-das-mares");
+  const atlas = getWorkReadingData("atlas-das-mares")!;
   assert.equal(atlas.mode, "prose");
   assert.equal(atlas.chapters.length, 3);
   assert.equal(atlas.chapters[0].title, "A carta náutica sem nome");
 
-  const silencio = getWorkReadingData("silencio-orbita");
+  const silencio = getWorkReadingData("silencio-orbita")!;
   assert.equal(silencio.mode, "poetry");
   assert.ok(silencio.chapters[0].stanzas);
 
-  const cidade = getWorkReadingData("cidade-entre-linhas");
+  const cidade = getWorkReadingData("cidade-entre-linhas")!;
   assert.equal(cidade.mode, "comic");
   assert.ok(cidade.chapters[0].pages);
 
-  const jardim = getWorkReadingData("jardim-lua");
+  const jardim = getWorkReadingData("jardim-lua")!;
   assert.equal(jardim.mode, "manga");
   assert.ok(jardim.chapters[0].pages);
 });

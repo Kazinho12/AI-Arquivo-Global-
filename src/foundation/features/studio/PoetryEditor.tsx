@@ -1,3 +1,9 @@
+import { Modal } from "../../components/ui";
+import {
+  localWarnings,
+  localPending,
+  useLocalRevision,
+} from "../local/persistence";
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -41,6 +47,8 @@ export function PoetryEditor({
   onReorderChapters,
   onSelectChapter,
 }: PoetryEditorProps) {
+  useLocalRevision();
+  const unsaved = localWarnings().length > 0;
   // Convert stanzas (string[][]) into text separated by double newlines for editing while preserving lines
   const initialText = currentChapter.stanzas
     ? currentChapter.stanzas.map((stanza) => stanza.join("\n")).join("\n\n")
@@ -50,7 +58,11 @@ export function PoetryEditor({
   const [poemTitle, setPoemTitle] = useState(currentChapter.title);
   const [previewMode, setPreviewMode] = useState(false);
   const [distractionFree, setDistractionFree] = useState(false);
-  const [alignCenter, setAlignCenter] = useState(false);
+  const alignCenter = currentChapter.alignment === "center";
+  const setAlignCenter = (value: boolean) =>
+    onUpdateChapter(currentChapter.id, {
+      alignment: value ? "center" : "left",
+    });
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -221,6 +233,7 @@ export function PoetryEditor({
                       disabled={idx === 0}
                       onClick={() => moveChapter("up", idx)}
                       title="Mover para cima"
+                      aria-label="Mover para cima"
                     >
                       <ChevronUp size={13} />
                     </button>
@@ -229,6 +242,7 @@ export function PoetryEditor({
                       disabled={idx === work.chapters.length - 1}
                       onClick={() => moveChapter("down", idx)}
                       title="Mover para baixo"
+                      aria-label="Mover para baixo"
                     >
                       <ChevronDown size={13} />
                     </button>
@@ -236,6 +250,7 @@ export function PoetryEditor({
                       type="button"
                       onClick={() => onDuplicateChapter(chap.id)}
                       title="Duplicar poema"
+                      aria-label="Duplicar poema"
                     >
                       <Copy size={13} />
                     </button>
@@ -245,6 +260,7 @@ export function PoetryEditor({
                         onClick={() => setDeleteConfirmId(chap.id)}
                         className="text-danger"
                         title="Eliminar poema"
+                        aria-label="Eliminar poema"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -258,36 +274,34 @@ export function PoetryEditor({
 
         {/* Delete Confirmation Modal */}
         {deleteConfirmId && (
-          <div className="modal-backdrop" role="dialog" aria-modal="true">
-            <div className="modal-content">
-              <h2>Eliminar poema?</h2>
-              <p className="mt-2 text-sm text-muted">
-                Esta ação removerá o poema durante esta sessão de edição.
-              </p>
-              <div className="modal-actions mt-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setDeleteConfirmId(null)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="primary"
-                  className="bg-rose-600 hover:bg-rose-700"
-                  onClick={() => {
-                    onDeleteChapter(deleteConfirmId);
-                    setDeleteConfirmId(null);
-                  }}
-                >
-                  Sim, eliminar
-                </Button>
-              </div>
+          <Modal
+            open
+            onClose={() => setDeleteConfirmId(null)}
+            title="Eliminar poema?"
+          >
+            <p className="mt-2 text-sm text-muted">
+              Esta ação removerá o poema durante esta sessão de edição.
+            </p>
+            <div className="modal-actions mt-4">
+              <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                className="bg-rose-600 hover:bg-rose-700"
+                onClick={() => {
+                  onDeleteChapter(deleteConfirmId);
+                  setDeleteConfirmId(null);
+                }}
+              >
+                Sim, eliminar
+              </Button>
             </div>
-          </div>
+          </Modal>
         )}
 
         {/* Poetry Composition Pane */}
-        <main className="editor-main-canvas">
+        <section aria-label="Área de edição" className="editor-main-canvas">
           {previewMode ? (
             <div className="editor-live-preview-box">
               <div className="preview-indicator-bar">
@@ -353,7 +367,11 @@ export function PoetryEditor({
 
                 <div className="saved-indicator font-mono text-xs">
                   <Check size={12} className="inline text-emerald-500 mr-1" />
-                  Rascunho local
+                  {unsaved
+                    ? "Alterações apenas em memória — exporta uma cópia"
+                    : localPending()
+                      ? "A guardar no dispositivo…"
+                      : "Rascunho local"}
                 </div>
               </div>
 
@@ -413,7 +431,7 @@ export function PoetryEditor({
               </footer>
             </div>
           )}
-        </main>
+        </section>
       </div>
     </div>
   );

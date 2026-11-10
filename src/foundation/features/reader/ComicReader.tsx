@@ -1,3 +1,6 @@
+import { useReadingPreferences } from "../preferences/store";
+import { useReadingProgress, savedPosition } from "./progress";
+import { LocalImage } from "../local/images";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -15,6 +18,7 @@ import type { Chapter, VisualReaderPreferences } from "./types";
 import { Button } from "../../components/ui";
 
 interface ComicReaderProps {
+  trackProgress?: boolean;
   workId: string;
   workTitle: string;
   author: string;
@@ -28,44 +32,33 @@ export function ComicReader({
   author,
   chapters,
   currentChapter,
+  trackProgress = false,
 }: ComicReaderProps) {
   const pages = currentChapter.pages || [];
 
-  const [prefs, setPrefs] = useState<VisualReaderPreferences>(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
-      return {
-        fitMode: "width",
-        direction: "ltr",
-        viewMode: "single",
-        zoom: 100,
-      };
-    }
-    try {
-      const saved = localStorage.getItem("ag_reader_comic_prefs");
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    return {
-      fitMode: "width",
-      direction: "ltr",
-      viewMode: "single",
-      zoom: 100,
-    };
+  const [prefs, setPrefs] = useReadingPreferences("comic");
+
+  const [currentPageIndex, setCurrentPageIndex] = useState(() =>
+    Math.min(
+      Math.max(0, pages.length - 1),
+      Math.floor(savedPosition(workId, currentChapter.id) * pages.length),
+    ),
+  );
+  const reading = useReadingProgress({
+    workId,
+    workTitle,
+    author,
+    chapters,
+    currentChapter,
+    mode: "comic",
+    enabled: trackProgress,
+    pageIndex: currentPageIndex,
+    vertical: prefs.viewMode === "vertical",
+    onVisiblePage: setCurrentPageIndex,
   });
-
-  const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [distractionFree, setDistractionFree] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined")
-      return;
-    try {
-      localStorage.setItem("ag_reader_comic_prefs", JSON.stringify(prefs));
-    } catch {
-      // ignore
-    }
-  }, [prefs]);
+  const distractionFree = prefs.distractionFree;
+  const setDistractionFree = (value: boolean) =>
+    setPrefs({ ...prefs, distractionFree: value });
 
   // Keyboard navigation
   useEffect(() => {
@@ -94,6 +87,11 @@ export function ComicReader({
 
   return (
     <div
+      ref={reading.root}
+      data-reading-size={prefs.fontSize}
+      data-reading-family={prefs.fontFamily}
+      data-reading-measure={prefs.measure}
+      data-reading-theme={prefs.theme}
       className={`comic-reader-container ${
         distractionFree ? "distraction-free" : ""
       }`}
@@ -216,7 +214,7 @@ export function ComicReader({
 
                 <div className="comic-plate-illustration-mock">
                   {currentPage.imageUrl ? (
-                    <img
+                    <LocalImage
                       src={currentPage.imageUrl}
                       alt={currentPage.title}
                       className="comic-plate-img max-h-[500px] object-contain w-full rounded"
@@ -287,6 +285,7 @@ export function ComicReader({
           >
             {pages.map((p) => (
               <article
+                data-reader-page
                 key={p.id}
                 className="comic-illustrated-plate vertical-item"
                 style={{ backgroundColor: p.accentColor }}
@@ -299,7 +298,7 @@ export function ComicReader({
 
                 <div className="comic-plate-illustration-mock">
                   {p.imageUrl ? (
-                    <img
+                    <LocalImage
                       src={p.imageUrl}
                       alt={p.title}
                       className="comic-plate-img max-h-[500px] object-contain w-full rounded"
@@ -323,6 +322,11 @@ export function ComicReader({
         </div>
       )}
 
+      {trackProgress && (
+        <Button variant="secondary" onClick={reading.complete}>
+          Marcar capítulo como lido
+        </Button>
+      )}
       {/* Reader Footer */}
       <footer className="comic-reader-footer">
         <Link to={`/obras/${workId}`} className="text-link">

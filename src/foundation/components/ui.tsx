@@ -192,15 +192,43 @@ export function Modal({
   const ref = useRef<HTMLDialogElement>(null);
   const id = useId();
   useEffect(() => {
+    const opener =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     const dialog = ref.current;
     if (!dialog) return;
     if (open && !dialog.open) dialog.showModal();
     else if (!open && dialog.open) dialog.close();
+    return () => {
+      if (dialog.open) dialog.close();
+      if (open && opener?.isConnected) opener.focus();
+    };
   }, [open]);
   return (
     <dialog
       ref={ref}
       aria-labelledby={id}
+      onKeyDown={(event) => {
+        if (event.key !== "Tab") return;
+        const elements = [
+          ...event.currentTarget.querySelectorAll<HTMLElement>(
+            "button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]",
+          ),
+        ].filter(
+          (element) =>
+            element.tabIndex >= 0 && element.getClientRects().length > 0,
+        );
+        const first = elements[0],
+          last = elements.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }}
       onCancel={onClose}
       onClose={onClose}
       onClick={(e) => {

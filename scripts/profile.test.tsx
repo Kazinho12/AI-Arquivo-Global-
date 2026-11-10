@@ -66,12 +66,12 @@ test("profile: bio validation allows up to 500 characters", () => {
 });
 
 test("profile: findAuthorWorks associates published works to author correctly", () => {
-  const liaWorks = findAuthorWorks("Lia Mavume");
+  const liaWorks = findAuthorWorks("demo-lia-mavume");
   assert.ok(liaWorks.length > 0);
   assert.equal(liaWorks[0].title, "Atlas das marés esquecidas");
 
   // Slugified search
-  const tomasWorks = findAuthorWorks("tomas-nilo");
+  const tomasWorks = findAuthorWorks("demo-tomas-nilo");
   assert.ok(tomasWorks.length > 0);
   assert.equal(tomasWorks[0].title, "A cidade entre linhas");
 

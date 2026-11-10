@@ -1,3 +1,6 @@
+import { Modal } from "../../components/ui";
+import { storeImage, LocalImage } from "../local/images";
+import { currentScope } from "../local/persistence";
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -50,7 +53,7 @@ export function VisualSequencer({
 
   // File input ref for local image selection
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const createdUrlsRef = useRef<string[]>([]);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     if (pages.length > 0 && !pages.some((p) => p.id === selectedPageId)) {
@@ -58,34 +61,32 @@ export function VisualSequencer({
     }
   }, [pages, selectedPageId]);
 
-  // Clean up object URLs on unmount
-  useEffect(() => {
-    return () => {
-      if (typeof window !== "undefined" && window.URL) {
-        createdUrlsRef.current.forEach((url) => {
-          try {
-            window.URL.revokeObjectURL(url);
-          } catch {
-            // ignore
-          }
-        });
-      }
-    };
-  }, []);
-
   const selectedPage = pages.find((p) => p.id === selectedPageId) || pages[0];
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file || !selectedPage) return;
-
-    if (typeof window !== "undefined" && window.URL) {
-      const objUrl = window.URL.createObjectURL(file);
-      createdUrlsRef.current.push(objUrl);
-      onUpdatePage(selectedPage.id, {
-        imageUrl: objUrl,
+    const owner = currentScope();
+    const targetId = selectedPage.id;
+    try {
+      const image = await storeImage(file, owner);
+      if (owner !== currentScope()) return;
+      onUpdatePage(targetId, {
+        imageUrl: image.reference,
         title: file.name.replace(/\.[^/.]+$/, ""),
       });
+      setUploadError(
+        image.persisted
+          ? ""
+          : "Imagem apenas em memória. Exporta uma cópia antes de sair.",
+      );
+    } catch (error) {
+      setUploadError(
+        error instanceof Error ? error.message : "Falha ao guardar imagem.",
+      );
     }
   };
 
@@ -104,6 +105,7 @@ export function VisualSequencer({
 
   return (
     <div className="visual-sequencer-root">
+      {uploadError && <p role="alert">{uploadError}</p>}
       {/* Top Bar */}
       <header className="editor-top-bar">
         <div className="editor-top-left">
@@ -218,33 +220,39 @@ export function VisualSequencer({
                   className={`sequencer-thumb-card ${
                     p.id === selectedPage?.id ? "selected" : ""
                   }`}
-                  onClick={() => setSelectedPageId(p.id)}
                   dir="ltr"
                 >
-                  <div
-                    className="thumb-visual-frame"
-                    style={{ backgroundColor: p.accentColor }}
+                  <button
+                    type="button"
+                    className="thumb-select"
+                    aria-label={`Selecionar prancha ${p.number}: ${p.title}`}
+                    aria-pressed={p.id === selectedPage?.id}
+                    onClick={() => setSelectedPageId(p.id)}
                   >
-                    {p.imageUrl ? (
-                      <img
-                        src={p.imageUrl}
-                        alt={p.title}
-                        className="thumb-image"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="thumb-placeholder-text">
-                        <ImageIcon size={24} className="opacity-40 mb-1" />
-                        <span className="text-xs opacity-75">
-                          Prancha gráfica
-                        </span>
-                      </div>
-                    )}
-                    <span className="thumb-index-badge font-mono">
-                      {isManga ? `【頁 ${idx + 1}】` : `Pág. ${idx + 1}`}
-                    </span>
-                  </div>
-
+                    <div
+                      className="thumb-visual-frame"
+                      style={{ backgroundColor: p.accentColor }}
+                    >
+                      {p.imageUrl ? (
+                        <LocalImage
+                          src={p.imageUrl}
+                          alt={p.title}
+                          className="thumb-image"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="thumb-placeholder-text">
+                          <ImageIcon size={24} className="opacity-40 mb-1" />
+                          <span className="text-xs opacity-75">
+                            Prancha gráfica
+                          </span>
+                        </div>
+                      )}
+                      <span className="thumb-index-badge font-mono">
+                        {isManga ? `【頁 ${idx + 1}】` : `Pág. ${idx + 1}`}
+                      </span>
+                    </div>
+                  </button>
                   <div className="thumb-card-body">
                     <span className="thumb-card-title truncate">{p.title}</span>
                     <div className="thumb-card-controls">
@@ -295,33 +303,34 @@ export function VisualSequencer({
 
           {/* Delete Page Modal */}
           {deleteConfirmId && (
-            <div className="modal-backdrop" role="dialog" aria-modal="true">
-              <div className="modal-content">
-                <h2>Eliminar esta prancha?</h2>
-                <p className="mt-2 text-sm text-muted">
-                  A página será removida da sequência deste capítulo durante
-                  esta sessão.
-                </p>
-                <div className="modal-actions mt-4">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setDeleteConfirmId(null)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    variant="primary"
-                    className="bg-rose-600 hover:bg-rose-700"
-                    onClick={() => {
-                      onDeletePage(deleteConfirmId);
-                      setDeleteConfirmId(null);
-                    }}
-                  >
-                    Sim, eliminar
-                  </Button>
-                </div>
+            <Modal
+              open
+              onClose={() => setDeleteConfirmId(null)}
+              title="Eliminar esta prancha?"
+            >
+              <p className="mt-2 text-sm text-muted">
+                A página será removida da sequência deste capítulo durante esta
+                sessão.
+              </p>
+              <div className="modal-actions mt-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => setDeleteConfirmId(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="primary"
+                  className="bg-rose-600 hover:bg-rose-700"
+                  onClick={() => {
+                    onDeletePage(deleteConfirmId);
+                    setDeleteConfirmId(null);
+                  }}
+                >
+                  Sim, eliminar
+                </Button>
               </div>
-            </div>
+            </Modal>
           )}
 
           {/* Selected Page Editor Panel */}
@@ -346,6 +355,7 @@ export function VisualSequencer({
                     variant="secondary"
                     onClick={() => fileInputRef.current?.click()}
                     title="Carregar imagem do teu dispositivo para pré-visualização local"
+                    aria-label="Carregar imagem do teu dispositivo para pré-visualização local"
                   >
                     <Upload size={14} className="inline mr-1" /> Carregar imagem
                     local
@@ -444,7 +454,7 @@ export function VisualSequencer({
                     style={{ backgroundColor: selectedPage.accentColor }}
                   >
                     {selectedPage.imageUrl ? (
-                      <img
+                      <LocalImage
                         src={selectedPage.imageUrl}
                         alt={selectedPage.title}
                         className="detail-preview-img"
@@ -470,8 +480,8 @@ export function VisualSequencer({
                     )}
                   </div>
                   <small className="text-muted block text-center mt-2 text-xs">
-                    As imagens locais permanecem apenas na memória do navegador
-                    durante a sessão.
+                    As imagens são guardadas neste dispositivo. Exporta uma
+                    cópia para as recuperar noutro dispositivo.
                   </small>
                 </div>
               </div>

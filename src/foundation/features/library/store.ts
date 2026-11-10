@@ -1,4 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { localId } from "../local/id";
+import {
+  bindScope,
+  useLocalCollection,
+  notifyLocal,
+  currentScope,
+  readLocal,
+  registerLocal,
+  useLocalRevision,
+  writeLocal,
+} from "../local/persistence";
+import { validCollection } from "../local/validation";
 import type { LibraryEntry, ReadingList } from "./types";
 
 const STORAGE_KEY_ENTRIES = "ag_library_entries_v1";
@@ -91,68 +102,20 @@ const initialSeedLists: ReadingList[] = [
   },
 ];
 
-// Helper to notify listeners within the same tab
-const listeners: Array<() => void> = [];
-function notifyListeners() {
-  listeners.forEach((listener) => listener());
-}
+registerLocal(STORAGE_KEY_ENTRIES, initialSeedEntries, (value) =>
+  validCollection("entries", value),
+);
+export const getStoredEntries = () =>
+  readLocal<LibraryEntry>(STORAGE_KEY_ENTRIES);
+export const saveStoredEntries = (value: LibraryEntry[]) =>
+  writeLocal(STORAGE_KEY_ENTRIES, value);
 
-export function getStoredEntries(): LibraryEntry[] {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
-    return initialSeedEntries;
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_ENTRIES);
-    if (!raw) {
-      localStorage.setItem(
-        STORAGE_KEY_ENTRIES,
-        JSON.stringify(initialSeedEntries),
-      );
-      return initialSeedEntries;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return initialSeedEntries;
-  }
-}
-
-export function saveStoredEntries(entries: LibraryEntry[]) {
-  if (typeof window === "undefined" || typeof localStorage === "undefined")
-    return;
-  try {
-    localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
-    notifyListeners();
-  } catch {
-    // ignore
-  }
-}
-
-export function getStoredLists(): ReadingList[] {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
-    return initialSeedLists;
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_LISTS);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY_LISTS, JSON.stringify(initialSeedLists));
-      return initialSeedLists;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return initialSeedLists;
-  }
-}
-
-export function saveStoredLists(lists: ReadingList[]) {
-  if (typeof window === "undefined" || typeof localStorage === "undefined")
-    return;
-  try {
-    localStorage.setItem(STORAGE_KEY_LISTS, JSON.stringify(lists));
-    notifyListeners();
-  } catch {
-    // ignore
-  }
-}
+registerLocal(STORAGE_KEY_LISTS, initialSeedLists, (value) =>
+  validCollection("lists", value),
+);
+export const getStoredLists = () => readLocal<ReadingList>(STORAGE_KEY_LISTS);
+export const saveStoredLists = (value: ReadingList[]) =>
+  writeLocal(STORAGE_KEY_LISTS, value);
 
 // Store functions
 export const libraryStore = {
@@ -177,7 +140,7 @@ export const libraryStore = {
       entries[existingIndex] = {
         ...entries[existingIndex],
         ...entry,
-        lastReadAt: "Agora mesmo",
+        lastReadAt: new Date().toLocaleString("pt-PT"),
       };
     } else {
       const newEntry: LibraryEntry = {
@@ -190,10 +153,12 @@ export const libraryStore = {
         progress: entry.progress ?? 0,
         lastReadChapterId: entry.lastReadChapterId || "cap-1",
         lastReadChapterTitle: entry.lastReadChapterTitle || "Capítulo 1",
-        lastReadAt: "Agora mesmo",
+        lastReadAt: new Date().toLocaleString("pt-PT"),
         status: entry.status || "reading",
         isFavorite: entry.isFavorite ?? false,
         readingListIds: entry.readingListIds || [],
+        lastReadPosition: entry.lastReadPosition,
+        lastReadAtIso: entry.lastReadAtIso,
       };
       entries.unshift(newEntry);
     }
@@ -248,7 +213,7 @@ export const libraryStore = {
   createList(title: string, description: string): ReadingList {
     const lists = getStoredLists();
     const newList: ReadingList = {
-      id: `lista-${Date.now()}`,
+      id: `lista-${localId()}`,
       title: title.trim(),
       description: description.trim(),
       createdAt: new Date().toISOString().split("T")[0],
@@ -309,7 +274,9 @@ export const libraryStore = {
       ...e,
       progress: 0,
       lastReadAt: "Nunca lido",
-      status: (e.status === "reading" ? "plan_to_read" : e.status) as any,
+      lastReadPosition: 0,
+      lastReadAtIso: undefined,
+      status: "plan_to_read" as const,
     }));
     saveStoredEntries(entries);
   },
@@ -317,26 +284,12 @@ export const libraryStore = {
 
 // React hook for observing changes
 export function useLibrary() {
-  const [entries, setEntries] = useState<LibraryEntry[]>(getStoredEntries);
-  const [lists, setLists] = useState<ReadingList[]>(getStoredLists);
-
-  const refresh = useCallback(() => {
-    setEntries(getStoredEntries());
-    setLists(getStoredLists());
-  }, []);
-
-  useEffect(() => {
-    listeners.push(refresh);
-    return () => {
-      const idx = listeners.indexOf(refresh);
-      if (idx >= 0) listeners.splice(idx, 1);
-    };
-  }, [refresh]);
-
+  const entries = useLocalCollection<LibraryEntry>(STORAGE_KEY_ENTRIES);
+  const lists = useLocalCollection<ReadingList>(STORAGE_KEY_LISTS);
   return {
     entries,
     lists,
-    store: libraryStore,
-    refresh,
+    store: bindScope(libraryStore, currentScope()),
+    refresh: notifyLocal,
   };
 }

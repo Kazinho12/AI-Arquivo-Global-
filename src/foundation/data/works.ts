@@ -13,6 +13,7 @@ export interface Work {
   id: string;
   title: string;
   author: string;
+  authorId: string;
   format: WorkFormat;
   genre: string;
   tags: string[];
@@ -24,6 +25,7 @@ export interface Work {
 export const demoWorks: Work[] = [
   {
     id: "atlas-das-mares",
+    authorId: "demo-lia-mavume",
     title: "Atlas das marés esquecidas",
     author: "Lia Mavume",
     format: "Romance",
@@ -37,6 +39,7 @@ export const demoWorks: Work[] = [
   },
   {
     id: "cidade-entre-linhas",
+    authorId: "demo-tomas-nilo",
     title: "A cidade entre linhas",
     author: "Tomás Nilo",
     format: "HQ / Comic",
@@ -50,6 +53,7 @@ export const demoWorks: Work[] = [
   },
   {
     id: "silencio-orbita",
+    authorId: "demo-iris-vale",
     title: "O silêncio em órbita",
     author: "Íris Vale",
     format: "Poesia",
@@ -63,6 +67,7 @@ export const demoWorks: Work[] = [
   },
   {
     id: "jardim-lua",
+    authorId: "demo-ren-aoki",
     title: "O jardim da última lua",
     author: "Ren Aoki",
     format: "Mangá",
@@ -76,6 +81,7 @@ export const demoWorks: Work[] = [
   },
   {
     id: "casa-chuva",
+    authorId: "demo-noa-senda",
     title: "A casa onde chove dentro",
     author: "Noa Senda",
     format: "Conto",
@@ -89,6 +95,7 @@ export const demoWorks: Work[] = [
   },
   {
     id: "arquivo-aurora",
+    authorId: "demo-davi-mar",
     title: "Arquivo Aurora",
     author: "Davi Mar",
     format: "Série literária",
@@ -102,6 +109,7 @@ export const demoWorks: Work[] = [
   },
   {
     id: "bestias-tinta",
+    authorId: "demo-mila-sol",
     title: "As pequenas bestas de tinta",
     author: "Mila Sol",
     format: "Obra ilustrada",
@@ -115,6 +123,7 @@ export const demoWorks: Work[] = [
   },
   {
     id: "ecos-aurora",
+    authorId: "demo-sam-lume",
     title: "Ecos de Aurora",
     author: "Sam Lume",
     format: "Fanfiction",
@@ -127,3 +136,14 @@ export const demoWorks: Work[] = [
     demo: true,
   },
 ];
+
+export const demoAuthors = [
+  { id: "demo-lia-mavume", username: "lia-mavume", displayName: "Lia Mavume" },
+  { id: "demo-tomas-nilo", username: "tomas-nilo", displayName: "Tomás Nilo" },
+  { id: "demo-iris-vale", username: "iris-vale", displayName: "Íris Vale" },
+  { id: "demo-ren-aoki", username: "ren-aoki", displayName: "Ren Aoki" },
+  { id: "demo-noa-senda", username: "noa-senda", displayName: "Noa Senda" },
+  { id: "demo-davi-mar", username: "davi-mar", displayName: "Davi Mar" },
+  { id: "demo-mila-sol", username: "mila-sol", displayName: "Mila Sol" },
+  { id: "demo-sam-lume", username: "sam-lume", displayName: "Sam Lume" },
+] as const;

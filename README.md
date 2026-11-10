@@ -52,3 +52,11 @@ As obras relacionadas usam coincidências de género, formato e tags; tendência
 As seis rotas de autenticação usam `src/foundation/features/auth` e `src/foundation/pages/Auth.tsx`, preservando as telas anteriores e os sete layouts. O SDK oficial controla persistência e renovação da sessão; a UI aguarda recuperação e validação do utilizador. Callbacks PKCE e de confirmação são processados por métodos do SDK, com limpeza do URL e redirecionamentos internos validados.
 
 Consultar [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) para variáveis públicas, configuração do Supabase/Google, recuperação, limites de persistência e checklist real. Nenhuma configuração externa foi alterada. Não havia credenciais de um projeto Supabase neste ambiente: os testes de autenticação são simulados, incluindo o teste do SDK com HTTP e armazenamento em memória.
+
+## Estabilização local — Etapa A
+
+As correções AG-01 a AG-08, o isolamento local por conta, a recuperação explícita de dados antigos, o progresso dos quatro leitores e as imagens IndexedDB estão descritos em [docs/STABILIZATION-A.md](docs/STABILIZATION-A.md). Esse documento atualiza os limites de persistência das fases posteriores às secções históricas acima e regista a validação local. Não comprova aplicação de migrações ou configuração remota.
+
+## Estabilização — Etapa B
+
+A correção local dos 13 P2, os contratos de preferências/conteúdo, o versionamento dos stores e a migração canónica de usernames estão documentados em [docs/STABILIZATION-B.md](docs/STABILIZATION-B.md). A documentação distingue verificações locais das ações remotas ainda manuais.

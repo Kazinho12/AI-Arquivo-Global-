@@ -1,3 +1,4 @@
+import { Modal } from "../components/ui";
 import { useState, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
@@ -72,7 +73,7 @@ export function LibraryOverviewPage() {
       .sort((a, b) => {
         if (sortOption === "title") return a.title.localeCompare(b.title);
         if (sortOption === "progress") return b.progress - a.progress;
-        return 0; // default recent
+        return (b.lastReadAtIso ?? "").localeCompare(a.lastReadAtIso ?? "");
       });
   }, [entries, activeTab, selectedFormat, searchQuery, sortOption]);
 
@@ -483,7 +484,11 @@ export function FavoritesPage() {
 // 3. History Page: /biblioteca/historico
 export function HistoryPage() {
   const { entries, store } = useLibrary();
-  const historyEntries = entries.filter((e) => e.progress > 0);
+  const historyEntries = entries
+    .filter((e) => e.lastReadAtIso || e.progress > 0)
+    .sort((a, b) =>
+      (b.lastReadAtIso ?? "").localeCompare(a.lastReadAtIso ?? ""),
+    );
 
   return (
     <div className="container library-page">
@@ -638,58 +643,59 @@ export function ListsPage() {
 
       {/* Create List Modal */}
       {showCreateDialog && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true">
-          <div className="modal-content">
-            <h2>Criar nova lista de leitura</h2>
-            <form onSubmit={handleCreate}>
-              <div className="form-group mt-3">
-                <label htmlFor="list-title" className="field-label">
-                  Nome da lista
-                </label>
-                <input
-                  id="list-title"
-                  type="text"
-                  placeholder="Ex.: Narrativas Costeiras e Ficção Especulativa"
-                  value={listTitle}
-                  onChange={(e) => setListTitle(e.target.value)}
-                  className="input-field"
-                  required
-                />
-              </div>
+        <Modal
+          open
+          onClose={() => setShowCreateDialog(false)}
+          title="Criar nova lista de leitura"
+        >
+          <form onSubmit={handleCreate}>
+            <div className="form-group mt-3">
+              <label htmlFor="list-title" className="field-label">
+                Nome da lista
+              </label>
+              <input
+                id="list-title"
+                type="text"
+                placeholder="Ex.: Narrativas Costeiras e Ficção Especulativa"
+                value={listTitle}
+                onChange={(e) => setListTitle(e.target.value)}
+                className="input-field"
+                required
+              />
+            </div>
 
-              <div className="form-group mt-3">
-                <label htmlFor="list-desc" className="field-label">
-                  Descrição (opcional)
-                </label>
-                <textarea
-                  id="list-desc"
-                  rows={3}
-                  placeholder="Explica o propósito desta seleção de obras..."
-                  value={listDesc}
-                  onChange={(e) => setListDesc(e.target.value)}
-                  className="comment-textarea"
-                />
-              </div>
+            <div className="form-group mt-3">
+              <label htmlFor="list-desc" className="field-label">
+                Descrição (opcional)
+              </label>
+              <textarea
+                id="list-desc"
+                rows={3}
+                placeholder="Explica o propósito desta seleção de obras..."
+                value={listDesc}
+                onChange={(e) => setListDesc(e.target.value)}
+                className="comment-textarea"
+              />
+            </div>
 
-              <div className="modal-actions mt-4">
-                <Button
-                  variant="ghost"
-                  type="button"
-                  onClick={() => setShowCreateDialog(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="primary"
-                  type="submit"
-                  disabled={!listTitle.trim()}
-                >
-                  Criar lista
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="modal-actions mt-4">
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setShowCreateDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={!listTitle.trim()}
+              >
+                Criar lista
+              </Button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {lists.length === 0 ? (

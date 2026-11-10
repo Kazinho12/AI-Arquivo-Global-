@@ -14,6 +14,8 @@ export interface LibraryEntry {
   status: ReadingStatus;
   isFavorite: boolean;
   readingListIds: string[];
+  lastReadPosition?: number;
+  lastReadAtIso?: string;
 }
 
 export interface ReadingList {

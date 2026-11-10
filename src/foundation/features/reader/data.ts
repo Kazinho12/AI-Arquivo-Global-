@@ -1,3 +1,4 @@
+import { worksRepository } from "../../lib/worksRepository";
 import type { WorkReadingData } from "./types";
 
 export const demoReadingLibrary: Record<string, WorkReadingData> = {
@@ -239,7 +240,8 @@ export function getWorkReadingData(
   format?: string,
   title?: string,
   author?: string,
-): WorkReadingData {
+): WorkReadingData | undefined {
+  if (!worksRepository.find(workId)) return undefined;
   if (demoReadingLibrary[workId]) {
     return demoReadingLibrary[workId];
   }
@@ -270,6 +272,18 @@ export function getWorkReadingData(
         id: "cap-1",
         number: 1,
         title: "Capítulo de Amostra",
+        pages: isVisual
+          ? [
+              {
+                id: "p-1",
+                number: 1,
+                title: "Página de amostra",
+                description: "Composição visual demonstrativa desta obra.",
+                aspectRatio: "3/4",
+                accentColor: "#14243B",
+              },
+            ]
+          : undefined,
         content: `Este é um capítulo de amostra preparado para demonstrar as capacidades do leitor da plataforma.
 
 A leitura no Arquivo Global foi concebida para oferecer máximo conforto tipográfico tanto em telas compactas como em monitores de alta resolução. As opções de leitura permitem ajustar corpo da letra, largura de linha e contraste visual sem comprometer a integridade da obra.`,
