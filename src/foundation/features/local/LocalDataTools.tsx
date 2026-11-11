@@ -153,10 +153,10 @@ export function LocalDataTools() {
       <details>
         <summary>Cópias e recuperação de dados locais</summary>
         <p>
-          Não há sincronização entre dispositivos. Os dados antigos não têm
-          proprietário conhecido e só são importados com a tua confirmação. Usa
-          esta opção apenas se os dados te pertencem. Nenhuma chave antiga será
-          apagada.
+          Estas cópias locais não sincronizam entre dispositivos. Os dados
+          antigos não têm proprietário conhecido e só são importados com a tua
+          confirmação. Usa esta opção apenas se os dados te pertencem. Nenhuma
+          chave antiga será apagada.
         </p>
         <Button
           variant="ghost"

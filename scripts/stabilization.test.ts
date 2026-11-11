@@ -211,8 +211,9 @@ test("AG-03/04: both migration paths include hardened provisioning and isolated 
     assert.ok(sql.includes("ON CONFLICT DO NOTHING"));
     assert.ok(sql.includes("WHERE p.id IS NULL"));
     assert.ok(sql.includes("EXCEPTION WHEN OTHERS"));
-    assert.ok(
-      sql.includes("REVOKE ALL ON FUNCTION public.ensure_user_profile"),
+    assert.match(
+      sql,
+      /REVOKE (?:ALL|EXECUTE) ON FUNCTION public\.ensure_user_profile\([^;]+\) FROM PUBLIC, anon, authenticated;/,
     );
     assert.ok(!/DELETE FROM|TRUNCATE/i.test(sql));
   }

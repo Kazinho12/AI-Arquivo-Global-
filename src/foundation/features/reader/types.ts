@@ -1,6 +1,10 @@
 export type ReaderMode = "prose" | "poetry" | "comic" | "manga";
 
 export interface Chapter {
+  revision?: number;
+  entryType?: "chapter" | "poem" | "visual";
+  createdAt?: string;
+  updatedAt?: string;
   id: string;
   number: number;
   title: string;

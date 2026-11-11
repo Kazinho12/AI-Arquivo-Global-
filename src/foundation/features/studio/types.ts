@@ -10,6 +10,11 @@ export type WorkStatus = "draft" | "in_review" | "published" | "archived";
 export type AgeRating = "Livre" | "+12" | "+14" | "+16" | "+18";
 
 export interface StudioWork {
+  persistence?: "supabase";
+  archivedAt?: string | null;
+  ownerId?: string;
+  slug?: string;
+  revision?: number;
   id: string;
   title: string;
   subtitle?: string;

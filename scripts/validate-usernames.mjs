@@ -16,7 +16,7 @@ for (const scenario of ["fresh", "existing", "collision"]) {
   const db = new PGlite();
   try {
     await db.exec(
-      `CREATE ROLE authenticated; CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,raw_user_meta_data jsonb,created_at timestamptz DEFAULT now()); CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$; GRANT USAGE ON SCHEMA auth,public TO authenticated;`,
+      `CREATE ROLE authenticated; CREATE ROLE anon; CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,raw_user_meta_data jsonb,created_at timestamptz DEFAULT now()); CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$; GRANT USAGE ON SCHEMA auth,public TO authenticated;`,
     );
     await db.exec(base);
     if (scenario === "fresh") await db.exec(canonical);
@@ -51,7 +51,7 @@ for (const scenario of ["fresh", "existing", "collision"]) {
     ).rows[0];
     assert.equal(first.bio, "Preservar");
     await db.exec(
-      `GRANT SELECT,INSERT,UPDATE ON public.profiles TO authenticated; SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',false);`,
+      `SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',false);`,
     );
     await assert.rejects(
       db.exec(

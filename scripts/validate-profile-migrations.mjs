@@ -135,7 +135,7 @@ for (const scenario of ["fresh", "original-already-applied"]) {
       1,
     );
     await db.exec(
-      "GRANT SELECT,INSERT,UPDATE ON public.profiles TO authenticated; SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',false);",
+      "SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',false);",
     );
     assert.equal(
       (

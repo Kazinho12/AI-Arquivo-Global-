@@ -1,3 +1,9 @@
+import {
+  RemoteEntryEditor,
+  entryPath,
+  entryLabel,
+} from "../features/studio/RemoteEntryEditor";
+import { WorkMetadataForm } from "../features/studio/WorkMetadataForm";
 import { Modal } from "../components/ui";
 import { storeImage, LocalImage } from "../features/local/images";
 import { currentScope } from "../features/local/persistence";
@@ -41,12 +47,83 @@ import { VisualSequencer } from "../features/studio/VisualSequencer";
 import { Button, Badge } from "../components/ui";
 import { NotFound } from "./States";
 
+const isArchived = (work: StudioWork) =>
+  Boolean(work.archivedAt) || work.status === "archived";
+const statusLabel = (work: StudioWork) =>
+  isArchived(work)
+    ? "Arquivada"
+    : work.status === "published"
+      ? "Publicada"
+      : "Rascunho";
+
+const statusClass = (work: StudioWork) =>
+  isArchived(work)
+    ? "status-archived"
+    : work.status === "published"
+      ? "status-published"
+      : "status-draft";
+
+function usePageActive() {
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
+  return active;
+}
+
+function StudioPersistenceNotice() {
+  const { remote, works } = useStudio();
+  const localCount = works.filter(
+    (work) => work.persistence !== "supabase",
+  ).length;
+  return (
+    <div className="studio-demo-banner" style={{ display: "block" }}>
+      <p>
+        <strong>Estúdio do Autor</strong> ·{" "}
+        {remote.enabled
+          ? "Os teus rascunhos e conteúdos editoriais são guardados na conta, sempre privados."
+          : "Inicia sessão para criar e recuperar rascunhos guardados na tua conta."}
+      </p>
+      {localCount > 0 && (
+        <p>
+          {localCount} obra(s) apenas neste navegador, identificadas como
+          locais. Não foram enviadas nem migradas automaticamente.
+        </p>
+      )}
+      <p>
+        As obras antigas deste navegador continuam locais e não foram
+        importadas. As imagens ainda não têm armazenamento remoto.
+      </p>
+      {remote.loading && <p role="status">A carregar as tuas obras…</p>}
+      {remote.saving && <p role="status">A guardar…</p>}
+      {remote.error && <p role="alert">{remote.error}</p>}
+      {remote.enabled && (
+        <Button
+          variant="ghost"
+          disabled={remote.saving || remote.loading}
+          onClick={() => void remote.controller?.load()}
+        >
+          Atualizar obras
+        </Button>
+      )}
+      {!remote.enabled && (
+        <Link to="/entrar" className="text-link">
+          Iniciar sessão
+        </Link>
+      )}
+    </div>
+  );
+}
+
 // ============================================================================
 // 1. Studio Dashboard: /estudio
 // ============================================================================
 export function StudioDashboardPage() {
   const { state: authState } = useAuth();
-  const { works, activities, stats, store } = useStudio();
+  const { works, activeWorks, activities, stats, remote } = useStudio();
   const navigate = useNavigate();
 
   const authorName =
@@ -55,21 +132,19 @@ export function StudioDashboardPage() {
     "Autor(a)";
 
   const recentWorks = useMemo(() => {
-    return [...works]
+    return [
+      ...(remote.enabled
+        ? activeWorks
+        : works.filter((work) => !isArchived(work))),
+    ]
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       .slice(0, 4);
-  }, [works]);
+  }, [works, activeWorks, remote.enabled]);
 
   return (
     <div className="container studio-page">
       {/* Notice Banner */}
-      <div className="studio-demo-banner">
-        <Info size={16} />
-        <span>
-          <strong>Estúdio do Autor</strong> · Os rascunhos e alterações são
-          guardados localmente no teu navegador durante esta sessão de trabalho.
-        </span>
-      </div>
+      <StudioPersistenceNotice />
 
       {/* Header with Greeting */}
       <header className="studio-header">
@@ -95,13 +170,16 @@ export function StudioDashboardPage() {
           <span className="stat-label">Total de Obras</span>
           <span className="stat-value font-mono">{stats.totalWorks}</span>
           <span className="stat-hint">
-            {stats.publishedCount} com estado local publicado ·{" "}
-            {stats.draftsCount} rascunhos
+            {stats.draftsCount}{" "}
+            {stats.draftsCount === 1
+              ? "rascunho privado ativo"
+              : "rascunhos privados ativos"}{" "}
+            na conta
           </span>
         </div>
 
         <div className="studio-stat-card">
-          <span className="stat-label">Capítulos & Poemas</span>
+          <span className="stat-label">Capítulos, Poemas & Atos</span>
           <span className="stat-value font-mono">{stats.totalChapters}</span>
           <span className="stat-hint">Em todas as obras ativas</span>
         </div>
@@ -148,28 +226,29 @@ export function StudioDashboardPage() {
             {recentWorks.map((work) => {
               const firstChapterId = work.chapters[0]?.id || "cap-1";
               const editLink =
-                work.mode === "comic" || work.mode === "manga"
-                  ? `/estudio/obras/${work.id}/paginas/${firstChapterId}/editar`
-                  : `/estudio/obras/${work.id}/capitulos/${firstChapterId}/editar`;
+                work.persistence === "supabase"
+                  ? work.chapters[0]
+                    ? entryPath(work, work.chapters[0])
+                    : `/estudio/obras/${work.id}`
+                  : work.mode === "comic" || work.mode === "manga"
+                    ? `/estudio/obras/${work.id}/paginas/${firstChapterId}/editar`
+                    : `/estudio/obras/${work.id}/capitulos/${firstChapterId}/editar`;
 
               return (
                 <article key={work.id} className="studio-work-card">
                   <header className="work-card-top">
-                    <span className="work-format-tag">{work.format}</span>
+                    <span className="work-format-tag">
+                      {work.format} ·{" "}
+                      {work.persistence === "supabase"
+                        ? "Conta privada"
+                        : "Local"}
+                    </span>
                     <span
                       className={`status-indicator ${
-                        work.status === "published"
-                          ? "status-published"
-                          : work.status === "draft"
-                            ? "status-draft"
-                            : "status-archived"
+                        isArchived(work) ? "status-archived" : statusClass(work)
                       }`}
                     >
-                      {work.status === "published"
-                        ? "Publicada"
-                        : work.status === "draft"
-                          ? "Rascunho"
-                          : "Arquivada"}
+                      {statusLabel(work)}
                     </span>
                   </header>
 
@@ -185,9 +264,13 @@ export function StudioDashboardPage() {
                         ? work.chapters.length === 1
                           ? "poema"
                           : "poemas"
-                        : work.chapters.length === 1
-                          ? "capítulo"
-                          : "capítulos"}
+                        : work.mode === "comic" || work.mode === "manga"
+                          ? work.chapters.length === 1
+                            ? "ato"
+                            : "atos"
+                          : work.chapters.length === 1
+                            ? "capítulo"
+                            : "capítulos"}
                     </span>
                     <span className="separator" aria-hidden="true">
                       ·
@@ -250,7 +333,8 @@ export function StudioDashboardPage() {
 // 2. Multi-step Creation Wizard: /estudio/obras/nova
 // ============================================================================
 export function NewWorkWizardPage() {
-  const { store } = useStudio();
+  const active = usePageActive();
+  const { remote } = useStudio();
   const navigate = useNavigate();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -266,11 +350,6 @@ export function NewWorkWizardPage() {
   const [ageRating, setAgeRating] = useState<AgeRating>("Livre");
   const [contentWarnings, setContentWarnings] = useState<string[]>([]);
   const [coverAccentColor, setCoverAccentColor] = useState("#14243B");
-  const [initialChapters, setInitialChapters] = useState<string[]>([
-    "Capítulo 1: O Início",
-    "Capítulo 2: O Desenvolvimento",
-  ]);
-
   const mode =
     format === "Poesia"
       ? "poetry"
@@ -280,541 +359,448 @@ export function NewWorkWizardPage() {
           ? "manga"
           : "prose";
 
-  // Adjust default chapter names on format switch
-  const handleFormatSelect = (f: WorkFormat) => {
-    setFormat(f);
-    if (f === "Poesia") {
-      setInitialChapters(["Primeiro Poema", "Segundo Poema"]);
-    } else if (f === "HQ / Comic" || f === "Mangá") {
-      setInitialChapters(["Ato I: Prólogo", "Ato II: O Encontro"]);
-    } else {
-      setInitialChapters([
-        "Capítulo 1: O Início",
-        "Capítulo 2: O Desenvolvimento",
-      ]);
-    }
-  };
+  const handleFormatSelect = (value: WorkFormat) => setFormat(value);
 
-  const handleCreate = () => {
-    if (!title.trim()) return;
+  const handleCreate = async () => {
+    if (!title.trim() || !remote.controller || remote.saving) return;
 
     const tags = tagsInput
       .split(",")
       .map((t) => t.trim().toLowerCase())
       .filter(Boolean);
 
-    const chapters = initialChapters.map((chapTitle, idx) => ({
-      id: `cap-${idx + 1}`,
-      number: idx + 1,
-      title: chapTitle,
-      content:
-        mode === "prose"
-          ? `Começa aqui a escrever o texto do capítulo "${chapTitle}"...`
-          : undefined,
-      stanzas:
-        mode === "poetry"
-          ? [
-              [
-                "Escreve aqui o primeiro verso deste poema,",
-                "e a estrofe que o inaugura.",
-              ],
-            ]
-          : undefined,
-      pages:
-        mode === "comic" || mode === "manga"
-          ? [
-              {
-                id: `p-${idx + 1}-1`,
-                number: 1,
-                title: "Prancha Inicial",
-                description:
-                  "Composição de abertura para este capítulo visual.",
-                aspectRatio: "3/4",
-                accentColor: coverAccentColor,
-              },
-            ]
-          : undefined,
-    }));
-
-    const created = store.createWork({
+    const created = await remote.controller.create({
       title: title.trim(),
       subtitle: subtitle.trim() || undefined,
       synopsis: synopsis.trim() || "Sem sinopse definida.",
       format,
-      mode,
       genre,
       language,
       tags: tags.length > 0 ? tags : ["ficção"],
       ageRating,
       contentWarnings,
-      status: "draft",
       coverAccentColor,
-      chapters,
     });
 
-    navigate(`/estudio/obras/${created.id}`);
+    if (created && active.current) navigate(`/estudio/obras/${created.id}`);
   };
 
   return (
     <div className="container studio-page">
+      <StudioPersistenceNotice />
       <nav className="studio-breadcrumb">
         <Link to="/estudio" className="text-link">
           ← Voltar ao painel do Estúdio
         </Link>
       </nav>
 
-      <header className="wizard-header">
-        <span className="eyebrow">NOVA CRIAÇÃO</span>
-        <h1>Criar uma Nova Obra</h1>
-        <p className="studio-subtitle">
-          Define o formato, identidade e estrutura inicial da tua história ou
-          poema.
-        </p>
-
-        {/* Stepper Progress */}
-        <div className="wizard-stepper">
-          {[
-            [1, "Formato"],
-            [2, "Identidade"],
-            [3, "Estrutura"],
-            [4, "Pré-visualização"],
-            [5, "Confirmação"],
-          ].map(([num, label]) => (
-            <button
-              key={num}
-              type="button"
-              className={`stepper-step ${step === num ? "active" : step > (num as number) ? "completed" : ""}`}
-              onClick={() => setStep(num as any)}
-            >
-              <span className="step-num">{num}</span>
-              <span className="step-label">{label}</span>
-            </button>
-          ))}
-        </div>
-      </header>
-
-      {/* Step 1: Formato */}
-      {step === 1 && (
-        <section className="wizard-card-step">
-          <h2>Etapa 1 — Escolhe o formato da tua obra</h2>
-          <p className="step-description">
-            O formato define as ferramentas do editor e a experiência de leitura
-            apresentada ao público.
+      <fieldset
+        disabled={remote.saving}
+        style={{ border: 0, padding: 0, minWidth: 0 }}
+      >
+        <header className="wizard-header">
+          <span className="eyebrow">NOVA CRIAÇÃO</span>
+          <h1>Criar uma Nova Obra</h1>
+          <p className="studio-subtitle">
+            Define o formato, identidade e estrutura inicial da tua história ou
+            poema.
           </p>
 
-          <div className="format-selection-grid">
-            {(
-              [
-                [
-                  "Romance",
-                  "Romance, novela ou narrativa longa com múltiplos capítulos.",
-                  "prose",
-                ],
-                [
-                  "Conto",
-                  "História curta ou antologia de episódios breves.",
-                  "prose",
-                ],
-                [
-                  "Poesia",
-                  "Versos livres ou rimados com preservação rígida de estrofes.",
-                  "poetry",
-                ],
-                [
-                  "HQ / Comic",
-                  "História em quadrinhos ocidental (da esquerda para a direita).",
-                  "comic",
-                ],
-                [
-                  "Mangá",
-                  "Banda desenhada oriental com leitura tradicional RTL (da direita para a esquerda).",
-                  "manga",
-                ],
-              ] as const
-            ).map(([fmt, desc]) => (
-              <article
-                key={fmt}
-                className={`format-card ${format === fmt ? "selected" : ""}`}
-                onClick={() => handleFormatSelect(fmt as WorkFormat)}
+          {/* Stepper Progress */}
+          <div className="wizard-stepper">
+            {[
+              [1, "Formato"],
+              [2, "Identidade"],
+              [3, "Estrutura"],
+              [4, "Pré-visualização"],
+              [5, "Confirmação"],
+            ].map(([num, label]) => (
+              <button
+                key={num}
+                type="button"
+                className={`stepper-step ${step === num ? "active" : step > (num as number) ? "completed" : ""}`}
+                onClick={() => setStep(num as any)}
               >
-                <div className="format-card-radio">
-                  <input
-                    type="radio"
-                    name="work-format"
-                    checked={format === fmt}
-                    onChange={() => handleFormatSelect(fmt as WorkFormat)}
-                    aria-label={fmt}
-                  />
-                </div>
-                <div>
-                  <h3 className="format-title">{fmt}</h3>
-                  <p className="format-desc">{desc}</p>
-                </div>
-              </article>
+                <span className="step-num">{num}</span>
+                <span className="step-label">{label}</span>
+              </button>
             ))}
           </div>
+        </header>
 
-          <div className="wizard-nav-actions">
-            <span />
-            <Button variant="primary" onClick={() => setStep(2)}>
-              Continuar: Identidade da Obra →
-            </Button>
-          </div>
-        </section>
-      )}
+        {/* Step 1: Formato */}
+        {step === 1 && (
+          <section className="wizard-card-step">
+            <h2>Etapa 1 — Escolhe o formato da tua obra</h2>
+            <p className="step-description">
+              O formato define as ferramentas do editor e a experiência de
+              leitura apresentada ao público.
+            </p>
 
-      {/* Step 2: Identidade */}
-      {step === 2 && (
-        <section className="wizard-card-step">
-          <h2>Etapa 2 — Identidade e Metadados</h2>
-          <p className="step-description">
-            Informações essenciais para apresentar a história aos leitores e no
-            catálogo.
-          </p>
-
-          <div className="wizard-form-grid">
-            <div className="form-group col-span-2">
-              <label htmlFor="w-title" className="field-label">
-                Título da Obra *
-              </label>
-              <input
-                id="w-title"
-                type="text"
-                placeholder="Ex.: O Som do Salitre"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="input-field"
-                required
-              />
-            </div>
-
-            <div className="form-group col-span-2">
-              <label htmlFor="w-subtitle" className="field-label">
-                Subtítulo (opcional)
-              </label>
-              <input
-                id="w-subtitle"
-                type="text"
-                placeholder="Ex.: Crónicas de um Verão na Costa"
-                value={subtitle}
-                onChange={(e) => setSubtitle(e.target.value)}
-                className="input-field"
-              />
-            </div>
-
-            <div className="form-group col-span-2">
-              <label htmlFor="w-synopsis" className="field-label">
-                Sinopse *
-              </label>
-              <textarea
-                id="w-synopsis"
-                rows={4}
-                placeholder="Apresenta a premissa da tua história ou a respiração do teu livro de poemas..."
-                value={synopsis}
-                onChange={(e) => setSynopsis(e.target.value)}
-                className="comment-textarea"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="w-genre" className="field-label">
-                Género Literário
-              </label>
-              <select
-                id="w-genre"
-                value={genre}
-                onChange={(e) => setGenre(e.target.value)}
-                className="filter-select w-full"
-              >
-                <option value="Ficção especulativa">Ficção especulativa</option>
-                <option value="Ficção urbana">Ficção urbana</option>
-                <option value="Poesia contemporânea">
-                  Poesia contemporânea
-                </option>
-                <option value="Fantasia">Fantasia</option>
-                <option value="Ficção científica">Ficção científica</option>
-                <option value="Mistério / Enigma">Mistério / Enigma</option>
-                <option value="Realismo mágico">Realismo mágico</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="w-lang" className="field-label">
-                Idioma Principal
-              </label>
-              <select
-                id="w-lang"
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="filter-select w-full"
-              >
-                <option value="Português">Português</option>
-                <option value="Galego">Galego</option>
-                <option value="Espanhol">Espanhol</option>
-                <option value="Inglês">Inglês</option>
-              </select>
-            </div>
-
-            <div className="form-group col-span-2">
-              <label htmlFor="w-tags" className="field-label">
-                Tags (separadas por vírgulas)
-              </label>
-              <input
-                id="w-tags"
-                type="text"
-                placeholder="mar, memória, costa, cartografia"
-                value={tagsInput}
-                onChange={(e) => setTagsInput(e.target.value)}
-                className="input-field"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="w-rating" className="field-label">
-                Classificação Etária
-              </label>
-              <select
-                id="w-rating"
-                value={ageRating}
-                onChange={(e) => setAgeRating(e.target.value as AgeRating)}
-                className="filter-select w-full"
-              >
-                <option value="Livre">Livre (para todas as idades)</option>
-                <option value="+12">+12 anos</option>
-                <option value="+14">+14 anos</option>
-                <option value="+16">+16 anos</option>
-                <option value="+18">+18 anos</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="field-label">Cor da Capa Gráfica</label>
-              <div className="flex items-center gap-2 mt-2">
-                {["#14243B", "#1E2A38", "#2C3E50", "#2A3F5E", "#0E2A47"].map(
-                  (col) => (
-                    <button
-                      key={col}
-                      type="button"
-                      className={`w-7 h-7 rounded-full border-2 ${
-                        coverAccentColor === col
-                          ? "border-accent scale-110"
-                          : "border-transparent"
-                      }`}
-                      style={{ backgroundColor: col }}
-                      onClick={() => setCoverAccentColor(col)}
-                      aria-label={`Cor ${col}`}
+            <div className="format-selection-grid">
+              {(
+                [
+                  [
+                    "Romance",
+                    "Romance, novela ou narrativa longa com múltiplos capítulos.",
+                    "prose",
+                  ],
+                  [
+                    "Conto",
+                    "História curta ou antologia de episódios breves.",
+                    "prose",
+                  ],
+                  [
+                    "Poesia",
+                    "Versos livres ou rimados com preservação rígida de estrofes.",
+                    "poetry",
+                  ],
+                  [
+                    "HQ / Comic",
+                    "História em quadrinhos ocidental (da esquerda para a direita).",
+                    "comic",
+                  ],
+                  [
+                    "Mangá",
+                    "Banda desenhada oriental com leitura tradicional RTL (da direita para a esquerda).",
+                    "manga",
+                  ],
+                ] as const
+              ).map(([fmt, desc]) => (
+                <article
+                  key={fmt}
+                  className={`format-card ${format === fmt ? "selected" : ""}`}
+                  onClick={() => handleFormatSelect(fmt as WorkFormat)}
+                >
+                  <div className="format-card-radio">
+                    <input
+                      type="radio"
+                      name="work-format"
+                      checked={format === fmt}
+                      onChange={() => handleFormatSelect(fmt as WorkFormat)}
+                      aria-label={fmt}
                     />
-                  ),
-                )}
-              </div>
+                  </div>
+                  <div>
+                    <h3 className="format-title">{fmt}</h3>
+                    <p className="format-desc">{desc}</p>
+                  </div>
+                </article>
+              ))}
             </div>
-          </div>
 
-          <div className="wizard-nav-actions">
-            <Button variant="ghost" onClick={() => setStep(1)}>
-              ← Voltar ao Formato
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => setStep(3)}
-              disabled={!title.trim()}
-            >
-              Continuar: Estrutura Inicial →
-            </Button>
-          </div>
-        </section>
-      )}
+            <div className="wizard-nav-actions">
+              <span />
+              <Button variant="primary" onClick={() => setStep(2)}>
+                Continuar: Identidade da Obra →
+              </Button>
+            </div>
+          </section>
+        )}
 
-      {/* Step 3: Estrutura Inicial */}
-      {step === 3 && (
-        <section className="wizard-card-step">
-          <h2>Etapa 3 — Estrutura Inicial da Obra</h2>
-          <p className="step-description">
-            Organiza os primeiros capítulos, poemas ou atos. Poderás adicionar e
-            editar mais mais tarde no Estúdio.
-          </p>
+        {/* Step 2: Identidade */}
+        {step === 2 && (
+          <section className="wizard-card-step">
+            <h2>Etapa 2 — Identidade e Metadados</h2>
+            <p className="step-description">
+              Informações essenciais para apresentar a história aos leitores e
+              no catálogo.
+            </p>
 
-          <div className="initial-chapters-list">
-            {initialChapters.map((chapName, idx) => (
-              <div key={idx} className="initial-chapter-row">
-                <span className="font-mono text-sm text-muted">{idx + 1}.</span>
+            <div className="wizard-form-grid">
+              <div className="form-group col-span-2">
+                <label htmlFor="w-title" className="field-label">
+                  Título da Obra *
+                </label>
                 <input
+                  id="w-title"
                   type="text"
-                  value={chapName}
-                  onChange={(e) => {
-                    const copy = [...initialChapters];
-                    copy[idx] = e.target.value;
-                    setInitialChapters(copy);
-                  }}
-                  className="input-field flex-1"
-                  placeholder="Nome do capítulo..."
+                  placeholder="Ex.: O Som do Salitre"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="input-field"
+                  required
                 />
-                {initialChapters.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setInitialChapters(
-                        initialChapters.filter((_, i) => i !== idx),
-                      );
-                    }}
-                    className="text-danger p-2"
-                    title="Remover capítulo"
-                    aria-label="Remover capítulo"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+              </div>
+
+              <div className="form-group col-span-2">
+                <label htmlFor="w-subtitle" className="field-label">
+                  Subtítulo (opcional)
+                </label>
+                <input
+                  id="w-subtitle"
+                  type="text"
+                  placeholder="Ex.: Crónicas de um Verão na Costa"
+                  value={subtitle}
+                  onChange={(e) => setSubtitle(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
+              <div className="form-group col-span-2">
+                <label htmlFor="w-synopsis" className="field-label">
+                  Sinopse *
+                </label>
+                <textarea
+                  id="w-synopsis"
+                  rows={4}
+                  placeholder="Apresenta a premissa da tua história ou a respiração do teu livro de poemas..."
+                  value={synopsis}
+                  onChange={(e) => setSynopsis(e.target.value)}
+                  className="comment-textarea"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="w-genre" className="field-label">
+                  Género Literário
+                </label>
+                <select
+                  id="w-genre"
+                  value={genre}
+                  onChange={(e) => setGenre(e.target.value)}
+                  className="filter-select w-full"
+                >
+                  <option value="Ficção especulativa">
+                    Ficção especulativa
+                  </option>
+                  <option value="Ficção urbana">Ficção urbana</option>
+                  <option value="Poesia contemporânea">
+                    Poesia contemporânea
+                  </option>
+                  <option value="Fantasia">Fantasia</option>
+                  <option value="Ficção científica">Ficção científica</option>
+                  <option value="Mistério / Enigma">Mistério / Enigma</option>
+                  <option value="Realismo mágico">Realismo mágico</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="w-lang" className="field-label">
+                  Idioma Principal
+                </label>
+                <select
+                  id="w-lang"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="filter-select w-full"
+                >
+                  <option value="Português">Português</option>
+                  <option value="Galego">Galego</option>
+                  <option value="Espanhol">Espanhol</option>
+                  <option value="Inglês">Inglês</option>
+                </select>
+              </div>
+
+              <div className="form-group col-span-2">
+                <label htmlFor="w-tags" className="field-label">
+                  Tags (separadas por vírgulas)
+                </label>
+                <input
+                  id="w-tags"
+                  type="text"
+                  placeholder="mar, memória, costa, cartografia"
+                  value={tagsInput}
+                  onChange={(e) => setTagsInput(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="w-rating" className="field-label">
+                  Classificação Etária
+                </label>
+                <select
+                  id="w-rating"
+                  value={ageRating}
+                  onChange={(e) => setAgeRating(e.target.value as AgeRating)}
+                  className="filter-select w-full"
+                >
+                  <option value="Livre">Livre (para todas as idades)</option>
+                  <option value="+12">+12 anos</option>
+                  <option value="+14">+14 anos</option>
+                  <option value="+16">+16 anos</option>
+                  <option value="+18">+18 anos</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="field-label">Cor da Capa Gráfica</label>
+                <div className="flex items-center gap-2 mt-2">
+                  {["#14243B", "#1E2A38", "#2C3E50", "#2A3F5E", "#0E2A47"].map(
+                    (col) => (
+                      <button
+                        key={col}
+                        type="button"
+                        className={`w-7 h-7 rounded-full border-2 ${
+                          coverAccentColor === col
+                            ? "border-accent scale-110"
+                            : "border-transparent"
+                        }`}
+                        style={{ backgroundColor: col }}
+                        onClick={() => setCoverAccentColor(col)}
+                        aria-label={`Cor ${col}`}
+                      />
+                    ),
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="wizard-nav-actions">
+              <Button variant="ghost" onClick={() => setStep(1)}>
+                ← Voltar ao Formato
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => setStep(3)}
+                disabled={!title.trim() || !remote.enabled || remote.saving}
+              >
+                Continuar: Estrutura Inicial →
+              </Button>
+            </div>
+          </section>
+        )}
+
+        {/* Step 3: Estrutura Inicial */}
+        {step === 3 && (
+          <section className="wizard-card-step">
+            <h2>Etapa 3 — Estrutura</h2>
+            <p>
+              Este rascunho guarda os metadados da obra. Podes adicionar
+              capítulos, poemas ou atos depois de criares a obra.
+            </p>
+            <div className="wizard-nav-actions">
+              <Button variant="ghost" onClick={() => setStep(2)}>
+                ← Voltar à Identidade
+              </Button>
+              <Button onClick={() => setStep(4)}>
+                Continuar: Pré-visualização →
+              </Button>
+            </div>
+          </section>
+        )}
+
+        {/* Step 4: Pré-visualização */}
+        {step === 4 && (
+          <section className="wizard-card-step">
+            <h2>Etapa 4 — Pré-visualização do Rascunho</h2>
+            <p className="step-description">
+              Pré-visualização privada dos metadados. A obra não será publicada.
+            </p>
+
+            <article className="work-preview-simulation">
+              <aside
+                className="preview-cover-sim"
+                style={{ backgroundColor: coverAccentColor }}
+              >
+                <span className="sim-format-label">{format}</span>
+                <h3 className="sim-title-label">{title || "Título da Obra"}</h3>
+                {subtitle && <p className="sim-sub-label">{subtitle}</p>}
+              </aside>
+
+              <div className="preview-meta-sim">
+                <div className="sim-badge-row">
+                  <Badge>{format}</Badge>
+                  <Badge>{genre}</Badge>
+                  <Badge>{ageRating}</Badge>
+                </div>
+
+                <h1>{title || "Sem título definido"}</h1>
+                {subtitle && (
+                  <p className="text-muted font-medium">{subtitle}</p>
                 )}
+
+                <p className="sim-synopsis">
+                  {synopsis ||
+                    "Ainda não escreveste uma sinopse para esta obra."}
+                </p>
+
+                <div className="sim-structure-preview">
+                  <strong>Estrutura:</strong> capítulos disponíveis numa próxima
+                  etapa.
+                </div>
               </div>
-            ))}
+            </article>
 
-            <Button
-              variant="secondary"
-              onClick={() => {
-                const nextNum = initialChapters.length + 1;
-                const nextLabel =
-                  mode === "poetry"
-                    ? `Poema ${nextNum}`
-                    : mode === "comic" || mode === "manga"
-                      ? `Ato ${nextNum}`
-                      : `Capítulo ${nextNum}`;
-                setInitialChapters([...initialChapters, nextLabel]);
-              }}
-              className="mt-2"
-            >
-              <Plus size={15} /> Adicionar outro item
-            </Button>
-          </div>
+            <div className="wizard-nav-actions">
+              <Button variant="ghost" onClick={() => setStep(3)}>
+                ← Voltar à Estrutura
+              </Button>
+              <Button variant="primary" onClick={() => setStep(5)}>
+                Continuar: Preparação Editorial →
+              </Button>
+            </div>
+          </section>
+        )}
 
-          <div className="wizard-nav-actions">
-            <Button variant="ghost" onClick={() => setStep(2)}>
-              ← Voltar à Identidade
-            </Button>
-            <Button variant="primary" onClick={() => setStep(4)}>
-              Continuar: Pré-visualização →
-            </Button>
-          </div>
-        </section>
-      )}
+        {/* Step 5: Preparação Editorial */}
+        {step === 5 && (
+          <section className="wizard-card-step">
+            <h2>Etapa 5 — Preparação Editorial e Criação</h2>
+            <p className="step-description">
+              Revê a validação da tua obra antes de abrir o espaço de escrita no
+              Estúdio.
+            </p>
 
-      {/* Step 4: Pré-visualização */}
-      {step === 4 && (
-        <section className="wizard-card-step">
-          <h2>Etapa 4 — Pré-visualização Pública</h2>
-          <p className="step-description">
-            É assim que a apresentação da tua obra surgirá no Arquivo Global
-            para os leitores.
-          </p>
+            <div className="editorial-checklist-card">
+              <ul className="checklist-items">
+                <li className="checklist-item">
+                  <Check size={16} className="text-emerald-500" />
+                  <span>
+                    Formato selecionado: <strong>{format}</strong> ({mode})
+                  </span>
+                </li>
+                <li className="checklist-item">
+                  <Check size={16} className="text-emerald-500" />
+                  <span>
+                    Título e metadados validados: <strong>{title}</strong>
+                  </span>
+                </li>
+                <li className="checklist-item">
+                  <Check size={16} className="text-emerald-500" />
+                  <span>Sinopse registada ({synopsis.length} caracteres)</span>
+                </li>
+                <li className="checklist-item">
+                  <Check size={16} className="text-emerald-500" />
+                  <span>
+                    Rascunho sem capítulos; metadados guardados na conta
+                  </span>
+                </li>
+                <li className="checklist-item">
+                  <Check size={16} className="text-emerald-500" />
+                  <span>
+                    Classificação etária: {ageRating} · Idioma: {language}
+                  </span>
+                </li>
+              </ul>
 
-          <article className="work-preview-simulation">
-            <aside
-              className="preview-cover-sim"
-              style={{ backgroundColor: coverAccentColor }}
-            >
-              <span className="sim-format-label">{format}</span>
-              <h3 className="sim-title-label">{title || "Título da Obra"}</h3>
-              {subtitle && <p className="sim-sub-label">{subtitle}</p>}
-            </aside>
-
-            <div className="preview-meta-sim">
-              <div className="sim-badge-row">
-                <Badge>{format}</Badge>
-                <Badge>{genre}</Badge>
-                <Badge>{ageRating}</Badge>
-              </div>
-
-              <h1>{title || "Sem título definido"}</h1>
-              {subtitle && <p className="text-muted font-medium">{subtitle}</p>}
-
-              <p className="sim-synopsis">
-                {synopsis || "Ainda não escreveste uma sinopse para esta obra."}
-              </p>
-
-              <div className="sim-structure-preview">
-                <strong>Estrutura inicial:</strong> {initialChapters.length}{" "}
-                {mode === "poetry" ? "poemas" : "capítulos"} preparados.
+              <div className="editorial-notice mt-4">
+                <Info size={16} />
+                <span>
+                  Esta obra será guardada na tua conta como{" "}
+                  <strong>Rascunho privado</strong>. Não será publicada.
+                </span>
               </div>
             </div>
-          </article>
 
-          <div className="wizard-nav-actions">
-            <Button variant="ghost" onClick={() => setStep(3)}>
-              ← Voltar à Estrutura
-            </Button>
-            <Button variant="primary" onClick={() => setStep(5)}>
-              Continuar: Preparação Editorial →
-            </Button>
-          </div>
-        </section>
-      )}
-
-      {/* Step 5: Preparação Editorial */}
-      {step === 5 && (
-        <section className="wizard-card-step">
-          <h2>Etapa 5 — Preparação Editorial e Criação</h2>
-          <p className="step-description">
-            Revê a validação da tua obra antes de abrir o espaço de escrita no
-            Estúdio.
-          </p>
-
-          <div className="editorial-checklist-card">
-            <ul className="checklist-items">
-              <li className="checklist-item">
-                <Check size={16} className="text-emerald-500" />
-                <span>
-                  Formato selecionado: <strong>{format}</strong> ({mode})
-                </span>
-              </li>
-              <li className="checklist-item">
-                <Check size={16} className="text-emerald-500" />
-                <span>
-                  Título e metadados validados: <strong>{title}</strong>
-                </span>
-              </li>
-              <li className="checklist-item">
-                <Check size={16} className="text-emerald-500" />
-                <span>Sinopse registada ({synopsis.length} caracteres)</span>
-              </li>
-              <li className="checklist-item">
-                <Check size={16} className="text-emerald-500" />
-                <span>
-                  {initialChapters.length} capítulos/poemas iniciais
-                  configurados
-                </span>
-              </li>
-              <li className="checklist-item">
-                <Check size={16} className="text-emerald-500" />
-                <span>
-                  Classificação etária: {ageRating} · Idioma: {language}
-                </span>
-              </li>
-            </ul>
-
-            <div className="editorial-notice mt-4">
-              <Info size={16} />
-              <span>
-                Esta obra será registada no teu Estúdio local com o estado{" "}
-                <strong>Rascunho</strong>. Não haverá publicação pública ou
-                remota nesta fase.
-              </span>
+            <div className="wizard-nav-actions">
+              <Button variant="ghost" onClick={() => setStep(4)}>
+                ← Voltar à Pré-visualização
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleCreate}
+                disabled={!title.trim() || !remote.enabled || remote.saving}
+              >
+                <Sparkles size={16} className="inline mr-1" />{" "}
+                {remote.saving ? "A guardar…" : "Criar obra e abrir no Estúdio"}
+              </Button>
             </div>
-          </div>
-
-          <div className="wizard-nav-actions">
-            <Button variant="ghost" onClick={() => setStep(4)}>
-              ← Voltar à Pré-visualização
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleCreate}
-              disabled={!title.trim()}
-            >
-              <Sparkles size={16} className="inline mr-1" /> Criar obra e abrir
-              no Estúdio
-            </Button>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+      </fieldset>
     </div>
   );
 }
@@ -823,45 +809,58 @@ export function NewWorkWizardPage() {
 // 3. Work Management: /estudio/obras/:id
 // ============================================================================
 export function WorkManagePage() {
+  const active = usePageActive();
   const { id } = useParams<{ id: string }>();
-  const { works, store } = useStudio();
+  const { works, store, remote } = useStudio();
   const navigate = useNavigate();
 
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [metadataDirty, setMetadataDirty] = useState(false);
 
   const work = works.find((w) => w.id === id);
 
   if (!work) {
+    if (remote.loading || remote.error)
+      return (
+        <div className="container studio-page">
+          <StudioPersistenceNotice />
+        </div>
+      );
     return <NotFound />;
   }
+  const isRemote = work.persistence === "supabase";
 
   const isVisual = work.mode === "comic" || work.mode === "manga";
 
-  const handleAddChapter = () => {
+  const handleAddChapter = async () => {
+    if (isRemote) {
+      const result = await remote.controller?.editorial(work, "add_entry");
+      const added = result?.work?.chapters.find(
+        (entry) => !work.chapters.some((old) => old.id === entry.id),
+      );
+      if (added && result?.work && active.current)
+        navigate(entryPath(result.work, added));
+      return;
+    }
     const chap = store.addChapter(work.id);
-    if (chap) {
-      if (isVisual) {
-        navigate(`/estudio/obras/${work.id}/paginas/${chap.id}/editar`);
-      } else {
-        navigate(`/estudio/obras/${work.id}/capitulos/${chap.id}/editar`);
-      }
-    }
+    if (chap) navigate(entryPath(work, chap));
   };
-
-  const handleDuplicate = () => {
-    const copy = store.duplicateWork(work.id);
-    if (copy) {
-      navigate(`/estudio/obras/${copy.id}`);
-    }
+  const handleDuplicate = async () => {
+    const copy = isRemote
+      ? (await remote.controller?.editorial(work, "duplicate_work"))?.work
+      : store.duplicateWork(work.id);
+    if (copy && active.current) navigate(`/estudio/obras/${copy.id}`);
   };
-
-  const handleDelete = () => {
-    store.deleteWork(work.id);
-    navigate("/estudio/publicacoes");
+  const handleDelete = async () => {
+    const removed = isRemote
+      ? await remote.controller?.remove(work)
+      : store.deleteWork(work.id);
+    if (removed && active.current) navigate("/estudio/publicacoes");
   };
 
   return (
     <div className="container studio-page">
+      <StudioPersistenceNotice />
       <nav className="studio-breadcrumb">
         <Link to="/estudio/publicacoes" className="text-link">
           ← Voltar às publicações do Estúdio
@@ -873,21 +872,14 @@ export function WorkManagePage() {
         <div className="work-manage-meta">
           <div className="flex items-center gap-2 mb-2">
             <Badge>{work.format}</Badge>
+            <Badge>
+              {work.persistence === "supabase"
+                ? "Guardada na conta · Privada"
+                : "Apenas neste navegador"}
+            </Badge>
             <Badge>{work.genre}</Badge>
-            <span
-              className={`status-indicator ${
-                work.status === "published"
-                  ? "status-published"
-                  : work.status === "draft"
-                    ? "status-draft"
-                    : "status-archived"
-              }`}
-            >
-              {work.status === "published"
-                ? "Publicada"
-                : work.status === "draft"
-                  ? "Rascunho"
-                  : "Arquivada"}
+            <span className={`status-indicator ${statusClass(work)}`}>
+              {statusLabel(work)}
             </span>
           </div>
           <h1>{work.title}</h1>
@@ -897,19 +889,30 @@ export function WorkManagePage() {
         </div>
 
         <div className="work-manage-actions">
-          <Link
-            to={
-              isVisual
-                ? `/estudio/obras/${work.id}/paginas/${work.chapters[0]?.id || "cap-1"}/editar`
-                : `/estudio/obras/${work.id}/capitulos/${work.chapters[0]?.id || "cap-1"}/editar`
-            }
-            className="button primary"
-          >
-            <Edit3 size={15} /> Escrever / Editar
-          </Link>
+          {isRemote && !work.chapters.length && (
+            <Button
+              disabled={remote.saving || metadataDirty || isArchived(work)}
+              onClick={handleAddChapter}
+            >
+              <Edit3 size={15} /> Escrever / Editar
+            </Button>
+          )}
+          {(!isRemote || work.chapters.length > 0) && (
+            <Link
+              to={
+                isVisual
+                  ? `/estudio/obras/${work.id}/paginas/${work.chapters[0]?.id || "cap-1"}/editar`
+                  : `/estudio/obras/${work.id}/capitulos/${work.chapters[0]?.id || "cap-1"}/editar`
+              }
+              className="button primary"
+            >
+              <Edit3 size={15} /> Escrever / Editar
+            </Link>
+          )}
 
           <Button
             variant="secondary"
+            disabled={remote.saving || metadataDirty}
             onClick={handleDuplicate}
             title="Duplicar obra"
             aria-label="Duplicar obra"
@@ -919,17 +922,26 @@ export function WorkManagePage() {
 
           <Button
             variant="ghost"
-            onClick={() => store.archiveWork(work.id)}
+            disabled={remote.saving || metadataDirty}
+            onClick={() =>
+              isRemote
+                ? void remote.controller?.editorial(
+                    work,
+                    isArchived(work) ? "restore" : "archive",
+                  )
+                : store.archiveWork(work.id)
+            }
             title="Arquivar ou desarquivar obra"
             aria-label="Arquivar ou desarquivar obra"
           >
             <Archive size={15} />{" "}
-            {work.status === "archived" ? "Desarquivar" : "Arquivar"}
+            {isArchived(work) ? "Desarquivar" : "Arquivar"}
           </Button>
 
           <Button
             variant="ghost"
             className="text-rose-500 hover:text-rose-600"
+            disabled={remote.saving}
             onClick={() => setDeleteConfirm(true)}
             title="Eliminar obra"
             aria-label="Eliminar obra"
@@ -947,8 +959,9 @@ export function WorkManagePage() {
           title={`Eliminar a obra "${work.title}"?`}
         >
           <p className="mt-2 text-sm text-muted">
-            Esta ação removerá a obra e todos os seus capítulos/páginas durante
-            a sessão.
+            {isRemote
+              ? "Esta ação elimina permanentemente o rascunho e todos os seus capítulos, poemas e atos. Alterações não guardadas serão descartadas."
+              : "Esta ação elimina a cópia local e os seus capítulos/páginas deste navegador."}
           </p>
           <div className="modal-actions mt-4">
             <Button variant="ghost" onClick={() => setDeleteConfirm(false)}>
@@ -957,6 +970,7 @@ export function WorkManagePage() {
             <Button
               variant="primary"
               className="bg-rose-600 hover:bg-rose-700"
+              disabled={remote.saving}
               onClick={handleDelete}
             >
               Sim, eliminar obra
@@ -965,6 +979,20 @@ export function WorkManagePage() {
         </Modal>
       )}
 
+      {isRemote && (
+        <WorkMetadataForm
+          key={work.id}
+          work={work}
+          onDirtyChange={setMetadataDirty}
+        />
+      )}
+      {isRemote && (
+        <p className="editorial-notice">
+          {isArchived(work)
+            ? "Obra arquivada. Desarquiva para editar."
+            : "Obra privada. Entradas e alterações são guardadas na conta; não há publicação pública."}
+        </p>
+      )}
       {/* Chapters / Structure Section */}
       <section
         className="studio-section mt-5"
@@ -972,12 +1000,21 @@ export function WorkManagePage() {
       >
         <div className="section-header-row">
           <h2>
-            {work.mode === "poetry" ? "Poemas" : "Capítulos e Atos"} (
-            {work.chapters.length})
+            {work.mode === "poetry"
+              ? "Poemas"
+              : isVisual
+                ? "Atos"
+                : "Capítulos e Atos"}{" "}
+            ({work.chapters.length})
           </h2>
-          <Button variant="primary" onClick={handleAddChapter}>
-            <Plus size={15} /> Adicionar{" "}
-            {work.mode === "poetry" ? "poema" : "capítulo"}
+          <Button
+            variant="primary"
+            disabled={
+              remote.saving || metadataDirty || (isRemote && isArchived(work))
+            }
+            onClick={handleAddChapter}
+          >
+            <Plus size={15} /> Adicionar {entryLabel(work)}
           </Button>
         </div>
 
@@ -991,7 +1028,10 @@ export function WorkManagePage() {
               ? chap.content.trim().split(/\s+/).filter(Boolean).length
               : 0;
             const verseCount = chap.stanzas
-              ? chap.stanzas.reduce((acc, st) => acc + st.length, 0)
+              ? chap.stanzas.reduce(
+                  (acc, st) => acc + st.filter((verse) => verse.trim()).length,
+                  0,
+                )
               : 0;
 
             return (
@@ -1008,7 +1048,11 @@ export function WorkManagePage() {
                       {work.mode === "poetry" ? (
                         <span>{verseCount} versos</span>
                       ) : isVisual ? (
-                        <span>{chap.pages?.length || 1} pranchas</span>
+                        <span>
+                          {isRemote
+                            ? `${wordCount} palavras de guião`
+                            : `${chap.pages?.length || 0} pranchas`}
+                        </span>
                       ) : (
                         <span>{wordCount} palavras</span>
                       )}
@@ -1069,10 +1113,21 @@ export function WorkManagePage() {
 // ============================================================================
 export function ChapterEditPage() {
   const { id, capituloId } = useParams<{ id: string; capituloId: string }>();
-  const { works, store } = useStudio();
+  const { works, store, remote } = useStudio();
   const navigate = useNavigate();
 
   const work = works.find((w) => w.id === id);
+  if (!work && (remote.loading || remote.error))
+    return (
+      <div className="container studio-page">
+        <StudioPersistenceNotice />
+      </div>
+    );
+  if (work?.persistence === "supabase") {
+    const entry = work.chapters.find((item) => item.id === capituloId);
+    if (!entry) return <NotFound />;
+    return <RemoteEntryEditor key={entry.id} work={work} entry={entry} />;
+  }
   if (!work || !["prose", "poetry"].includes(work.mode)) return <NotFound />;
 
   const currentChapter = work.chapters.find((c) => c.id === capituloId);
@@ -1148,10 +1203,21 @@ export function ChapterEditPage() {
 // ============================================================================
 export function PagesEditPage() {
   const { id, capituloId } = useParams<{ id: string; capituloId: string }>();
-  const { works, store } = useStudio();
+  const { works, store, remote } = useStudio();
   const navigate = useNavigate();
 
   const work = works.find((w) => w.id === id);
+  if (!work && (remote.loading || remote.error))
+    return (
+      <div className="container studio-page">
+        <StudioPersistenceNotice />
+      </div>
+    );
+  if (work?.persistence === "supabase") {
+    const entry = work.chapters.find((item) => item.id === capituloId);
+    if (!entry) return <NotFound />;
+    return <RemoteEntryEditor key={entry.id} work={work} entry={entry} />;
+  }
   if (!work || !["comic", "manga"].includes(work.mode)) return <NotFound />;
 
   const currentChapter = work.chapters.find((c) => c.id === capituloId);
@@ -1194,19 +1260,31 @@ export function PagesEditPage() {
 // 6. Publications Inventory: /estudio/publicacoes
 // ============================================================================
 export function PublicationsPage() {
-  const { works, store } = useStudio();
+  const { works, store, remote } = useStudio();
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [filterFormat, setFilterFormat] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("active");
+  const [origin, setOrigin] = useState(remote.enabled ? "account" : "local");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return works.filter((w) => {
       if (filterFormat !== "all" && w.format !== filterFormat) return false;
-      if (filterStatus !== "all" && w.status !== filterStatus) return false;
+      if (
+        origin === "account"
+          ? w.persistence !== "supabase"
+          : w.persistence === "supabase"
+      )
+        return false;
+      if (filterStatus === "active" && isArchived(w)) return false;
+      if (filterStatus === "archived" && !isArchived(w)) return false;
+      if (filterStatus === "draft" && (isArchived(w) || w.status !== "draft"))
+        return false;
+      if (filterStatus === "published" && w.status !== "published")
+        return false;
       if (search.trim()) {
         const q = search.toLowerCase();
         return (
@@ -1217,10 +1295,11 @@ export function PublicationsPage() {
       }
       return true;
     });
-  }, [works, filterFormat, filterStatus, search]);
+  }, [works, filterFormat, filterStatus, search, origin]);
 
   return (
     <div className="container studio-page">
+      <StudioPersistenceNotice />
       <header className="studio-header">
         <div>
           <span className="eyebrow">CATÁLOGO DO AUTOR</span>
@@ -1252,6 +1331,15 @@ export function PublicationsPage() {
 
         <div className="flex items-center gap-2">
           <select
+            value={origin}
+            onChange={(e) => setOrigin(e.target.value)}
+            className="filter-select"
+            aria-label="Origem das obras"
+          >
+            <option value="account">Obras da conta</option>
+            <option value="local">Apenas neste navegador</option>
+          </select>
+          <select
             value={filterFormat}
             onChange={(e) => setFilterFormat(e.target.value)}
             className="filter-select"
@@ -1272,6 +1360,7 @@ export function PublicationsPage() {
             aria-label="Filtrar por estado"
           >
             <option value="all">Todos os estados</option>
+            <option value="active">Ativas</option>
             <option value="draft">Rascunhos</option>
             <option value="published">Publicadas</option>
             <option value="archived">Arquivadas</option>
@@ -1308,8 +1397,8 @@ export function PublicationsPage() {
           title="Eliminar esta obra?"
         >
           <p className="mt-2 text-sm text-muted">
-            Esta ação removerá a obra do teu Estúdio durante esta sessão de
-            trabalho.
+            Esta ação elimina o rascunho da conta ou, se identificado como
+            local, apenas a cópia deste navegador.
           </p>
           <div className="modal-actions mt-4">
             <Button variant="ghost" onClick={() => setDeleteId(null)}>
@@ -1318,9 +1407,15 @@ export function PublicationsPage() {
             <Button
               variant="primary"
               className="bg-rose-600 hover:bg-rose-700"
-              onClick={() => {
-                store.deleteWork(deleteId);
-                setDeleteId(null);
+              disabled={remote.saving}
+              onClick={async () => {
+                const work = works.find((item) => item.id === deleteId);
+                if (!work) return;
+                const removed =
+                  work.persistence === "supabase"
+                    ? await remote.controller?.remove(work)
+                    : store.deleteWork(work.id);
+                if (removed) setDeleteId(null);
               }}
             >
               Sim, eliminar
@@ -1348,28 +1443,25 @@ export function PublicationsPage() {
           {filtered.map((work) => {
             const firstChapterId = work.chapters[0]?.id || "cap-1";
             const editUrl =
-              work.mode === "comic" || work.mode === "manga"
-                ? `/estudio/obras/${work.id}/paginas/${firstChapterId}/editar`
-                : `/estudio/obras/${work.id}/capitulos/${firstChapterId}/editar`;
+              work.persistence === "supabase"
+                ? work.chapters[0]
+                  ? entryPath(work, work.chapters[0])
+                  : `/estudio/obras/${work.id}`
+                : work.mode === "comic" || work.mode === "manga"
+                  ? `/estudio/obras/${work.id}/paginas/${firstChapterId}/editar`
+                  : `/estudio/obras/${work.id}/capitulos/${firstChapterId}/editar`;
 
             return (
               <article key={work.id} className="studio-work-card">
                 <header className="work-card-top">
-                  <span className="work-format-tag">{work.format}</span>
-                  <span
-                    className={`status-indicator ${
-                      work.status === "published"
-                        ? "status-published"
-                        : work.status === "draft"
-                          ? "status-draft"
-                          : "status-archived"
-                    }`}
-                  >
-                    {work.status === "published"
-                      ? "Publicada"
-                      : work.status === "draft"
-                        ? "Rascunho"
-                        : "Arquivada"}
+                  <span className="work-format-tag">
+                    {work.format} ·{" "}
+                    {work.persistence === "supabase"
+                      ? "Conta privada"
+                      : "Local"}
+                  </span>
+                  <span className={`status-indicator ${statusClass(work)}`}>
+                    {statusLabel(work)}
                   </span>
                 </header>
 
@@ -1379,7 +1471,14 @@ export function PublicationsPage() {
                 <p className="work-synopsis-snippet">{work.synopsis}</p>
 
                 <div className="work-card-meta">
-                  <span>{work.chapters.length} capítulos</span>
+                  <span>
+                    {work.chapters.length}{" "}
+                    {work.mode === "poetry"
+                      ? "poemas"
+                      : work.mode === "prose"
+                        ? "capítulos"
+                        : "atos"}
+                  </span>
                   <span className="separator" aria-hidden="true">
                     ·
                   </span>
@@ -1395,7 +1494,29 @@ export function PublicationsPage() {
                   </Link>
                   <Button
                     variant="ghost"
-                    onClick={() => store.duplicateWork(work.id)}
+                    disabled={remote.saving}
+                    onClick={() =>
+                      work.persistence === "supabase"
+                        ? void remote.controller?.editorial(
+                            work,
+                            isArchived(work) ? "restore" : "archive",
+                          )
+                        : store.archiveWork(work.id)
+                    }
+                  >
+                    {isArchived(work) ? "Desarquivar" : "Arquivar"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={remote.saving}
+                    onClick={() =>
+                      work.persistence === "supabase"
+                        ? void remote.controller?.editorial(
+                            work,
+                            "duplicate_work",
+                          )
+                        : store.duplicateWork(work.id)
+                    }
                     title="Duplicar"
                     aria-label="Duplicar"
                   >
@@ -1404,6 +1525,7 @@ export function PublicationsPage() {
                   <Button
                     variant="ghost"
                     className="text-rose-500"
+                    disabled={remote.saving}
                     onClick={() => setDeleteId(work.id)}
                     title="Eliminar"
                     aria-label="Eliminar"
@@ -1424,7 +1546,7 @@ export function PublicationsPage() {
                 <th>Título</th>
                 <th>Formato</th>
                 <th>Estado</th>
-                <th>Capítulos</th>
+                <th>Entradas</th>
                 <th>Última alteração</th>
                 <th className="text-right">Ações</th>
               </tr>
@@ -1433,9 +1555,13 @@ export function PublicationsPage() {
               {filtered.map((work) => {
                 const firstChapterId = work.chapters[0]?.id || "cap-1";
                 const editUrl =
-                  work.mode === "comic" || work.mode === "manga"
-                    ? `/estudio/obras/${work.id}/paginas/${firstChapterId}/editar`
-                    : `/estudio/obras/${work.id}/capitulos/${firstChapterId}/editar`;
+                  work.persistence === "supabase"
+                    ? work.chapters[0]
+                      ? entryPath(work, work.chapters[0])
+                      : `/estudio/obras/${work.id}`
+                    : work.mode === "comic" || work.mode === "manga"
+                      ? `/estudio/obras/${work.id}/paginas/${firstChapterId}/editar`
+                      : `/estudio/obras/${work.id}/capitulos/${firstChapterId}/editar`;
 
                 return (
                   <tr key={work.id}>
@@ -1447,22 +1573,15 @@ export function PublicationsPage() {
                         {work.title}
                       </Link>
                     </td>
-                    <td>{work.format}</td>
                     <td>
-                      <span
-                        className={`status-indicator ${
-                          work.status === "published"
-                            ? "status-published"
-                            : work.status === "draft"
-                              ? "status-draft"
-                              : "status-archived"
-                        }`}
-                      >
-                        {work.status === "published"
-                          ? "Publicada"
-                          : work.status === "draft"
-                            ? "Rascunho"
-                            : "Arquivada"}
+                      {work.format} ·{" "}
+                      {work.persistence === "supabase"
+                        ? "Conta privada"
+                        : "Local"}
+                    </td>
+                    <td>
+                      <span className={`status-indicator ${statusClass(work)}`}>
+                        {statusLabel(work)}
                       </span>
                     </td>
                     <td className="font-mono text-sm">
@@ -1479,7 +1598,29 @@ export function PublicationsPage() {
                         </Link>
                         <Button
                           variant="ghost"
-                          onClick={() => store.duplicateWork(work.id)}
+                          disabled={remote.saving}
+                          onClick={() =>
+                            work.persistence === "supabase"
+                              ? void remote.controller?.editorial(
+                                  work,
+                                  isArchived(work) ? "restore" : "archive",
+                                )
+                              : store.archiveWork(work.id)
+                          }
+                        >
+                          {isArchived(work) ? "Desarquivar" : "Arquivar"}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          disabled={remote.saving}
+                          onClick={() =>
+                            work.persistence === "supabase"
+                              ? void remote.controller?.editorial(
+                                  work,
+                                  "duplicate_work",
+                                )
+                              : store.duplicateWork(work.id)
+                          }
                           title="Duplicar"
                           aria-label="Duplicar"
                         >
@@ -1488,6 +1629,7 @@ export function PublicationsPage() {
                         <Button
                           variant="ghost"
                           className="text-rose-500"
+                          disabled={remote.saving}
                           onClick={() => setDeleteId(work.id)}
                           title="Eliminar"
                           aria-label="Eliminar"
@@ -1511,16 +1653,18 @@ export function PublicationsPage() {
 // 7. Author Statistics: /estudio/estatisticas
 // ============================================================================
 export function StudioStatsPage() {
-  const { stats, works } = useStudio();
+  const { stats, activeWorks: works } = useStudio();
 
   return (
     <div className="container studio-page">
+      <StudioPersistenceNotice />
       <header className="studio-header">
         <div>
           <span className="eyebrow">PLANEAMENTO EDITORIAL</span>
           <h1>Estatísticas do Autor</h1>
           <p className="studio-subtitle">
-            Contagens da produção local e distribuição de formatos.
+            Contagens das obras privadas ativas da conta, sem dados de
+            audiência.
           </p>
         </div>
       </header>
@@ -1528,8 +1672,9 @@ export function StudioStatsPage() {
       <div className="form-info-callout mb-4">
         <Info size={16} />
         <span>
-          Estas contagens usam apenas os teus rascunhos locais. Não há métricas
-          de audiência, retenção ou publicação remota.
+          Estas contagens usam apenas obras privadas ativas guardadas na conta.
+          O catálogo editorial, o arquivo e os rascunhos locais não entram
+          nestas estatísticas.
         </span>
       </div>
 
@@ -1543,7 +1688,7 @@ export function StudioStatsPage() {
         </div>
 
         <div className="studio-stat-card">
-          <span className="stat-label">Capítulos Produzidos</span>
+          <span className="stat-label">Entradas Produzidas</span>
           <span className="stat-value font-mono">{stats.totalChapters}</span>
           <span className="stat-hint">
             Distribuídos por {stats.totalWorks} obras
@@ -1576,8 +1721,8 @@ export function StudioStatsPage() {
               <tr>
                 <th>Obra</th>
                 <th>Formato</th>
-                <th>Capítulos</th>
-                <th>Palavras Estimadas</th>
+                <th>Entradas</th>
+                <th>Palavras</th>
                 <th>Estado</th>
               </tr>
             </thead>

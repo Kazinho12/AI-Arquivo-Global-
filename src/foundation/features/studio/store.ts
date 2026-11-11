@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { useRemoteWorks } from "./RemoteWorksProvider";
 import { localId } from "../local/id";
 import {
   bindScope,
@@ -527,7 +529,40 @@ export const studioStore = {
 };
 
 export function useStudio() {
-  const works = useLocalCollection<StudioWork>(STORAGE_KEY_WORKS);
+  const localWorks = useLocalCollection<StudioWork>(STORAGE_KEY_WORKS);
+  const remote = useRemoteWorks();
+  const works = useMemo(
+    () => [
+      ...remote.works,
+      ...localWorks.map((work) => ({ ...work, persistence: undefined })),
+    ],
+    [remote.works, localWorks],
+  );
+  const accountWorks = remote.works;
+  const activeWorks = accountWorks.filter((work) => !work.archivedAt);
+  const totalWords = activeWorks.reduce(
+    (sum, work) =>
+      sum +
+      work.chapters.reduce(
+        (count, entry) =>
+          count +
+          (entry.content ?? "").trim().split(/\s+/).filter(Boolean).length,
+        0,
+      ),
+    0,
+  );
+  const accountStats = {
+    totalWorks: activeWorks.length,
+    draftsCount: activeWorks.length,
+    publishedCount: 0,
+    totalChapters: activeWorks.reduce(
+      (count, work) => count + work.chapters.length,
+      0,
+    ),
+    totalWords,
+    estimatedReads: null,
+    avgReadTimeMinutes: Math.ceil(totalWords / 200),
+  };
   const activities = useLocalCollection<EditorialActivity>(
     STORAGE_KEY_ACTIVITIES,
   );
@@ -536,7 +571,10 @@ export function useStudio() {
     works,
     activities,
     media,
-    stats: studioStore.getStats(),
+    remote,
+    accountWorks,
+    activeWorks,
+    stats: accountStats,
     store: bindScope(studioStore, currentScope()),
     refresh: notifyLocal,
   };

@@ -1,3 +1,4 @@
+import { RemoteWorksProvider } from "../features/studio/RemoteWorksProvider";
 import { PreferenceEffects } from "../features/preferences/store";
 import { LocalDataBoundary } from "../features/local/LocalDataBoundary";
 import { AuthProvider } from "../features/auth/AuthProvider";
@@ -58,7 +59,9 @@ export function Providers({ children }: { children: ReactNode }) {
       <ToastContext.Provider value={setMessage}>
         <PreferenceEffects />
         <AuthProvider>
-          <LocalDataBoundary>{children}</LocalDataBoundary>
+          <LocalDataBoundary>
+            <RemoteWorksProvider>{children}</RemoteWorksProvider>
+          </LocalDataBoundary>
         </AuthProvider>
         <div className="toast-region" role="status" aria-live="polite">
           {message && (

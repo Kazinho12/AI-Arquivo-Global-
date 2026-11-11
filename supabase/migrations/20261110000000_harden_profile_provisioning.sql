@@ -32,10 +32,12 @@ CREATE INDEX IF NOT EXISTS idx_profiles_username_lower ON public.profiles (lower
 CREATE OR REPLACE FUNCTION public.handle_profile_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
-  NEW.updated_at := now();
+  NEW.updated_at := pg_catalog.now();
   RETURN NEW;
 END;
 $$;
+-- Internal trigger function: no browser RPC access, including explicit default grants.
+REVOKE EXECUTE ON FUNCTION public.handle_profile_updated_at() FROM PUBLIC, anon, authenticated;
 
 -- Provision only missing profiles. Existing IDs and profile values are preserved.
 CREATE OR REPLACE FUNCTION public.ensure_user_profile(
@@ -70,7 +72,7 @@ BEGIN
     PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('ag-profile:' || candidate, 0));
     IF EXISTS (SELECT 1 FROM public.profiles WHERE pg_catalog.lower(username) = candidate) THEN CONTINUE; END IF;
     INSERT INTO public.profiles (id, username, display_name, bio, created_at, updated_at)
-      VALUES (p_id, candidate, display_label, '', COALESCE(p_created_at, now()), now())
+      VALUES (p_id, candidate, display_label, '', COALESCE(p_created_at, pg_catalog.now()), pg_catalog.now())
       ON CONFLICT DO NOTHING RETURNING id INTO inserted_id;
     IF inserted_id IS NOT NULL OR EXISTS (SELECT 1 FROM public.profiles WHERE id = p_id) THEN RETURN true; END IF;
   END LOOP;
@@ -82,7 +84,7 @@ EXCEPTION WHEN OTHERS THEN
   RETURN false;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.ensure_user_profile(uuid, text, jsonb, timestamptz) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.ensure_user_profile(uuid, text, jsonb, timestamptz) FROM PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
@@ -94,7 +96,7 @@ EXCEPTION WHEN OTHERS THEN
   RETURN NEW;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS on_profile_updated ON public.profiles;
 CREATE TRIGGER on_profile_updated BEFORE UPDATE ON public.profiles
@@ -112,6 +114,13 @@ CREATE POLICY "Utilizador pode criar o seu próprio perfil" ON public.profiles
 DROP POLICY IF EXISTS "Utilizador pode atualizar o seu próprio perfil" ON public.profiles;
 CREATE POLICY "Utilizador pode atualizar o seu próprio perfil" ON public.profiles
   FOR UPDATE TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- Explicit browser contract; do not inherit broad table privileges from defaults.
+-- RLS remains enabled and limits writes to auth.uid() = id.
+REVOKE ALL PRIVILEGES ON TABLE public.profiles FROM PUBLIC, anon, authenticated;
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT SELECT ON TABLE public.profiles TO anon, authenticated;
+GRANT INSERT, UPDATE ON TABLE public.profiles TO authenticated;
 
 -- Isolated per account: one rejected row does not roll back the remaining backfill.
 DO $$

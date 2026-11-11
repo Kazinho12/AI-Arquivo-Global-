@@ -16,6 +16,8 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+-- Trigger-only helper; direct execution is not part of the frontend contract.
+REVOKE EXECUTE ON FUNCTION public.normalize_profile_username() FROM PUBLIC, anon, authenticated;
 DROP TRIGGER IF EXISTS normalize_profile_username ON public.profiles;
 CREATE TRIGGER normalize_profile_username BEFORE INSERT OR UPDATE OF username ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.normalize_profile_username();
