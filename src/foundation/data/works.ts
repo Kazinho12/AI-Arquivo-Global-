@@ -22,6 +22,8 @@ export interface Work {
   synopsis: string;
   createdAt: string;
   cover: number;
+  coverAccentColor?: string;
+  coverStyle?: string;
   /** Legacy consumers may still hold demo records; the inaugural catalog does not use this flag. */
   demo?: true;
 }

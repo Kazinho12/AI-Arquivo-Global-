@@ -47,6 +47,18 @@ import { PoetryEditor } from "../features/studio/PoetryEditor";
 import { VisualSequencer } from "../features/studio/VisualSequencer";
 import { Button, Badge } from "../components/ui";
 import { NotFound } from "./States";
+import { LanguageCombobox } from "../components/LanguageCombobox";
+import { WorkCover } from "../components/WorkCover";
+import {
+  EDITORIAL_COVER_PALETTE,
+  COVER_STYLES,
+  coverStyleDefinitions,
+  type CoverStyle,
+  isValidHexColor,
+  normalizeHexColor,
+  getCoverContrastTheme,
+} from "../data/covers";
+import { getGenresForFormat } from "../data/genres";
 
 const isArchived = (work: StudioWork) =>
   Boolean(work.archivedAt) || work.status === "archived";
@@ -353,6 +365,10 @@ export function NewWorkWizardPage() {
   const [ageRating, setAgeRating] = useState<AgeRating>("Livre");
   const [contentWarnings, setContentWarnings] = useState<string[]>([]);
   const [coverAccentColor, setCoverAccentColor] = useState("#14243B");
+  const [coverStyle, setCoverStyle] = useState<CoverStyle>("geometric");
+  const [customHex, setCustomHex] = useState("#14243B");
+
+  const formatGenres = useMemo(() => getGenresForFormat(format), [format]);
   const mode =
     format === "Poesia"
       ? "poetry"
@@ -565,35 +581,33 @@ export function NewWorkWizardPage() {
                   onChange={(e) => setGenre(e.target.value)}
                   className="filter-select w-full"
                 >
-                  <option value="Ficção especulativa">
-                    Ficção especulativa
-                  </option>
-                  <option value="Ficção urbana">Ficção urbana</option>
-                  <option value="Poesia contemporânea">
-                    Poesia contemporânea
-                  </option>
-                  <option value="Fantasia">Fantasia</option>
-                  <option value="Ficção científica">Ficção científica</option>
-                  <option value="Mistério / Enigma">Mistério / Enigma</option>
-                  <option value="Realismo mágico">Realismo mágico</option>
+                  <optgroup label={`Sugeridos para ${format}`}>
+                    {formatGenres.recommended.map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Todos os Géneros">
+                    {formatGenres.all
+                      .filter((g) => !formatGenres.recommended.includes(g))
+                      .map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
+                  </optgroup>
                 </select>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="w-lang" className="field-label">
-                  Idioma Principal
-                </label>
-                <select
+              <div className="form-group col-span-2">
+                <LanguageCombobox
                   id="w-lang"
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="filter-select w-full"
-                >
-                  <option value="Português">Português</option>
-                  <option value="Galego">Galego</option>
-                  <option value="Espanhol">Espanhol</option>
-                  <option value="Inglês">Inglês</option>
-                </select>
+                  onChange={(val) => setLanguage(val)}
+                  label="Idioma Principal *"
+                  required
+                />
               </div>
 
               <div className="form-group col-span-2">
@@ -628,25 +642,156 @@ export function NewWorkWizardPage() {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label className="field-label">Cor da Capa Gráfica</label>
-                <div className="flex items-center gap-2 mt-2">
-                  {["#14243B", "#1E2A38", "#2C3E50", "#2A3F5E", "#0E2A47"].map(
-                    (col) => (
+              {/* Seletor Ampliado de Cores da Capa (28 Cores + Custom HEX) */}
+              <div className="form-group col-span-2">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="field-label">
+                    Paleta Editorial de Cores (28 Cores ou Personalizada)
+                  </label>
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    {getCoverContrastTheme(coverAccentColor) === "light"
+                      ? "Contraste Claro (Texto Escuro)"
+                      : "Contraste Escuro (Texto Claro)"}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800">
+                  {EDITORIAL_COVER_PALETTE.map((col) => {
+                    const isSelected =
+                      coverAccentColor.toUpperCase() === col.hex.toUpperCase();
+                    return (
                       <button
-                        key={col}
+                        key={col.id}
                         type="button"
-                        className={`w-7 h-7 rounded-full border-2 ${
-                          coverAccentColor === col
-                            ? "border-accent scale-110"
-                            : "border-transparent"
+                        title={`${col.name} (${col.hex})`}
+                        className={`w-6 h-6 rounded-full border-2 transition-transform cursor-pointer ${
+                          isSelected
+                            ? "border-slate-900 dark:border-white scale-125 z-10 shadow-sm"
+                            : "border-transparent hover:scale-110"
                         }`}
-                        style={{ backgroundColor: col }}
-                        onClick={() => setCoverAccentColor(col)}
-                        aria-label={`Cor ${col}`}
+                        style={{ backgroundColor: col.hex }}
+                        onClick={() => {
+                          setCoverAccentColor(col.hex);
+                          setCustomHex(col.hex);
+                        }}
+                        aria-label={`Cor ${col.name} ${col.hex}`}
                       />
-                    ),
-                  )}
+                    );
+                  })}
+                </div>
+
+                {/* Seletor HEX personalizado */}
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="color"
+                    value={
+                      isValidHexColor(coverAccentColor)
+                        ? coverAccentColor
+                        : "#14243B"
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setCoverAccentColor(val);
+                      setCustomHex(val);
+                    }}
+                    className="w-8 h-8 rounded border border-slate-300 dark:border-slate-700 cursor-pointer p-0.5 bg-transparent"
+                    title="Seletor visual de cor HEX"
+                  />
+                  <input
+                    type="text"
+                    value={customHex}
+                    placeholder="#14243B"
+                    maxLength={7}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setCustomHex(val);
+                      if (isValidHexColor(val)) {
+                        setCoverAccentColor(val);
+                      }
+                    }}
+                    className="w-28 font-mono text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 uppercase"
+                  />
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Insere qualquer código HEX válido (#RRGGBB)
+                  </span>
+                </div>
+              </div>
+
+              {/* Experimentador de Estilos Gráficos */}
+              <div className="form-group col-span-2">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="field-label">Estilo Gráfico da Capa</label>
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
+                    Persistência de estilo na próxima fase
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {COVER_STYLES.map((st) => {
+                    const isSelected = coverStyle === st;
+                    return (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setCoverStyle(st)}
+                        className={`px-3 py-2 text-xs font-medium rounded-lg border text-left transition-colors ${
+                          isSelected
+                            ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-transparent shadow-sm"
+                            : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
+                        }`}
+                      >
+                        <div className="font-semibold truncate">
+                          {coverStyleDefinitions[st]?.label.split(" ")[0]}
+                        </div>
+                        <div className="text-[10px] opacity-75 truncate">
+                          {st}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                  A cor selecionada é gravada de imediato na tua conta. A persistência dos estilos gráficos personalizados será ativada na próxima migração da base de dados.
+                </p>
+              </div>
+
+              {/* Pré-visualização Viva da Capa no Passo 2 */}
+              <div className="col-span-2 mt-2 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40">
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  <div className="w-[160px] flex-shrink-0">
+                    <WorkCover
+                      title={title || "Título da Obra"}
+                      author="Autor do Arquivo"
+                      subtitle={subtitle}
+                      color={coverAccentColor}
+                      style={coverStyle}
+                      format={format}
+                      size="responsive"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2 text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Pré-visualização Viva da Capa
+                      </span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                        {coverStyleDefinitions[coverStyle]?.label}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      {title || "Sem título definido"}
+                    </h3>
+                    {subtitle && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                        {subtitle}
+                      </p>
+                    )}
+                    <p className="text-xs text-slate-600 dark:text-slate-300">
+                      Formato: <strong>{format}</strong> · Género: <strong>{genre}</strong> · Idioma: <strong>{language}</strong>
+                    </p>
+                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                      ✓ Contraste tipográfico acessível calculado automaticamente segundo as normas WCAG AA.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -694,13 +839,16 @@ export function NewWorkWizardPage() {
             </p>
 
             <article className="work-preview-simulation">
-              <aside
-                className="preview-cover-sim"
-                style={{ backgroundColor: coverAccentColor }}
-              >
-                <span className="sim-format-label">{format}</span>
-                <h3 className="sim-title-label">{title || "Título da Obra"}</h3>
-                {subtitle && <p className="sim-sub-label">{subtitle}</p>}
+              <aside className="preview-cover-sim flex justify-center p-2 bg-transparent">
+                <WorkCover
+                  title={title || "Título da Obra"}
+                  author="Autor da Obra"
+                  subtitle={subtitle}
+                  color={coverAccentColor}
+                  style={coverStyle}
+                  format={format}
+                  size="md"
+                />
               </aside>
 
               <div className="preview-meta-sim">

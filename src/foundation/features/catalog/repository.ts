@@ -58,6 +58,7 @@ export function mapPublishedWork(row: Record<string, any>): PublishedWork {
     synopsis: row.description,
     createdAt: row.last_published_at,
     cover: 1,
+    coverAccentColor: row.cover_accent_color || undefined,
     origin: "user-publication",
     language: row.language,
     ageRating: row.age_rating,

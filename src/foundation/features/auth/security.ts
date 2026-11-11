@@ -1,6 +1,10 @@
 import { matchRoutes } from "react-router-dom";
 import { productRoutes } from "../../app/routes";
 export function validateEmail(value: string): string | null {
+  if (!value || !value.trim()) return "Introduz o teu endereço de e-mail.";
+  if (!value.includes("@")) {
+    return "Introduz um endereço de e-mail válido (ex.: o.teu@email.com). O login é feito com e-mail, não com nome de utilizador.";
+  }
   return value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
     ? null
     : "Introduz um endereço de e-mail válido.";
@@ -178,6 +182,10 @@ export function authErrorMessage(error: unknown): string {
     return "Este link é inválido ou expirou. Solicita um novo link e abre-o no mesmo navegador.";
   if (
     e?.status === 401 ||
+    e?.status === 403 ||
+    e?.code === "bad_jwt" ||
+    e?.code === "invalid_jwt" ||
+    e?.code === "session_expired" ||
     e?.code === "refresh_token_not_found" ||
     e?.code === "refresh_token_already_used" ||
     e?.code === "session_not_found" ||
@@ -192,7 +200,11 @@ export function isInvalidSession(error: unknown): boolean {
   const e = error as { status?: number; code?: string } | null;
   return (
     e?.status === 401 ||
+    e?.status === 403 ||
     [
+      "bad_jwt",
+      "invalid_jwt",
+      "session_expired",
       "refresh_token_not_found",
       "refresh_token_already_used",
       "session_not_found",

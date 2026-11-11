@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import { inauguralWorks } from "../data/inaugural";
 import type { Work } from "../data/works";
+import { WorkCover } from "./WorkCover";
+
 export function Cover({
   work,
   large = false,
@@ -11,7 +13,7 @@ export function Cover({
   large?: boolean;
 }) {
   const editorial = inauguralWorks.find((item) => item.id === work.id);
-  if (editorial)
+  if (editorial && editorial.coverAsset) {
     return (
       <div
         aria-hidden="true"
@@ -26,29 +28,32 @@ export function Cover({
         />
       </div>
     );
+  }
+
+  const accentColor =
+    work.coverAccentColor ||
+    (work as any).cover_accent_color ||
+    "#14243B";
+
   return (
     <div
       aria-hidden="true"
-      className={`cover cover-${work.cover} ${large ? "cover-large" : ""}`}
+      className={`cover-container overflow-hidden rounded ${large ? "cover-large" : ""}`}
     >
-      <span className="cover-edition">
-        {work.origin === "user-publication"
-          ? "ARQUIVO GLOBAL / OBRA PUBLICADA"
-          : "ARQUIVO GLOBAL / COMPOSIÇÃO LOCAL"}
-      </span>
-      <div className="cover-art">
-        <i />
-        <i />
-        <i />
-        <i />
-        <i />
-      </div>
-      <div className="cover-lettering">
-        <span>{work.author}</span>
-        <strong>{work.title}</strong>
-        <small>UMA HISTÓRIA PARA ATRAVESSAR</small>
-      </div>
-      <span className="cover-number">AG — 00{work.cover}</span>
+      <WorkCover
+        title={work.title}
+        author={work.author}
+        subtitle={work.subtitle}
+        color={accentColor}
+        style="legacy"
+        format={work.format}
+        editionLabel={
+          work.origin === "user-publication"
+            ? "ARQUIVO GLOBAL / OBRA PUBLICADA"
+            : "ARQUIVO GLOBAL / COMPOSIÇÃO LOCAL"
+        }
+        size={large ? "lg" : "responsive"}
+      />
     </div>
   );
 }

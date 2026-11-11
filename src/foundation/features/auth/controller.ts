@@ -249,13 +249,18 @@ export class AuthController {
       return result;
     } catch (error) {
       const message = authErrorMessage(error);
-      if ((error as { status?: number })?.status === 429)
+      const statusNum = (error as { status?: number })?.status;
+      if (statusNum === 429)
         this.set({ resendAt: this.env.now() + 60000 });
+      const isClientError = Boolean(
+        statusNum && statusNum >= 400 && statusNum < 500,
+      );
       this.set({
         error: message,
-        status: isInvalidSession(error)
-          ? "unauthenticated"
-          : "operational-error",
+        status:
+          isInvalidSession(error) || (!this.state.session && isClientError)
+            ? "unauthenticated"
+            : "operational-error",
         ...(isInvalidSession(error) ? { session: null, user: null } : {}),
       });
       return { ok: false, message };

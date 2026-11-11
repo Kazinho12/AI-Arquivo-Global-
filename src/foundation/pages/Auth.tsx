@@ -74,16 +74,29 @@ function EmailField({
   onChange: (email: string) => void;
 }) {
   return (
-    <Field
-      label="E-mail"
-      type="email"
-      autoComplete="email"
-      required
-      maxLength={254}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder="o.teu@email.com"
-    />
+    <div>
+      <Field
+        label="E-mail"
+        type="email"
+        autoComplete="email"
+        required
+        maxLength={254}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="o.teu@email.com"
+      />
+      <p
+        className="auth-hint"
+        style={{
+          marginTop: "0.25rem",
+          marginBottom: "0.75rem",
+          fontSize: "0.8rem",
+          opacity: 0.8,
+        }}
+      >
+        Inicia sessão com o teu endereço de e-mail (não com o nome de utilizador).
+      </p>
+    </div>
   );
 }
 export function LoginPage() {
