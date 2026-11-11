@@ -10,8 +10,10 @@ export const formats = [
 ] as const;
 export type WorkFormat = (typeof formats)[number];
 export interface Work {
+  origin?: "user-publication" | "original-created-for-project";
   id: string;
   title: string;
+  subtitle?: string;
   author: string;
   authorId: string;
   format: WorkFormat;

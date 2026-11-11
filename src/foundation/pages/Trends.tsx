@@ -1,16 +1,16 @@
+import { usePublicCatalog } from "../features/catalog/PublicCatalog";
 import { Link, useSearchParams } from "react-router-dom";
 import { Sparkles, Info } from "lucide-react";
 import { DemoNotice, PageIntro, WorkSection } from "../components/Discovery";
 import { EmptyState } from "../components/ui";
 import { editorialSelections, selectEditorialWorks } from "../data/editorial";
-import { worksRepository } from "../lib/worksRepository";
 export default function Trends() {
   const [params] = useSearchParams();
   const selection = params.get("selecao") ?? "";
   const entries = selection
     ? editorialSelections.filter((s) => s.id === selection)
     : editorialSelections;
-  const works = worksRepository.list();
+  const works = usePublicCatalog().works;
   return (
     <div className="container discovery-page">
       <div className="trends-intro">

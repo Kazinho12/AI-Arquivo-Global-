@@ -1,3 +1,5 @@
+import { DiscoveryCollection } from "../features/catalog/DiscoveryCollection";
+import { usePublicCatalog } from "../features/catalog/PublicCatalog";
 import { useSearchParams } from "react-router-dom";
 import { SlidersHorizontal, X } from "lucide-react";
 import { Button, EmptyState, Pagination, SearchField, Select } from "./ui";
@@ -5,7 +7,7 @@ import { WorkGrid } from "./Discovery";
 import { formats, type Work } from "../data/works";
 import { filterWorks } from "../lib/worksRepository";
 import { getGenres, getTags, paginate, readFilters } from "../lib/discovery";
-export function WorkCollection({
+function LocalWorkCollection({
   works,
   advanced = false,
   fixedTag,
@@ -128,7 +130,7 @@ export function WorkCollection({
             </legend>
             <p className="filter-help">
               A obra deve incluir todas as tags selecionadas. As contagens
-              referem-se ao catálogo inaugural completo.
+              referem-se ao catálogo apresentado.
             </p>
             <div className="tag-options">
               {tags.map((tag) => (
@@ -187,7 +189,7 @@ export function WorkCollection({
         <p role="status" aria-live="polite">
           {result.total === 0
             ? "Nenhuma obra encontrada"
-            : `${result.start}–${result.end} de ${result.total} ${result.total === 1 ? "obra editorial" : "obras editoriais"}`}
+            : `${result.start}–${result.end} de ${result.total} ${result.total === 1 ? "obra" : "obras"}`}
         </p>
         {active && (
           <Button variant="ghost" onClick={() => setParams({})}>
@@ -219,5 +221,18 @@ export function WorkCollection({
         </EmptyState>
       )}
     </div>
+  );
+}
+
+export function WorkCollection(props: {
+  works: readonly Work[];
+  advanced?: boolean;
+  fixedTag?: string;
+}) {
+  const catalog = usePublicCatalog();
+  return catalog.repository?.search ? (
+    <DiscoveryCollection fixedTag={props.fixedTag} />
+  ) : (
+    <LocalWorkCollection {...props} />
   );
 }

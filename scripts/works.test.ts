@@ -556,3 +556,29 @@ test("F2.2: concurrent editorial/metadata changes fail without replacing newer c
   await controller.recover(updated.id);
   assert.equal(controller.getSnapshot().works.length, 1);
 });
+
+test("Delete work: exact UUID/revision, valid operation ID and safe retry after a lost response", async () => {
+  const db = backend();
+  const repo = db.session(a).repository;
+  const work = await repo.create(metadata);
+  db.loseNextResponse();
+  await assert.rejects(repo.remove(work), /ligação/);
+  const first = db.requests.find(
+    (request) => request.body?.p_action === "delete_work",
+  )!.body!;
+  assert.equal(first.p_work_id, work.id);
+  assert.equal(first.p_revision, work.revision);
+  assert.match(
+    String(first.p_operation_id),
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+  );
+  await repo.remove(work);
+  const retries = db.requests.filter(
+    (request) => request.body?.p_action === "delete_work",
+  );
+  assert.equal(
+    retries[0].body?.p_operation_id,
+    retries[1].body?.p_operation_id,
+  );
+  assert.equal(await repo.find(work.id), null);
+});

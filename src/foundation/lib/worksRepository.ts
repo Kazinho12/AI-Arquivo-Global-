@@ -1,7 +1,7 @@
 import type { Work } from "../data/works";
 import { inauguralWorks } from "../data/inaugural";
 import { normalizeText, slugify, type SearchScope } from "./discovery";
-/** Read-only boundary. A future Supabase adapter can implement this contract. No network or credentials. */
+/** Local inaugural editions only. User publications use features/catalog/repository. */
 export interface WorksRepository {
   list(): readonly Work[];
   find(id: string): Work | undefined;

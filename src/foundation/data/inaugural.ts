@@ -355,7 +355,7 @@ export const editorialTaxonomy = {
 };
 export const institutionalContent = {
   catalogNotice:
-    "Catálogo inaugural · preparado localmente pela Equipa Editorial. Sem publicação remota.",
+    "Edição inaugural · conteúdo local da Equipa Editorial, identificado separadamente das publicações de autores.",
   rulesStatus:
     "Rascunho não publicado · sem aprovação institucional ou jurídica",
   privacyStatus: "Descrição técnica atual; política oficial ainda por aprovar.",

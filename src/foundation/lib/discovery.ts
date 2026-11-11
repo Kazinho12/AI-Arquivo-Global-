@@ -9,10 +9,13 @@ export const normalizeText = (value: string): string =>
     .replace(/\p{Diacritic}/gu, "")
     .toLocaleLowerCase("pt")
     .trim();
-export const slugify = (value: string): string =>
-  normalizeText(value)
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+export const slugify = (value: string): string => {
+  const normalized = normalizeText(value);
+  return (
+    normalized.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "") ||
+    normalized
+  );
+};
 export type SearchScope = "todos" | "titulo" | "autor" | "sinopse";
 export type SortOrder = "recentes" | "antigas" | "titulo" | "autor";
 export interface DiscoveryFilters {

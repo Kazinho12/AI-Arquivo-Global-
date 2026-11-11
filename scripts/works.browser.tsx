@@ -1,3 +1,8 @@
+import { PublicCatalogProvider } from "../src/foundation/features/catalog/PublicCatalog";
+import type {
+  PublishedWork,
+  PublicWorksRepository,
+} from "../src/foundation/features/catalog/repository";
 import { AuthProvider } from "../src/foundation/features/auth/AuthProvider";
 import {
   initialAuthState,
@@ -33,6 +38,17 @@ const fixture = document.getElementById("fixture")!;
 const root = createRoot(fixture);
 const rows = new Map<string, StudioWork>();
 let networkError = false;
+const editions = new Map<string, PublishedWork>();
+const publicRepository: PublicWorksRepository = {
+  async list() {
+    if (networkError) throw Error("Catálogo indisponível");
+    return [...editions.values()];
+  },
+  async find(id) {
+    if (networkError) throw Error("Catálogo indisponível");
+    return editions.get(id) ?? null;
+  },
+};
 const metadata: DraftMetadata = {
   title: "Rascunho local anterior",
   synopsis: "Preservar",
@@ -65,6 +81,7 @@ function repository(ownerId: string): WorksRepository {
         ...input,
         id: crypto.randomUUID(),
         ownerId,
+        publicId: crypto.randomUUID(),
         slug: "obra-privada",
         mode: modeForFormat(input.format),
         status: "draft",
@@ -96,6 +113,7 @@ function repository(ownerId: string): WorksRepository {
       let saved = structuredClone(current);
       if (action === "delete_work") {
         rows.delete(work.id);
+        editions.delete(work.publicId!);
         return { deletedId: work.id };
       }
       if (action === "duplicate_work") {
@@ -113,6 +131,43 @@ function repository(ownerId: string): WorksRepository {
         };
       } else {
         saved.revision!++;
+        if (action === "publish") {
+          if (!saved.chapters.some((e) => e.content?.trim()))
+            throw Error("Conteúdo obrigatório");
+          const now = new Date().toISOString();
+          saved.status = "published";
+          saved.visibility = "public";
+          saved.firstPublishedAt ??= now;
+          saved.lastPublishedAt = now;
+          saved.withdrawnAt = null;
+          saved.publishedRevision = saved.revision;
+          editions.set(saved.publicId!, {
+            id: saved.publicId!,
+            title: saved.title,
+            author: "Autora pública",
+            authorId: "autora",
+            authorUsername: "autora",
+            format: saved.format,
+            genre: saved.genre,
+            tags: saved.tags,
+            synopsis: saved.synopsis,
+            createdAt: now,
+            cover: 1,
+            origin: "user-publication",
+            language: saved.language,
+            ageRating: saved.ageRating,
+            contentWarnings: saved.contentWarnings,
+            firstPublishedAt: saved.firstPublishedAt,
+            lastPublishedAt: now,
+            chapters: structuredClone(saved.chapters),
+          });
+        }
+        if (action === "withdraw") {
+          saved.status = "draft";
+          saved.visibility = "private";
+          saved.withdrawnAt = new Date().toISOString();
+          editions.delete(saved.publicId!);
+        }
         if (action === "archive") saved.archivedAt = new Date().toISOString();
         if (action === "restore") saved.archivedAt = null;
         if (action === "add_entry")
@@ -170,9 +225,9 @@ function repository(ownerId: string): WorksRepository {
       return { work: saved };
     },
     async remove(work) {
-      check();
-      if (work.ownerId !== ownerId) throw new Error("Sem permissão");
-      rows.delete(work.id);
+      const result = await this.editorial!(work, "delete_work");
+      if (result.deletedId !== work.id)
+        throw new Error("Eliminação não confirmada");
     },
   };
 }
@@ -189,7 +244,9 @@ async function mount(path: string, owner = "author-a") {
         path: "*",
         element: (
           <RemoteWorksProvider controller={controller}>
-            <ApplicationRoutes />
+            <PublicCatalogProvider repository={publicRepository}>
+              <ApplicationRoutes />
+            </PublicCatalogProvider>
           </RemoteWorksProvider>
         ),
       },
@@ -198,7 +255,9 @@ async function mount(path: string, owner = "author-a") {
   );
   await act(async () => {
     root.render(
-      <RouterProvider router={router} future={{ v7_startTransition: true }} />,
+      <React.StrictMode>
+        <RouterProvider router={router} future={{ v7_startTransition: true }} />
+      </React.StrictMode>,
     );
     await new Promise((done) => setTimeout(done, 10));
   });
@@ -218,11 +277,15 @@ async function waitFor(checker: () => unknown, message: string) {
   throw new Error(message + ": " + fixture.textContent);
 }
 async function click(text: string) {
-  const button = [...fixture.querySelectorAll("button")].find((item) =>
-    item.textContent?.includes(text),
+  const scope = fixture.querySelector("dialog:modal") ?? fixture;
+  const button = [...scope.querySelectorAll("button")].find(
+    (item) =>
+      item.textContent?.includes(text) ||
+      item.getAttribute("aria-label") === text,
   );
   check(button && !button.disabled, "Botão indisponível: " + text);
   await act(async () => {
+    button.focus();
     button.click();
     await new Promise((done) => setTimeout(done, 5));
   });
@@ -268,8 +331,44 @@ async function run(name: string, action: () => Promise<void>) {
     results.push({ name, ok: false, error: String(error) });
   } finally {
     networkError = false;
+    await act(async () => root.render(null));
   }
 }
+function visibleDialog() {
+  const dialog = fixture.querySelector<HTMLDialogElement>("dialog[open]");
+  check(
+    dialog?.open &&
+      dialog.matches(":modal") &&
+      dialog.getBoundingClientRect().width > 0,
+    "Confirmação não está visível na top layer",
+  );
+  check(dialog.contains(document.activeElement), "Foco fora da confirmação");
+  check(
+    Boolean(dialog.getAttribute("aria-labelledby")),
+    "Confirmação sem nome acessível",
+  );
+  return dialog;
+}
+await run(
+  "Eliminar: StrictMode keeps the confirmation visible after its effect replay",
+  async () => {
+    const work = await repository("author-a").create({
+      ...metadata,
+      title: "Teste de confirmação",
+    });
+    try {
+      await mount(`/estudio/obras/${work.id}`);
+      await click("Eliminar");
+      await act(async () => new Promise((done) => setTimeout(done, 50)));
+      visibleDialog();
+      check(rows.has(work.id), "Eliminou ao primeiro clique");
+      await click("Cancelar");
+      check(rows.has(work.id), "Cancelar eliminou dados");
+    } finally {
+      rows.delete(work.id);
+    }
+  },
+);
 let id = "";
 await run(
   "F2.1: wizard creates only private remote metadata and opens management",
@@ -360,14 +459,33 @@ await run(
 await run(
   "F2.1: delete requires confirmation and removes only selected remote draft",
   async () => {
-    await mount(`/estudio/obras/${id}`);
+    const router = await mount(`/estudio/obras/${id}`);
     await click("Eliminar");
+    visibleDialog();
     check(rows.has(id), "Eliminou antes da confirmação");
     await click("Cancelar");
+    check(
+      !fixture.querySelector("dialog[open]"),
+      "Cancelar não fechou confirmação",
+    );
     check(rows.has(id), "Cancelar eliminou obra");
     await click("Eliminar");
+    visibleDialog();
     await click("Sim, eliminar obra");
+    await waitFor(
+      () => router.state.location.pathname === "/estudio",
+      "Não redirecionou para o Studio",
+    );
     check(!rows.has(id), "Não eliminou");
+    check(
+      (await repository("author-a").find(id)) === null,
+      "Eliminação não persistiu",
+    );
+    await mount("/estudio/publicacoes");
+    check(
+      !fixture.textContent?.includes("Título atualizado"),
+      "Obra eliminada reapareceu na lista",
+    );
     check(getStoredWorks().length === 1, "Eliminou dados locais");
   },
 );
@@ -647,6 +765,148 @@ await run(
   },
 );
 await run(
+  "Eliminar: network and stale revision errors stay visible inside the work confirmation",
+  async () => {
+    const work = await repository("author-a").create({
+      ...metadata,
+      title: "Erro de eliminação",
+    });
+    const router = await mount(`/estudio/obras/${work.id}`);
+    await click("Eliminar");
+    visibleDialog();
+    networkError = true;
+    await click("Sim, eliminar obra");
+    check(
+      visibleDialog().querySelector('[role="alert"]'),
+      "Erro de rede fora do modal",
+    );
+    check(
+      rows.has(work.id) && router.state.location.pathname.includes(work.id),
+      "Falha eliminou ou redirecionou",
+    );
+    networkError = false;
+    rows.set(work.id, { ...rows.get(work.id)!, revision: work.revision! + 1 });
+    await click("Sim, eliminar obra");
+    check(
+      visibleDialog()
+        .querySelector('[role="alert"]')
+        ?.textContent?.includes("revisão"),
+      "Conflito não visível",
+    );
+    check(rows.has(work.id), "Conflito eliminou obra");
+    await click("Cancelar");
+    await click("Atualizar obras");
+    await click("Eliminar");
+    await click("Sim, eliminar obra");
+    await waitFor(
+      () => router.state.location.pathname === "/estudio",
+      "Não redirecionou após recuperar revisão",
+    );
+    check(!rows.has(work.id), "Não eliminou com revisão atual");
+  },
+);
+await run(
+  "Eliminar: inventory grid and table require a visible confirmation",
+  async () => {
+    for (const view of ["grid", "table"]) {
+      const work = await repository("author-a").create({
+        ...metadata,
+        title: "Inventário " + view,
+      });
+      const router = await mount("/estudio/publicacoes");
+      if (view === "table") await click("Tabela");
+      const row = [
+        ...fixture.querySelectorAll(view === "grid" ? "article" : "tbody tr"),
+      ].find((item) => item.textContent?.includes(work.title));
+      const button = row?.querySelector<HTMLButtonElement>(
+        'button[aria-label="Eliminar"]',
+      );
+      check(button, "Eliminar em falta");
+      await act(async () => {
+        button.click();
+        await new Promise((done) => setTimeout(done, 20));
+      });
+      visibleDialog();
+      check(rows.has(work.id), "Eliminou antes de confirmar");
+      await click("Cancelar");
+      check(rows.has(work.id), "Cancelar eliminou inventário");
+      await act(async () => {
+        button.click();
+        await new Promise((done) => setTimeout(done, 20));
+      });
+      await click("Sim, eliminar");
+      await waitFor(
+        () => router.state.location.pathname === "/estudio",
+        "Sem retorno ao Studio",
+      );
+      check(!rows.has(work.id), "Inventário não eliminou");
+    }
+  },
+);
+await run(
+  "Eliminar: chapters and poems cancel, fail visibly, then delete and persist",
+  async () => {
+    for (const format of ["Romance", "Poesia"] as const) {
+      const repo = repository("author-a");
+      let work = await repo.create({
+        ...metadata,
+        title: "Entrada a eliminar",
+        format,
+      });
+      work = (await repo.editorial!(work, "add_entry")).work!;
+      const entry = work.chapters[0];
+      const router = await mount(
+        `/estudio/obras/${work.id}/capitulos/${entry.id}/editar`,
+      );
+      const label = format === "Poesia" ? "poema" : "capítulo";
+      await click("Eliminar " + label);
+      visibleDialog();
+      await click("Cancelar");
+      check(
+        rows.get(work.id)?.chapters.length === 1,
+        "Cancelamento apagou entrada",
+      );
+      await click("Eliminar " + label);
+      networkError = true;
+      await click("Confirmar eliminação");
+      check(
+        visibleDialog().querySelector('[role="alert"]'),
+        "Erro da entrada invisível",
+      );
+      networkError = false;
+      rows.set(work.id, {
+        ...rows.get(work.id)!,
+        revision: work.revision! + 1,
+      });
+      await click("Confirmar eliminação");
+      check(
+        visibleDialog()
+          .querySelector('[role="alert"]')
+          ?.textContent?.includes("revisão"),
+        "Conflito da entrada invisível",
+      );
+      check(
+        rows.get(work.id)?.chapters.length === 1,
+        "Conflito apagou entrada",
+      );
+      await click("Cancelar");
+      await click("Recuperar última versão persistida");
+      await click("Confirmar recuperação");
+      await click("Eliminar " + label);
+      visibleDialog();
+      await click("Confirmar eliminação");
+      await waitFor(
+        () => router.state.location.pathname === `/estudio/obras/${work.id}`,
+        "Não saiu da entrada eliminada",
+      );
+      check(
+        (await repo.find(work.id))?.chapters.length === 0,
+        "Entrada eliminada reapareceu",
+      );
+    }
+  },
+);
+await run(
   "F2.2: transient Auth errors preserve account buffers; logout clears them",
   async () => {
     await act(async () => root.render(null));
@@ -714,6 +974,123 @@ await run(
       !observed?.controller && original.editorBuffers.size === 0,
       "Logout não limpou os dados da conta",
     );
+  },
+);
+await run(
+  "F3.1: explicit confirmation, cancel, public catalogue/reader, private edits, withdraw and republish",
+  async () => {
+    const repo = repository("author-a");
+    let book = await repo.create({
+      ...metadata,
+      title: "Publicação real de teste",
+    });
+    book = (await repo.editorial!(book, "add_entry")).work!;
+    book = (
+      await repo.editorial!(book, "save_entry", {
+        entry_id: book.chapters[0].id,
+        title: "Entrada pública",
+        content: "Conteúdo público confirmado",
+        alignment: "left",
+      })
+    ).work!;
+    const router = await mount(`/estudio/obras/${book.id}`);
+    await click("Publicar");
+    visibleDialog();
+    check(!editions.has(book.publicId!), "Publicou antes de confirmar");
+    await click("Cancelar");
+    check(!editions.has(book.publicId!), "Cancelar publicou");
+    await click("Publicar");
+    await click("Confirmar publicação");
+    await waitFor(() => editions.has(book.publicId!), "Não publicou");
+    await act(async () => {
+      await router.navigate("/catalogo");
+    });
+    await waitFor(
+      () => fixture.textContent?.includes("Publicação real de teste"),
+      "Catálogo não atualizou",
+    );
+    await act(async () => {
+      await router.navigate(`/obras/${book.publicId}`);
+    });
+    await waitFor(
+      () => fixture.textContent?.includes("Entrada pública"),
+      "Detalhes não carregaram",
+    );
+    await act(async () => {
+      await router.navigate(
+        `/obras/${book.publicId}/capitulos/${book.chapters[0].id}`,
+      );
+    });
+    await waitFor(
+      () => fixture.textContent?.includes("Conteúdo público confirmado"),
+      "Leitura não abriu",
+    );
+    book = rows.get(book.id)!;
+    book = (
+      await repo.editorial!(book, "save_entry", {
+        entry_id: book.chapters[0].id,
+        title: "Entrada pública",
+        content: "Alteração privada",
+        alignment: "left",
+      })
+    ).work!;
+    check(
+      editions.get(book.publicId!)!.chapters[0].content ===
+        "Conteúdo público confirmado",
+      "Edição privada vazou",
+    );
+    await mount(`/estudio/obras/${book.id}`);
+    await click("Retirar publicação");
+    visibleDialog();
+    await click("Confirmar retirada");
+    await waitFor(() => !editions.has(book.publicId!), "Não retirou");
+    await mount(`/obras/${book.publicId}`);
+    await waitFor(
+      () => fixture.textContent?.toLowerCase().includes("não encontrada"),
+      "Página retirada continua pública",
+    );
+    await mount(`/estudio/obras/${book.id}`);
+    await click("Republicar");
+    await click("Confirmar publicação");
+    await waitFor(
+      () =>
+        editions.get(book.publicId!)?.chapters[0].content ===
+        "Alteração privada",
+      "Não republicou mesma obra",
+    );
+  },
+);
+await run(
+  "F3.1: publication network error and revision conflict stay visible in confirmation",
+  async () => {
+    const repo = repository("author-a");
+    let book = await repo.create({ ...metadata, title: "Falha de publicação" });
+    book = (await repo.editorial!(book, "add_entry")).work!;
+    book = (
+      await repo.editorial!(book, "save_entry", {
+        entry_id: book.chapters[0].id,
+        title: "Entrada",
+        content: "Texto",
+        alignment: "left",
+      })
+    ).work!;
+    await mount(`/estudio/obras/${book.id}`);
+    await click("Publicar");
+    networkError = true;
+    await click("Confirmar publicação");
+    await waitFor(
+      () => visibleDialog().querySelector('[role="alert"]'),
+      "Falha invisível",
+    );
+    check(!editions.has(book.publicId!), "Publicou com erro");
+    networkError = false;
+    rows.set(book.id, { ...book, revision: book.revision! + 1 });
+    await click("Confirmar publicação");
+    await waitFor(
+      () => visibleDialog().textContent?.includes("Conflito de revisão"),
+      "Conflito invisível",
+    );
+    await click("Cancelar");
   },
 );
 await act(async () => root.unmount());

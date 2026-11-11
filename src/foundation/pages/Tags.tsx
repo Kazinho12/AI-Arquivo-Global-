@@ -1,3 +1,5 @@
+import { RemoteTags, RemoteTagPage } from "../features/catalog/RemoteTags";
+import { usePublicCatalog } from "../features/catalog/PublicCatalog";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Hash, ArrowRight } from "lucide-react";
 import {
@@ -14,13 +16,12 @@ import {
   slugify,
   type TagGroup,
 } from "../lib/discovery";
-import { worksRepository } from "../lib/worksRepository";
 const groups: TagGroup[] = ["Mundos", "Temas", "Criação"];
-export default function Tags() {
+function LocalTags() {
   const [params, setParams] = useSearchParams();
   const query = params.get("q") ?? "";
   const group = params.get("grupo") ?? "";
-  const tags = getTags(worksRepository.list());
+  const tags = getTags(usePublicCatalog().works);
   const results = tags.filter(
     (tag) =>
       (!group || tag.group === group) &&
@@ -88,8 +89,7 @@ export default function Tags() {
                     <div>
                       <Hash size={18} />
                       <span>
-                        {tag.count}{" "}
-                        {tag.count === 1 ? "obra local" : "obras locais"}
+                        {tag.count} {tag.count === 1 ? "obra" : "obras"}
                       </span>
                     </div>
                     <h3>{tag.name}</h3>
@@ -111,9 +111,9 @@ export default function Tags() {
     </div>
   );
 }
-export function TagPage() {
+function LocalTagPage() {
   const { slug } = useParams();
-  const works = worksRepository.list();
+  const works = usePublicCatalog().works;
   const tag = getTags(works).find((t) => t.slug === slugify(slug ?? ""));
   if (!tag)
     return (
@@ -128,7 +128,7 @@ export function TagPage() {
         <PageIntro
           eyebrow="PISTA NÃO ENCONTRADA"
           title="Esta tag ainda não faz parte do arquivo."
-          description="Não encontramos uma tag com este endereço no catálogo inaugural. Explora as palavras disponíveis para seguir outro caminho."
+          description="Não encontramos uma tag com este endereço no catálogo. Explora as palavras disponíveis para seguir outro caminho."
         />
         <Link className="button secondary" to="/tags">
           Voltar ao diretório
@@ -160,7 +160,7 @@ export function TagPage() {
         <DemoNotice />
         <span className="count-label">
           {tag.count} {tag.count === 1 ? "obra associada" : "obras associadas"}{" "}
-          no catálogo local
+          no catálogo
         </span>
       </div>
       <WorkCollection works={works} fixedTag={tag.slug} />
@@ -186,4 +186,13 @@ export function TagPage() {
       </aside>
     </div>
   );
+}
+
+export default function Tags() {
+  const catalog = usePublicCatalog();
+  return catalog.repository?.facets ? <RemoteTags /> : <LocalTags />;
+}
+export function TagPage() {
+  const catalog = usePublicCatalog();
+  return catalog.repository?.search ? <RemoteTagPage /> : <LocalTagPage />;
 }

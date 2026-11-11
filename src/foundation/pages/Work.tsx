@@ -1,3 +1,4 @@
+import { PublishedWorkPage } from "../features/catalog/PublishedPages";
 import { Link, useParams } from "react-router-dom";
 import { BookOpen, Feather } from "lucide-react";
 import { Badge } from "../components/ui";
@@ -10,6 +11,14 @@ import { getWorkReadingData } from "../features/reader/data";
 import { useLibrary } from "../features/library/store";
 import { NotFound } from "./States";
 export default function WorkDetail() {
+  const { id } = useParams();
+  return inauguralWorks.some((work) => work.id === id) ? (
+    <EditorialWorkDetail />
+  ) : (
+    <PublishedWorkPage />
+  );
+}
+function EditorialWorkDetail() {
   const { id } = useParams();
   const { entries } = useLibrary();
   const work = inauguralWorks.find((item) => item.id === id);

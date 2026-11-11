@@ -1,3 +1,4 @@
+import { notifyPublicCatalog } from "../catalog/events";
 import type { StudioWork } from "./types";
 import type {
   DraftMetadata,
@@ -130,7 +131,12 @@ export class WorksController {
           throw new Error(
             "A gestão editorial ainda não está disponível neste serviço.",
           );
-        return this.repository.editorial(work, action, payload);
+        const result = await this.repository.editorial(work, action, payload);
+        if (action === "publish" || action === "withdraw")
+          notifyPublicCatalog(
+            action === "withdraw" ? work.publicId : undefined,
+          );
+        return result;
       },
       (result) => {
         if (result.deletedId) {
@@ -162,6 +168,7 @@ export class WorksController {
     (await this.mutate(
       async () => {
         await this.repository.remove(work);
+        notifyPublicCatalog(work.publicId);
         this.clearBuffers(work.id);
         return true;
       },

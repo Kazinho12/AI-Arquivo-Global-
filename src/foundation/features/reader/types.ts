@@ -38,7 +38,7 @@ export interface ReadingPreferences {
   measure: "compact" | "comfortable" | "wide";
   fontFamily: "serif" | "sans" | "literary";
   distractionFree: boolean;
-  theme?: "dark" | "light" | "sepia";
+  theme?: "dark" | "light" | "sepia" | "system";
 }
 
 export interface VisualReaderPreferences {

@@ -6208,3 +6208,121 @@ dialog p {
     width: 100%;
   }
 }
+
+/* F3.2: reader-local palettes and typography; never change the platform theme. */
+.prose-reader-container.reader-theme-dark,
+.poetry-reader-container.reader-theme-dark {
+  --text: #e9eef5;
+  --muted: #b3c2d5;
+  --border: #53637a;
+  --surface: #132237;
+  --elevated: #192b43;
+  --bg: #0b1524;
+  --accent: #b5a1ff;
+  --accent-ink: #102338;
+  color-scheme: dark;
+}
+.prose-reader-container.reader-theme-light,
+.poetry-reader-container.reader-theme-light {
+  --text: #17212e;
+  --muted: #465367;
+  --border: #7b8799;
+  --surface: #f4f6fa;
+  --elevated: #fff;
+  --bg: #fff;
+  --accent: #5134ad;
+  --accent-ink: #fff;
+  color-scheme: light;
+}
+.prose-reader-container.reader-theme-sepia,
+.poetry-reader-container.reader-theme-sepia {
+  --text: #2d261e;
+  --muted: #5d5040;
+  --border: #928472;
+  --surface: #f6efdf;
+  --elevated: #fbf7ee;
+  --bg: #fbf7ee;
+  --accent: #62377d;
+  --accent-ink: #fff;
+  color-scheme: light;
+}
+.prose-canvas,
+.poetry-canvas {
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.reader-preferred-text {
+  font: inherit;
+}
+.reader-preferred-text.poetry-stanzas-container {
+  font-family: inherit;
+}
+.reader-settings-panel fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+.reader-settings-panel .segmented-control {
+  display: flex;
+  flex-wrap: wrap;
+}
+.reader-settings-panel button {
+  min-height: 44px;
+}
+.reader-settings-panel [aria-pressed="true"] {
+  outline: 2px solid var(--text);
+  outline-offset: -3px;
+}
+.prose-reader-container :focus-visible,
+.poetry-reader-container :focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.chapter-select-wrapper {
+  min-width: min(220px, 100%);
+  max-width: 100%;
+}
+.chapter-select-wrapper label {
+  display: block;
+  font-size: 0.875rem;
+}
+.chapter-dropdown-select {
+  max-width: 100%;
+  min-height: 44px;
+}
+.reader-details-link {
+  display: inline-block;
+  margin-block: 1.25rem;
+  text-decoration: underline;
+}
+.reader-resume {
+  margin-block: 1.5rem;
+}
+.poetry-verse {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .reader-toolbar {
+    padding-inline: 16px;
+  }
+  .reader-toolbar-meta,
+  .reader-toolbar-actions {
+    width: 100%;
+  }
+  .chapter-nav-buttons {
+    gap: 12px;
+  }
+  .chapter-nav-buttons > * {
+    max-width: 100%;
+    min-width: 0;
+  }
+  .chapter-select-wrapper {
+    flex-basis: 100%;
+    order: -1;
+  }
+  .prose-paragraph {
+    text-align: start;
+  }
+}

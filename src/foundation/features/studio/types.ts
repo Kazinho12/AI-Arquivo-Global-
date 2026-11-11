@@ -12,6 +12,12 @@ export type AgeRating = "Livre" | "+12" | "+14" | "+16" | "+18";
 export interface StudioWork {
   persistence?: "supabase";
   archivedAt?: string | null;
+  publicId?: string;
+  visibility?: "private" | "public";
+  firstPublishedAt?: string | null;
+  lastPublishedAt?: string | null;
+  withdrawnAt?: string | null;
+  publishedRevision?: number | null;
   ownerId?: string;
   slug?: string;
   revision?: number;

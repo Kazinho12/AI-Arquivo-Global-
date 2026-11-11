@@ -553,8 +553,9 @@ export function useStudio() {
   );
   const accountStats = {
     totalWorks: activeWorks.length,
-    draftsCount: activeWorks.length,
-    publishedCount: 0,
+    draftsCount: activeWorks.filter((work) => work.status === "draft").length,
+    publishedCount: activeWorks.filter((work) => work.status === "published")
+      .length,
     totalChapters: activeWorks.reduce(
       (count, work) => count + work.chapters.length,
       0,

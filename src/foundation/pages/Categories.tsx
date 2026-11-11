@@ -1,3 +1,5 @@
+import { DiscoveryCollection } from "../features/catalog/DiscoveryCollection";
+import { usePublicCatalog } from "../features/catalog/PublicCatalog";
 import { Link, useSearchParams } from "react-router-dom";
 import { BookOpen, Frame, ArrowUpRight } from "lucide-react";
 import { DemoNotice, PageIntro, WorkGrid } from "../components/Discovery";
@@ -9,9 +11,8 @@ import {
   getGenres,
   paginate,
 } from "../lib/discovery";
-import { worksRepository } from "../lib/worksRepository";
-export default function Categories() {
-  const works = worksRepository.list();
+function LocalCategories() {
+  const works = usePublicCatalog().works;
   const [params, setParams] = useSearchParams();
   const family = params.get("familia") ?? "";
   const genre = params.get("genero") ?? "";
@@ -47,7 +48,7 @@ export default function Categories() {
                   <span>{c.name}</span>
                   <span>
                     {c.count}
-                    <span className="sr-only"> obras locais</span>
+                    <span className="sr-only"> obras</span>
                   </span>
                 </Link>
               ))}
@@ -71,7 +72,7 @@ export default function Categories() {
                   <span>{c.name}</span>
                   <span>
                     {c.count}
-                    <span className="sr-only"> obras locais</span>
+                    <span className="sr-only"> obras</span>
                   </span>
                 </Link>
               ))}
@@ -153,9 +154,7 @@ export default function Categories() {
         </div>
         <p className="directory-count" role="status">
           {result.total}{" "}
-          {result.total === 1
-            ? "obra localnstrativa encontrada"
-            : "obras locaisnstrativas encontradas"}
+          {result.total === 1 ? "obra encontrada" : "obras encontradas"}
           {result.total > 0 ? ` · ${result.start}–${result.end}` : ""}
         </p>
         <WorkGrid works={result.items} />
@@ -168,5 +167,21 @@ export default function Categories() {
         )}
       </section>
     </div>
+  );
+}
+
+export default function Categories() {
+  const catalog = usePublicCatalog();
+  return catalog.repository?.search ? (
+    <div className="container discovery-page">
+      <PageIntro
+        eyebrow="FORMATOS E GÉNEROS"
+        title="Muitas formas. Infinitos mundos."
+        description="Explora publicações reais por formato, género e outros metadados."
+      />
+      <DiscoveryCollection />
+    </div>
+  ) : (
+    <LocalCategories />
   );
 }

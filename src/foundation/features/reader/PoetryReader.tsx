@@ -1,8 +1,14 @@
+import {
+  ReaderSettings,
+  ReaderIndex,
+  useReaderAppearance,
+  poetryStanzas,
+} from "./ReaderSettings";
 import { InlineContent } from "./content";
 import { Modal } from "../../components/ui";
 import { useReadingPreferences } from "../preferences/store";
-import { useReadingProgress, savedPosition } from "./progress";
-import { useState, useEffect } from "react";
+import { useReadingProgress } from "./progress";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronLeft,
@@ -13,11 +19,12 @@ import {
   Feather,
   MessageSquare,
 } from "lucide-react";
-import type { Chapter, ReadingPreferences } from "./types";
+import type { Chapter } from "./types";
 import { Button } from "../../components/ui";
 
 interface PoetryReaderProps {
   trackProgress?: boolean;
+  showCommunityLinks?: boolean;
   workId: string;
   workTitle: string;
   author: string;
@@ -32,6 +39,7 @@ export function PoetryReader({
   chapters,
   currentChapter,
   trackProgress = false,
+  showCommunityLinks = true,
 }: PoetryReaderProps) {
   const TitleHeading = trackProgress ? "h1" : "h2";
   const reading = useReadingProgress({
@@ -54,38 +62,16 @@ export function PoetryReader({
 
   // Stanzas: array of string[] representing lines of verse
   const stanzas: string[][] =
-    currentChapter.stanzas ??
-    (currentChapter.content ?? "")
-      .split("\n\n")
-      .map((stanza) => stanza.split("\n"));
+    currentChapter.content !== undefined
+      ? poetryStanzas(currentChapter.content)
+      : (currentChapter.stanzas ?? []);
 
-  const fontSizeClass =
-    prefs.fontSize === "small"
-      ? "text-base"
-      : prefs.fontSize === "medium"
-        ? "text-xl"
-        : prefs.fontSize === "large"
-          ? "text-2xl"
-          : "text-lg";
-
-  const lineHeightClass =
-    prefs.lineHeight === "compact"
-      ? "leading-relaxed"
-      : prefs.lineHeight === "relaxed"
-        ? "leading-loose"
-        : "leading-normal";
-
-  const themeStyle =
-    prefs.theme === "sepia"
-      ? "reader-theme-sepia"
-      : prefs.theme === "light"
-        ? "reader-theme-light"
-        : "reader-theme-dark";
+  const appearance = useReaderAppearance(prefs);
 
   return (
     <div
       ref={reading.root}
-      className={`poetry-reader-container ${themeStyle} ${
+      className={`poetry-reader-container ${appearance.themeClass} ${
         prefs.distractionFree ? "distraction-free" : ""
       }`}
     >
@@ -114,6 +100,8 @@ export function PoetryReader({
                 variant="ghost"
                 onClick={() => setShowSettings(!showSettings)}
                 aria-label="Ajustar tipografia poética"
+                aria-haspopup="dialog"
+                aria-expanded={showSettings}
                 title="Tipografia"
               >
                 <Type size={18} />
@@ -126,54 +114,10 @@ export function PoetryReader({
                   onClose={() => setShowSettings(false)}
                   title="Definições de leitura de poesia"
                 >
-                  <div className="reader-settings-group">
-                    <span className="reader-settings-label">
-                      Corpo dos versos
-                    </span>
-                    <div className="segmented-control">
-                      {(
-                        [
-                          ["small", "A-"],
-                          ["normal", "Padrão"],
-                          ["medium", "A+"],
-                          ["large", "A++"],
-                        ] as const
-                      ).map(([key, label]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          className={prefs.fontSize === key ? "active" : ""}
-                          onClick={() => setPrefs({ ...prefs, fontSize: key })}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="reader-settings-group">
-                    <span className="reader-settings-label">
-                      Ambiente de fundo
-                    </span>
-                    <div className="segmented-control">
-                      {(
-                        [
-                          ["dark", "Escuro"],
-                          ["sepia", "Sépia"],
-                          ["light", "Claro"],
-                        ] as const
-                      ).map(([key, label]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          className={prefs.theme === key ? "active" : ""}
-                          onClick={() => setPrefs({ ...prefs, theme: key })}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <ReaderSettings
+                    prefs={prefs}
+                    onChange={(value) => setPrefs({ ...prefs, ...value })}
+                  />
                 </Modal>
               )}
             </div>
@@ -211,9 +155,7 @@ export function PoetryReader({
         </Button>
       )}
       {/* Main Poetry Canvas */}
-      <article
-        className={`poetry-canvas ${prefs.fontFamily === "sans" ? "font-sans" : "font-serif"} ${prefs.measure === "wide" ? "max-w-4xl" : prefs.measure === "compact" ? "max-w-xl" : "max-w-2xl"}`}
-      >
+      <article style={appearance.style} className="poetry-canvas">
         <header className="poetry-header">
           <span className="poetry-eyebrow">Poesia</span>
           <TitleHeading className="poetry-title">
@@ -223,7 +165,7 @@ export function PoetryReader({
 
         <div
           style={{ textAlign: currentChapter.alignment ?? "left" }}
-          className={`poetry-stanzas-container ${fontSizeClass} ${lineHeightClass}`}
+          className="poetry-stanzas-container reader-preferred-text"
         >
           {stanzas.map((stanza, sIdx) => (
             <div
@@ -255,6 +197,12 @@ export function PoetryReader({
               <span />
             )}
 
+            <ReaderIndex
+              workId={workId}
+              chapters={chapters}
+              currentChapter={currentChapter}
+              poetry
+            />
             <span className="poetry-counter">
               {currentIndex + 1} de {chapters.length}
             </span>
@@ -273,14 +221,19 @@ export function PoetryReader({
             )}
           </div>
 
-          <div className="reader-footer-links">
-            <Link
-              to={`/obras/${workId}/comentarios`}
-              className="reader-aux-link"
-            >
-              <MessageSquare size={15} /> Ver comentários e impressões
-            </Link>
-          </div>
+          <Link to={`/obras/${workId}`} className="reader-details-link">
+            Voltar aos detalhes da obra
+          </Link>
+          {showCommunityLinks && (
+            <div className="reader-footer-links">
+              <Link
+                to={`/obras/${workId}/comentarios`}
+                className="reader-aux-link"
+              >
+                <MessageSquare size={15} /> Ver comentários e impressões
+              </Link>
+            </div>
+          )}
         </footer>
       </article>
     </div>

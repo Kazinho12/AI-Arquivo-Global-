@@ -4,10 +4,17 @@ import { worksRepository } from "../../lib/worksRepository";
 import { libraryStore } from "../library/store";
 import { currentScope, inScope } from "../local/persistence";
 
+export function resumeChapter(chapters: Chapter[], savedId?: string) {
+  return (
+    chapters.find((chapter) => chapter.id === savedId) ?? chapters[0] ?? null
+  );
+}
 export function savedPosition(workId: string, chapterId: string) {
   const entry = libraryStore.getEntry(workId);
-  return entry?.lastReadChapterId === chapterId
-    ? (entry.lastReadPosition ?? 0)
+  const position =
+    entry?.lastReadChapterId === chapterId ? entry.lastReadPosition : 0;
+  return typeof position === "number" && Number.isFinite(position)
+    ? Math.min(1, Math.max(0, position))
     : 0;
 }
 export function recordReading(input: {

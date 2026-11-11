@@ -1,3 +1,4 @@
+import { PublishedReaderPage } from "../features/catalog/PublishedPages";
 import {
   useValidatedItems,
   validComments,
@@ -25,6 +26,14 @@ import { NotFound } from "./States";
 
 // 1. Literary Reader Page: /obras/:id/capitulos/:capituloId
 export function LiteraryReaderPage() {
+  const { id } = useParams();
+  return worksRepository.find(id ?? "") ? (
+    <EditorialLiteraryReader />
+  ) : (
+    <PublishedReaderPage />
+  );
+}
+function EditorialLiteraryReader() {
   const { id, capituloId } = useParams<{ id: string; capituloId: string }>();
   const work = worksRepository.find(id ?? "");
 

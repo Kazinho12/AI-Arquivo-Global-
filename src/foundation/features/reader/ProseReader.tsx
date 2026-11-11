@@ -1,7 +1,12 @@
+import {
+  ReaderSettings,
+  ReaderIndex,
+  useReaderAppearance,
+} from "./ReaderSettings";
 import { ProseContent } from "./content";
 import { Modal } from "../../components/ui";
 import { useReadingPreferences } from "../preferences/store";
-import { useReadingProgress, savedPosition } from "./progress";
+import { useReadingProgress } from "./progress";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -14,11 +19,12 @@ import {
   MessageSquare,
   Sparkles,
 } from "lucide-react";
-import type { Chapter, ReadingPreferences } from "./types";
+import type { Chapter } from "./types";
 import { Button } from "../../components/ui";
 
 interface ProseReaderProps {
   trackProgress?: boolean;
+  showCommunityLinks?: boolean;
   workId: string;
   workTitle: string;
   author: string;
@@ -34,6 +40,8 @@ export function ProseReader({
   chapters,
   currentChapter,
   trackProgress = false,
+  showCommunityLinks = true,
+  onSelectChapter,
 }: ProseReaderProps) {
   const TitleHeading = trackProgress ? "h1" : "h2";
   const reading = useReadingProgress({
@@ -77,49 +85,12 @@ export function ProseReader({
   const wordCount = (currentChapter.content || "").trim().split(/\s+/).length;
   const readTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
 
-  const fontSizeClass =
-    prefs.fontSize === "small"
-      ? "text-sm"
-      : prefs.fontSize === "medium"
-        ? "text-lg"
-        : prefs.fontSize === "large"
-          ? "text-xl"
-          : prefs.fontSize === "xlarge"
-            ? "text-2xl"
-            : "text-base";
-
-  const lineHeightClass =
-    prefs.lineHeight === "compact"
-      ? "leading-snug"
-      : prefs.lineHeight === "relaxed"
-        ? "leading-loose"
-        : "leading-relaxed";
-
-  const measureClass =
-    prefs.measure === "compact"
-      ? "max-w-xl"
-      : prefs.measure === "wide"
-        ? "max-w-4xl"
-        : "max-w-2xl";
-
-  const fontClass =
-    prefs.fontFamily === "sans"
-      ? "font-sans"
-      : prefs.fontFamily === "literary"
-        ? "font-serif tracking-normal"
-        : "font-serif";
-
-  const themeStyle =
-    prefs.theme === "sepia"
-      ? "reader-theme-sepia"
-      : prefs.theme === "light"
-        ? "reader-theme-light"
-        : "reader-theme-dark";
+  const appearance = useReaderAppearance(prefs);
 
   return (
     <div
       ref={reading.root}
-      className={`prose-reader-container ${themeStyle} ${
+      className={`prose-reader-container ${appearance.themeClass} ${
         prefs.distractionFree ? "distraction-free" : ""
       }`}
     >
@@ -163,6 +134,8 @@ export function ProseReader({
                 variant="ghost"
                 onClick={() => setShowSettings(!showSettings)}
                 aria-label="Ajustar tipografia e leitura"
+                aria-haspopup="dialog"
+                aria-expanded={showSettings}
                 title="Tipografia e leitura"
               >
                 <Type size={18} />
@@ -175,126 +148,10 @@ export function ProseReader({
                   onClose={() => setShowSettings(false)}
                   title="Definições de leitura"
                 >
-                  <div className="reader-settings-group">
-                    <span className="reader-settings-label">
-                      Corpo do texto
-                    </span>
-                    <div className="segmented-control">
-                      {(
-                        [
-                          ["small", "A-"],
-                          ["normal", "Padrão"],
-                          ["medium", "A+"],
-                          ["large", "A++"],
-                        ] as const
-                      ).map(([key, label]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          className={prefs.fontSize === key ? "active" : ""}
-                          onClick={() => setPrefs({ ...prefs, fontSize: key })}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="reader-settings-group">
-                    <span className="reader-settings-label">Espaçamento</span>
-                    <div className="segmented-control">
-                      {(
-                        [
-                          ["compact", "Compacto"],
-                          ["normal", "Padrão"],
-                          ["relaxed", "Amplo"],
-                        ] as const
-                      ).map(([key, label]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          className={prefs.lineHeight === key ? "active" : ""}
-                          onClick={() =>
-                            setPrefs({ ...prefs, lineHeight: key })
-                          }
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="reader-settings-group">
-                    <span className="reader-settings-label">
-                      Largura do texto
-                    </span>
-                    <div className="segmented-control">
-                      {(
-                        [
-                          ["compact", "Estreita"],
-                          ["comfortable", "Confortável"],
-                          ["wide", "Larga"],
-                        ] as const
-                      ).map(([key, label]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          className={prefs.measure === key ? "active" : ""}
-                          onClick={() => setPrefs({ ...prefs, measure: key })}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="reader-settings-group">
-                    <span className="reader-settings-label">Tipografia</span>
-                    <div className="segmented-control">
-                      {(
-                        [
-                          ["serif", "Serifada"],
-                          ["sans", "Sem serifa"],
-                          ["literary", "Editorial"],
-                        ] as const
-                      ).map(([key, label]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          className={prefs.fontFamily === key ? "active" : ""}
-                          onClick={() =>
-                            setPrefs({ ...prefs, fontFamily: key })
-                          }
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="reader-settings-group">
-                    <span className="reader-settings-label">
-                      Ambiente de fundo
-                    </span>
-                    <div className="segmented-control">
-                      {(
-                        [
-                          ["dark", "Escuro"],
-                          ["sepia", "Sépia"],
-                          ["light", "Claro"],
-                        ] as const
-                      ).map(([key, label]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          className={prefs.theme === key ? "active" : ""}
-                          onClick={() => setPrefs({ ...prefs, theme: key })}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <ReaderSettings
+                    prefs={prefs}
+                    onChange={(value) => setPrefs({ ...prefs, ...value })}
+                  />
                 </Modal>
               )}
             </div>
@@ -333,7 +190,7 @@ export function ProseReader({
         </Button>
       )}
       {/* Main Reading Canvas */}
-      <article className={`prose-canvas ${measureClass} ${fontClass}`}>
+      <article style={appearance.style} className="prose-canvas">
         <header className="chapter-header">
           <span className="chapter-number">
             {`Capítulo ${currentChapter.number}`}
@@ -343,7 +200,7 @@ export function ProseReader({
           </TitleHeading>
         </header>
 
-        <div className={`chapter-body ${fontSizeClass} ${lineHeightClass}`}>
+        <div className="chapter-body reader-preferred-text">
           <ProseContent text={currentChapter.content ?? ""} />
         </div>
 
@@ -361,28 +218,12 @@ export function ProseReader({
               <span />
             )}
 
-            <div className="chapter-select-wrapper">
-              <label htmlFor="chapter-select" className="sr-only">
-                Mudar de capítulo
-              </label>
-              <select
-                id="chapter-select"
-                value={currentChapter.id}
-                onChange={(e) => {
-                  const target = e.target.value;
-                  if (typeof window !== "undefined") {
-                    window.location.href = `/obras/${workId}/capitulos/${target}`;
-                  }
-                }}
-                className="chapter-dropdown-select"
-              >
-                {chapters.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    Cap. {c.number}: {c.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <ReaderIndex
+              workId={workId}
+              chapters={chapters}
+              currentChapter={currentChapter}
+              onSelect={onSelectChapter}
+            />
 
             {nextChapter ? (
               <Link
@@ -398,20 +239,25 @@ export function ProseReader({
             )}
           </div>
 
-          <div className="reader-footer-links">
-            <Link
-              to={`/obras/${workId}/comentarios`}
-              className="reader-aux-link"
-            >
-              <MessageSquare size={15} /> Ver comentários deste capítulo
-            </Link>
-            <Link
-              to={`/obras/${workId}/avaliacoes`}
-              className="reader-aux-link"
-            >
-              <Sparkles size={15} /> Ver avaliações da obra
-            </Link>
-          </div>
+          <Link to={`/obras/${workId}`} className="reader-details-link">
+            Voltar aos detalhes da obra
+          </Link>
+          {showCommunityLinks && (
+            <div className="reader-footer-links">
+              <Link
+                to={`/obras/${workId}/comentarios`}
+                className="reader-aux-link"
+              >
+                <MessageSquare size={15} /> Ver comentários deste capítulo
+              </Link>
+              <Link
+                to={`/obras/${workId}/avaliacoes`}
+                className="reader-aux-link"
+              >
+                <Sparkles size={15} /> Ver avaliações da obra
+              </Link>
+            </div>
+          )}
         </footer>
       </article>
     </div>

@@ -62,7 +62,7 @@ const enums: Record<string, readonly unknown[]> = {
   lineHeight: ["compact", "normal", "relaxed"],
   measure: ["compact", "comfortable", "wide"],
   fontFamily: ["serif", "sans", "literary"],
-  theme: ["dark", "light", "sepia"],
+  theme: ["dark", "light", "sepia", "system"],
   fitMode: ["width", "height", "original"],
   direction: ["ltr", "rtl"],
   viewMode: ["single", "vertical"],

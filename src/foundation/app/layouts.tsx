@@ -1,3 +1,4 @@
+import { QuickSearch } from "../features/catalog/QuickSearch";
 import { LocalDataTools } from "../features/local/LocalDataTools";
 import { AuthHeaderLinks } from "../features/auth/components";
 import { useEffect, useState } from "react";
@@ -54,6 +55,7 @@ function Header() {
             ))}
           </nav>
           <div className="header-actions">
+            <QuickSearch />
             <Button
               variant="ghost"
               onClick={toggle}

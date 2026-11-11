@@ -1,3 +1,5 @@
+import { DiscoveryShelves } from "../features/catalog/RemoteTags";
+import { usePublicCatalog } from "../features/catalog/PublicCatalog";
 import { Link } from "react-router-dom";
 import { ArrowRight, BookOpen, Compass, Frame } from "lucide-react";
 import {
@@ -7,10 +9,10 @@ import {
   WorkSection,
 } from "../components/Discovery";
 import { editorialSelections, selectEditorialWorks } from "../data/editorial";
-import { worksRepository, filterWorks } from "../lib/worksRepository";
+import { filterWorks } from "../lib/worksRepository";
 import { catalogUrl, getFormatCounts, getGenres } from "../lib/discovery";
 export default function Explore() {
-  const works = worksRepository.list();
+  const works = usePublicCatalog().works;
   const selection = editorialSelections[0];
   return (
     <div className="container discovery-page">
@@ -23,6 +25,12 @@ export default function Explore() {
         <Compass className="intro-orbit" size={130} strokeWidth={0.6} />
       </div>
       <DemoNotice />
+      <DiscoveryShelves />
+      <p>
+        As restantes contagens desta página referem-se à amostra apresentada,
+        com até 12 publicações de autores. O catálogo pesquisa todas as
+        publicações disponíveis.
+      </p>
       <section className="section discovery-section">
         <div className="section-heading">
           <div>
@@ -47,7 +55,7 @@ export default function Explore() {
               )}
               <span>
                 <strong>{format.name}</strong>
-                <small>{format.count} obra preparada</small>
+                <small>{format.count} obra no catálogo</small>
               </span>
               <ArrowRight size={16} />
             </Link>
@@ -74,8 +82,7 @@ export default function Explore() {
             <Link key={genre.slug} to={catalogUrl({ genero: genre.name })}>
               <span>{genre.name}</span>
               <small>
-                {genre.count}{" "}
-                {genre.count === 1 ? "obra local" : "obras locais"}
+                {genre.count} {genre.count === 1 ? "obra" : "obras"}
               </small>
               <ArrowRight size={16} />
             </Link>
@@ -86,12 +93,15 @@ export default function Explore() {
         title="As primeiras páginas do Arquivo."
         eyebrow="EDIÇÃO INAUGURAL"
         description="Conteúdo original preparado pela Equipa Editorial. A data indica preparação local, não publicação."
-        works={filterWorks(works, {
-          query: "",
-          format: "",
-          genre: "",
-          sort: "recentes",
-        }).slice(0, 4)}
+        works={filterWorks(
+          works.filter((work) => work.origin !== "user-publication"),
+          {
+            query: "",
+            format: "",
+            genre: "",
+            sort: "recentes",
+          },
+        ).slice(0, 4)}
         to="/catalogo?ordem=recentes"
       />
       <section className="section discovery-section">

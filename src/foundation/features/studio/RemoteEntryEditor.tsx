@@ -35,6 +35,7 @@ export function RemoteEntryEditor({
     null,
   );
   const [saved, setSaved] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const original = base.chapters.find((item) => item.id === entry.id)!;
   const dirty =
     title !== original.title ||
@@ -119,7 +120,14 @@ export function RemoteEntryEditor({
     payload: Record<string, unknown> = {},
   ) {
     const result = await remote.controller?.editorial(work, action, payload);
-    if (!result?.work) return;
+    if (!result?.work) {
+      if (action === "delete_entry")
+        setDeleteError(
+          remote.controller?.getSnapshot().error ||
+            "Não foi possível eliminar a entrada. Cancela e recupera a última versão.",
+        );
+      return;
+    }
     setBase(result.work);
     setConfirmation(null);
     if (action === "delete_entry") {
@@ -295,7 +303,10 @@ export function RemoteEntryEditor({
             <Button
               variant="ghost"
               disabled={disabled}
-              onClick={() => setConfirmation("delete")}
+              onClick={() => {
+                setDeleteError("");
+                setConfirmation("delete");
+              }}
             >
               Eliminar {entryLabel(work)}
             </Button>
@@ -322,13 +333,19 @@ export function RemoteEntryEditor({
               ? `Eliminar ${entryLabel(work)}?`
               : "Recuperar última versão?"
           }
-          onClose={() => setConfirmation(null)}
+          onClose={() => {
+            if (!remote.saving) setConfirmation(null);
+          }}
         >
           <p>
             {confirmation === "delete"
-              ? "A entrada será eliminada da conta. As alterações não guardadas desta entrada serão descartadas."
+              ? "A entrada será eliminada da edição privada. As alterações não guardadas serão descartadas. Se existir uma edição pública, atualiza ou retira a publicação para remover também esse conteúdo dos leitores."
               : "O texto em edição será substituído pela última versão guardada no servidor. Copia primeiro as alterações que pretendes conservar."}
           </p>
+          {confirmation === "delete" && deleteError && (
+            <p role="alert">{deleteError}</p>
+          )}
+          {remote.saving && <p role="status">A processar…</p>}
           <div className="modal-actions">
             <Button
               variant="ghost"

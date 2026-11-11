@@ -229,8 +229,15 @@ export function Modal({
           first?.focus();
         }
       }}
-      onCancel={onClose}
-      onClose={onClose}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClose={(event) => {
+        // StrictMode closes/reopens the dialog during effect replay. Its queued
+        // close event must not dismiss a dialog which is already open again.
+        if (!event.currentTarget.open) onClose();
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

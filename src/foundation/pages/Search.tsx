@@ -1,8 +1,8 @@
+import { usePublicCatalog } from "../features/catalog/PublicCatalog";
 import { Link } from "react-router-dom";
 import { Search as SearchIcon } from "lucide-react";
 import { DemoNotice, PageIntro } from "../components/Discovery";
 import { WorkCollection } from "../components/WorkCollection";
-import { worksRepository } from "../lib/worksRepository";
 export default function Search() {
   return (
     <div className="container discovery-page">
@@ -15,7 +15,7 @@ export default function Search() {
         />
       </div>
       <DemoNotice />
-      <WorkCollection works={worksRepository.list()} advanced />
+      <WorkCollection works={usePublicCatalog().works} advanced />
       <aside className="search-tips panel">
         <h2>Uma boa pista muda tudo.</h2>
         <p>

@@ -1,3 +1,4 @@
+import { PublicationControls } from "../features/studio/PublicationControls";
 import {
   RemoteEntryEditor,
   entryPath,
@@ -54,7 +55,9 @@ const statusLabel = (work: StudioWork) =>
     ? "Arquivada"
     : work.status === "published"
       ? "Publicada"
-      : "Rascunho";
+      : work.withdrawnAt
+        ? "Retirada"
+        : "Rascunho";
 
 const statusClass = (work: StudioWork) =>
   isArchived(work)
@@ -84,7 +87,7 @@ function StudioPersistenceNotice() {
       <p>
         <strong>Estúdio do Autor</strong> ·{" "}
         {remote.enabled
-          ? "Os teus rascunhos e conteúdos editoriais são guardados na conta, sempre privados."
+          ? "A edição e os rascunhos são guardados na conta. Só a publicação confirmada torna uma edição acessível aos leitores."
           : "Inicia sessão para criar e recuperar rascunhos guardados na tua conta."}
       </p>
       {localCount > 0 && (
@@ -174,7 +177,7 @@ export function StudioDashboardPage() {
             {stats.draftsCount === 1
               ? "rascunho privado ativo"
               : "rascunhos privados ativos"}{" "}
-            na conta
+            na conta · {stats.publishedCount} publicadas
           </span>
         </div>
 
@@ -240,7 +243,7 @@ export function StudioDashboardPage() {
                     <span className="work-format-tag">
                       {work.format} ·{" "}
                       {work.persistence === "supabase"
-                        ? "Conta privada"
+                        ? "Guardada na conta"
                         : "Local"}
                     </span>
                     <span
@@ -815,6 +818,7 @@ export function WorkManagePage() {
   const navigate = useNavigate();
 
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [metadataDirty, setMetadataDirty] = useState(false);
 
   const work = works.find((w) => w.id === id);
@@ -852,10 +856,24 @@ export function WorkManagePage() {
     if (copy && active.current) navigate(`/estudio/obras/${copy.id}`);
   };
   const handleDelete = async () => {
-    const removed = isRemote
-      ? await remote.controller?.remove(work)
-      : store.deleteWork(work.id);
-    if (removed && active.current) navigate("/estudio/publicacoes");
+    setDeleteError("");
+    try {
+      const removed = isRemote
+        ? await remote.controller?.remove(work)
+        : store.deleteWork(work.id);
+      if (!active.current) return;
+      if (removed) navigate("/estudio", { replace: true });
+      else
+        setDeleteError(
+          remote.controller?.getSnapshot().error ||
+            "Não foi possível eliminar a obra. Atualiza a lista e tenta novamente.",
+        );
+    } catch {
+      if (active.current)
+        setDeleteError(
+          "Não foi possível eliminar a obra. Verifica a ligação e tenta novamente.",
+        );
+    }
   };
 
   return (
@@ -922,7 +940,11 @@ export function WorkManagePage() {
 
           <Button
             variant="ghost"
-            disabled={remote.saving || metadataDirty}
+            disabled={
+              remote.saving ||
+              metadataDirty ||
+              (isRemote && work.status === "published")
+            }
             onClick={() =>
               isRemote
                 ? void remote.controller?.editorial(
@@ -931,7 +953,11 @@ export function WorkManagePage() {
                   )
                 : store.archiveWork(work.id)
             }
-            title="Arquivar ou desarquivar obra"
+            title={
+              isRemote && work.status === "published"
+                ? "Retira a publicação antes de arquivar"
+                : "Arquivar ou desarquivar obra"
+            }
             aria-label="Arquivar ou desarquivar obra"
           >
             <Archive size={15} />{" "}
@@ -942,7 +968,10 @@ export function WorkManagePage() {
             variant="ghost"
             className="text-rose-500 hover:text-rose-600"
             disabled={remote.saving}
-            onClick={() => setDeleteConfirm(true)}
+            onClick={() => {
+              setDeleteError("");
+              setDeleteConfirm(true);
+            }}
             title="Eliminar obra"
             aria-label="Eliminar obra"
           >
@@ -951,20 +980,29 @@ export function WorkManagePage() {
         </div>
       </header>
 
+      {deleteError && !deleteConfirm && <p role="alert">{deleteError}</p>}
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <Modal
           open
-          onClose={() => setDeleteConfirm(false)}
+          onClose={() => {
+            if (!remote.saving) setDeleteConfirm(false);
+          }}
           title={`Eliminar a obra "${work.title}"?`}
         >
           <p className="mt-2 text-sm text-muted">
             {isRemote
-              ? "Esta ação elimina permanentemente o rascunho e todos os seus capítulos, poemas e atos. Alterações não guardadas serão descartadas."
+              ? "Esta ação elimina permanentemente a obra, os seus conteúdos e a edição pública, quando existe. Alterações não guardadas serão descartadas."
               : "Esta ação elimina a cópia local e os seus capítulos/páginas deste navegador."}
           </p>
+          {deleteError && <p role="alert">{deleteError}</p>}
+          {remote.saving && <p role="status">A eliminar a obra…</p>}
           <div className="modal-actions mt-4">
-            <Button variant="ghost" onClick={() => setDeleteConfirm(false)}>
+            <Button
+              variant="ghost"
+              disabled={remote.saving}
+              onClick={() => setDeleteConfirm(false)}
+            >
               Cancelar
             </Button>
             <Button
@@ -979,6 +1017,7 @@ export function WorkManagePage() {
         </Modal>
       )}
 
+      {isRemote && <PublicationControls work={work} dirty={metadataDirty} />}
       {isRemote && (
         <WorkMetadataForm
           key={work.id}
@@ -990,7 +1029,9 @@ export function WorkManagePage() {
         <p className="editorial-notice">
           {isArchived(work)
             ? "Obra arquivada. Desarquiva para editar."
-            : "Obra privada. Entradas e alterações são guardadas na conta; não há publicação pública."}
+            : work.status === "published"
+              ? "As alterações em edição só chegam aos leitores após atualizar a publicação."
+              : "Obra privada. A publicação exige confirmação explícita."}
         </p>
       )}
       {/* Chapters / Structure Section */}
@@ -1262,6 +1303,7 @@ export function PagesEditPage() {
 export function PublicationsPage() {
   const { works, store, remote } = useStudio();
   const navigate = useNavigate();
+  const active = usePageActive();
 
   const [search, setSearch] = useState("");
   const [filterFormat, setFilterFormat] = useState("all");
@@ -1269,6 +1311,7 @@ export function PublicationsPage() {
   const [origin, setOrigin] = useState(remote.enabled ? "account" : "local");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState("");
 
   const filtered = useMemo(() => {
     return works.filter((w) => {
@@ -1282,6 +1325,11 @@ export function PublicationsPage() {
       if (filterStatus === "active" && isArchived(w)) return false;
       if (filterStatus === "archived" && !isArchived(w)) return false;
       if (filterStatus === "draft" && (isArchived(w) || w.status !== "draft"))
+        return false;
+      if (
+        filterStatus === "withdrawn" &&
+        !(w.withdrawnAt && w.status === "draft")
+      )
         return false;
       if (filterStatus === "published" && w.status !== "published")
         return false;
@@ -1363,6 +1411,7 @@ export function PublicationsPage() {
             <option value="active">Ativas</option>
             <option value="draft">Rascunhos</option>
             <option value="published">Publicadas</option>
+            <option value="withdrawn">Retiradas</option>
             <option value="archived">Arquivadas</option>
           </select>
 
@@ -1389,19 +1438,29 @@ export function PublicationsPage() {
         </div>
       </div>
 
+      {deleteError && !deleteId && <p role="alert">{deleteError}</p>}
       {/* Delete Confirmation Modal */}
       {deleteId && (
         <Modal
           open
-          onClose={() => setDeleteId(null)}
+          onClose={() => {
+            if (!remote.saving) setDeleteId(null);
+          }}
           title="Eliminar esta obra?"
         >
           <p className="mt-2 text-sm text-muted">
-            Esta ação elimina o rascunho da conta ou, se identificado como
-            local, apenas a cópia deste navegador.
+            Esta ação elimina a obra da conta, os conteúdos e a edição pública,
+            quando existe. Nas obras locais, elimina apenas a cópia deste
+            navegador.
           </p>
+          {deleteError && <p role="alert">{deleteError}</p>}
+          {remote.saving && <p role="status">A eliminar a obra…</p>}
           <div className="modal-actions mt-4">
-            <Button variant="ghost" onClick={() => setDeleteId(null)}>
+            <Button
+              variant="ghost"
+              disabled={remote.saving}
+              onClick={() => setDeleteId(null)}
+            >
               Cancelar
             </Button>
             <Button
@@ -1409,13 +1468,32 @@ export function PublicationsPage() {
               className="bg-rose-600 hover:bg-rose-700"
               disabled={remote.saving}
               onClick={async () => {
+                setDeleteError("");
                 const work = works.find((item) => item.id === deleteId);
-                if (!work) return;
-                const removed =
-                  work.persistence === "supabase"
-                    ? await remote.controller?.remove(work)
-                    : store.deleteWork(work.id);
-                if (removed) setDeleteId(null);
+                if (!work) {
+                  setDeleteError(
+                    "A obra já não está na lista. Cancela e atualiza as obras.",
+                  );
+                  return;
+                }
+                try {
+                  const removed =
+                    work.persistence === "supabase"
+                      ? await remote.controller?.remove(work)
+                      : store.deleteWork(work.id);
+                  if (!active.current) return;
+                  if (removed) navigate("/estudio", { replace: true });
+                  else
+                    setDeleteError(
+                      remote.controller?.getSnapshot().error ||
+                        "Não foi possível eliminar a obra. Cancela e atualiza a lista.",
+                    );
+                } catch {
+                  if (active.current)
+                    setDeleteError(
+                      "Não foi possível eliminar a obra. Verifica a ligação e tenta novamente.",
+                    );
+                }
               }}
             >
               Sim, eliminar
@@ -1457,7 +1535,7 @@ export function PublicationsPage() {
                   <span className="work-format-tag">
                     {work.format} ·{" "}
                     {work.persistence === "supabase"
-                      ? "Conta privada"
+                      ? "Guardada na conta"
                       : "Local"}
                   </span>
                   <span className={`status-indicator ${statusClass(work)}`}>
@@ -1494,7 +1572,16 @@ export function PublicationsPage() {
                   </Link>
                   <Button
                     variant="ghost"
-                    disabled={remote.saving}
+                    disabled={
+                      remote.saving ||
+                      (work.persistence === "supabase" &&
+                        work.status === "published")
+                    }
+                    title={
+                      work.status === "published"
+                        ? "Retira a publicação antes de arquivar"
+                        : undefined
+                    }
                     onClick={() =>
                       work.persistence === "supabase"
                         ? void remote.controller?.editorial(
@@ -1526,7 +1613,10 @@ export function PublicationsPage() {
                     variant="ghost"
                     className="text-rose-500"
                     disabled={remote.saving}
-                    onClick={() => setDeleteId(work.id)}
+                    onClick={() => {
+                      setDeleteError("");
+                      setDeleteId(work.id);
+                    }}
                     title="Eliminar"
                     aria-label="Eliminar"
                   >
@@ -1576,7 +1666,7 @@ export function PublicationsPage() {
                     <td>
                       {work.format} ·{" "}
                       {work.persistence === "supabase"
-                        ? "Conta privada"
+                        ? "Guardada na conta"
                         : "Local"}
                     </td>
                     <td>
@@ -1598,7 +1688,16 @@ export function PublicationsPage() {
                         </Link>
                         <Button
                           variant="ghost"
-                          disabled={remote.saving}
+                          disabled={
+                            remote.saving ||
+                            (work.persistence === "supabase" &&
+                              work.status === "published")
+                          }
+                          title={
+                            work.status === "published"
+                              ? "Retira a publicação antes de arquivar"
+                              : undefined
+                          }
                           onClick={() =>
                             work.persistence === "supabase"
                               ? void remote.controller?.editorial(
@@ -1630,7 +1729,10 @@ export function PublicationsPage() {
                           variant="ghost"
                           className="text-rose-500"
                           disabled={remote.saving}
-                          onClick={() => setDeleteId(work.id)}
+                          onClick={() => {
+                            setDeleteError("");
+                            setDeleteId(work.id);
+                          }}
                           title="Eliminar"
                           aria-label="Eliminar"
                         >
@@ -1663,8 +1765,7 @@ export function StudioStatsPage() {
           <span className="eyebrow">PLANEAMENTO EDITORIAL</span>
           <h1>Estatísticas do Autor</h1>
           <p className="studio-subtitle">
-            Contagens das obras privadas ativas da conta, sem dados de
-            audiência.
+            Contagens das obras ativas da conta, sem dados de audiência.
           </p>
         </div>
       </header>
@@ -1672,9 +1773,9 @@ export function StudioStatsPage() {
       <div className="form-info-callout mb-4">
         <Info size={16} />
         <span>
-          Estas contagens usam apenas obras privadas ativas guardadas na conta.
-          O catálogo editorial, o arquivo e os rascunhos locais não entram
-          nestas estatísticas.
+          Estas contagens usam apenas obras ativas guardadas na conta. O
+          catálogo editorial, o arquivo e os rascunhos locais não entram nestas
+          estatísticas.
         </span>
       </div>
 

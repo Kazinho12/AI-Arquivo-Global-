@@ -1,3 +1,5 @@
+import { DiscoveryShelves } from "../features/catalog/RemoteTags";
+import { usePublicCatalog } from "../features/catalog/PublicCatalog";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -14,7 +16,6 @@ import {
 } from "lucide-react";
 import { Cover, WorkCard } from "../components/WorkCard";
 import { ActionLink, SearchField } from "../components/ui";
-import { worksRepository } from "../lib/worksRepository";
 import { getGenres, getTags, catalogUrl } from "../lib/discovery";
 import { TagLinks } from "../components/Discovery";
 import { editorialSelections, selectEditorialWorks } from "../data/editorial";
@@ -47,7 +48,7 @@ const formatCards = [
 export default function Home() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
-  const works = worksRepository.list();
+  const works = usePublicCatalog().works;
   const featured = selectEditorialWorks(works, editorialSelections[0]);
   return (
     <>
@@ -155,6 +156,9 @@ export default function Home() {
           e <Link to="/catalogo?formato=Obra+ilustrada">obras ilustradas</Link>.
         </div>
       </section>
+      <div className="container">
+        <DiscoveryShelves />
+      </div>
       <section className="container section showcase">
         <div className="section-heading">
           <div>
@@ -247,8 +251,8 @@ export default function Home() {
             <div>
               <h3>Criar com autonomia</h3>
               <p>
-                A autoria local já está disponível. As regras de publicação
-                remota ainda serão definidas.
+                Cria no Studio e confirma a publicação para disponibilizar a tua
+                obra no catálogo público.
               </p>
             </div>
           </article>

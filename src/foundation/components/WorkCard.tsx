@@ -1,3 +1,4 @@
+import { slugify } from "../lib/discovery";
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import { inauguralWorks } from "../data/inaugural";
@@ -30,7 +31,11 @@ export function Cover({
       aria-hidden="true"
       className={`cover cover-${work.cover} ${large ? "cover-large" : ""}`}
     >
-      <span className="cover-edition">ARQUIVO GLOBAL / EDIÇÃO DEMO</span>
+      <span className="cover-edition">
+        {work.origin === "user-publication"
+          ? "ARQUIVO GLOBAL / OBRA PUBLICADA"
+          : "ARQUIVO GLOBAL / COMPOSIÇÃO LOCAL"}
+      </span>
       <div className="cover-art">
         <i />
         <i />
@@ -60,9 +65,20 @@ export function WorkCard({ work }: { work: Work }) {
         <p>{work.author}</p>
         <div className="work-tags">
           <span>{work.genre}</span>
-          <span>Preparação local</span>
+          <span>
+            {work.origin === "user-publication"
+              ? "Publicada pelo autor"
+              : "Edição inaugural · local"}
+          </span>
         </div>
       </Link>
+      <div className="work-tags" aria-label="Tags da obra">
+        {work.tags.map((tag) => (
+          <Link key={tag} to={`/tags/${encodeURIComponent(slugify(tag))}`}>
+            {tag}
+          </Link>
+        ))}
+      </div>
     </article>
   );
 }

@@ -22,7 +22,9 @@ export type EditorialAction =
   | "save_entry"
   | "duplicate_entry"
   | "delete_entry"
-  | "reorder_entries";
+  | "reorder_entries"
+  | "publish"
+  | "withdraw";
 export interface EditorialResult {
   work?: StudioWork;
   deletedId?: string;
@@ -41,7 +43,7 @@ export interface WorksRepository {
 }
 export class WorksError extends Error {}
 const columns =
-  "id,owner_id,title,slug,description,type,status,visibility,language,subtitle,genre,tags,age_rating,content_warnings,cover_accent_color,revision,created_at,updated_at,archived_at";
+  "id,owner_id,title,slug,description,type,status,visibility,language,subtitle,genre,tags,age_rating,content_warnings,cover_accent_color,revision,created_at,updated_at,archived_at,public_id,first_published_at,last_published_at,withdrawn_at,published_revision";
 export const modeForFormat = (format: WorkFormat): StudioWork["mode"] =>
   format === "Poesia"
     ? "poetry"
@@ -98,16 +100,22 @@ export function metadataPayload(input: DraftMetadata) {
 function mapRow(row: Record<string, any>, ownerId: string): StudioWork {
   if (
     row.owner_id !== ownerId ||
-    row.status !== "draft" ||
-    row.visibility !== "private"
+    !(
+      (row.status === "draft" && row.visibility === "private") ||
+      (row.status === "published" && row.visibility === "public")
+    )
   )
-    throw new WorksError(
-      "A resposta não corresponde aos teus rascunhos privados.",
-    );
+    throw new WorksError("A resposta não corresponde às tuas obras.");
   return {
     id: row.id,
     ownerId: row.owner_id,
     archivedAt: row.archived_at ?? null,
+    publicId: row.public_id,
+    visibility: row.visibility,
+    firstPublishedAt: row.first_published_at ?? null,
+    lastPublishedAt: row.last_published_at ?? null,
+    withdrawnAt: row.withdrawn_at ?? null,
+    publishedRevision: row.published_revision ?? null,
     slug: row.slug,
     persistence: "supabase",
     revision: row.revision,
@@ -122,7 +130,7 @@ function mapRow(row: Record<string, any>, ownerId: string): StudioWork {
     ageRating: row.age_rating,
     contentWarnings: row.content_warnings,
     coverAccentColor: row.cover_accent_color,
-    status: "draft",
+    status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     chapters: (row.entries ?? []).map((entry: Record<string, any>) => ({
@@ -155,11 +163,11 @@ function failure(error: { code?: string } | null): never {
     );
   if (error?.code === "55000")
     throw new WorksError(
-      "Desarquiva a obra antes de editar os seus conteúdos.",
+      "Desarquiva a obra antes de editar ou publicar. Retira a publicação antes de arquivar.",
     );
   if (["23514", "23502", "22023", "22P02"].includes(error?.code ?? ""))
     throw new WorksError(
-      "Revê o título, o conteúdo, o formato e a ordem das entradas. A operação não foi aplicada.",
+      "Revê título, sinopse, idioma, classificação e entradas com texto válido. A operação não foi aplicada.",
     );
   if (error?.code === "42501")
     throw new WorksError(
@@ -244,14 +252,15 @@ export function createWorksRepository(
     const operationId =
       pendingOperations.get(key) ?? globalThis.crypto.randomUUID();
     pendingOperations.set(key, operationId);
+    const publication = action === "publish" || action === "withdraw";
     const response = await request(() =>
       db
-        .rpc("mutate_private_work", {
+        .rpc(publication ? "publish_private_work" : "mutate_private_work", {
           p_work_id: work.id,
           p_revision: work.revision,
           p_action: action,
-          p_payload: payload,
           p_operation_id: operationId,
+          ...(!publication ? { p_payload: payload } : {}),
         })
         .setHeader("Authorization", `Bearer ${token}`),
     );

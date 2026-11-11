@@ -1,3 +1,4 @@
+import { PublicCatalogProvider } from "../features/catalog/PublicCatalog";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import {
   BrowserRouter,
@@ -361,7 +362,9 @@ export function App() {
   return (
     <Providers>
       <BrowserRouter>
-        <ApplicationRoutes />
+        <PublicCatalogProvider>
+          <ApplicationRoutes />
+        </PublicCatalogProvider>
       </BrowserRouter>
     </Providers>
   );

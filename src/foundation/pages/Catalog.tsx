@@ -1,9 +1,10 @@
+import { usePublicCatalog } from "../features/catalog/PublicCatalog";
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
-import { worksRepository } from "../lib/worksRepository";
 import { DemoNotice, PageIntro } from "../components/Discovery";
 import { WorkCollection } from "../components/WorkCollection";
 export default function Catalog() {
+  const catalog = usePublicCatalog();
   return (
     <div className="container catalog-page">
       <PageIntro
@@ -17,10 +18,35 @@ export default function Catalog() {
           Pesquisa avançada <ArrowUpRight size={16} />
         </Link>
       </div>
-      <WorkCollection works={worksRepository.list()} />
+      <section aria-label="Publicações de autores">
+        <h2>Publicações de autores e edição inaugural</h2>
+        <p>
+          As obras de autores são publicações reais; a edição inaugural é
+          conteúdo editorial local, sem proprietário de conta atribuído.
+        </p>
+        {catalog.loading && <p role="status">A carregar publicações…</p>}
+        {catalog.error && <p role="alert">{catalog.error}</p>}
+        {!catalog.repository?.search &&
+          !catalog.loading &&
+          !catalog.error &&
+          !catalog.published.length && (
+            <p>Sem publicações de autores disponíveis.</p>
+          )}
+        {!catalog.repository && (
+          <p>O catálogo de autores não está configurado neste ambiente.</p>
+        )}
+        <button
+          className="button secondary"
+          disabled={catalog.loading}
+          onClick={catalog.refresh}
+        >
+          Atualizar catálogo
+        </button>
+      </section>
+      <WorkCollection works={catalog.works} />
       <div className="notice">
-        As datas indicam preparação editorial local. Ainda não existem
-        publicações reais nesta versão.
+        As obras inaugurais mantêm datas de preparação local. Nas obras de
+        autores, a data indica a última publicação confirmada.
       </div>
     </div>
   );
