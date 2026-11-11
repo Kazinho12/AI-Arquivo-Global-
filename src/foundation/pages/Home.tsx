@@ -1,5 +1,5 @@
-import { DiscoveryShelves } from "../features/catalog/RemoteTags";
-import { usePublicCatalog } from "../features/catalog/PublicCatalog";
+import { useHomeSelection } from "../features/home/useHomeSelection";
+import { HeroCovers } from "../features/home/HeroCovers";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -12,13 +12,11 @@ import {
   Layers3,
   Orbit,
   PenLine,
-  Sparkles,
 } from "lucide-react";
-import { Cover, WorkCard } from "../components/WorkCard";
-import { ActionLink, SearchField } from "../components/ui";
+import { WorkCard } from "../components/WorkCard";
+import { ActionLink, SearchField, Button } from "../components/ui";
 import { getGenres, getTags, catalogUrl } from "../lib/discovery";
 import { TagLinks } from "../components/Discovery";
-import { editorialSelections, selectEditorialWorks } from "../data/editorial";
 const formatCards = [
   {
     name: "Romances",
@@ -48,8 +46,9 @@ const formatCards = [
 export default function Home() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
-  const works = usePublicCatalog().works;
-  const featured = selectEditorialWorks(works, editorialSelections[0]);
+  const home = useHomeSelection();
+  const { hero, recent } = home.selection;
+  const works = hero ? [hero, ...recent] : recent;
   return (
     <>
       <section className="hero container">
@@ -83,29 +82,7 @@ export default function Home() {
             <span className="status-dot" /> Gratuito para ler. Livre para criar.
           </div>
         </div>
-        <div className="hero-visual">
-          <div className="orbital orbital-one" />
-          <div className="orbital orbital-two" />
-          <span className="star star-one">✧</span>
-          <span className="star star-two">+</span>
-          <div className="hero-book hero-book-back">
-            {works[2] && <Cover work={works[2]} />}
-          </div>
-          <div className="hero-book hero-book-front">
-            {works[0] && <Cover work={works[0]} />}
-          </div>
-          <div className="floating-note">
-            <Sparkles size={16} />
-            <span>
-              A próxima descoberta
-              <br />
-              <strong>começa numa página.</strong>
-            </span>
-          </div>
-          <span className="visual-caption">
-            EDIÇÃO INAUGURAL · PREPARAÇÃO LOCAL
-          </span>
-        </div>
+        <HeroCovers works={works.slice(0, 5)} />
       </section>
       <div className="manifesto-strip">
         <div className="container">
@@ -148,79 +125,94 @@ export default function Home() {
           ))}
         </div>
         <div className="format-extra">
-          Também há espaço para <Link to="/catalogo?formato=Conto">contos</Link>
-          , <Link to="/catalogo?formato=Fanfiction">fanfictions</Link>,{" "}
-          <Link to="/catalogo?formato=S%C3%A9rie+liter%C3%A1ria">
-            séries literárias
-          </Link>{" "}
-          e <Link to="/catalogo?formato=Obra+ilustrada">obras ilustradas</Link>.
+          Preferes uma leitura breve? Descobre também os{" "}
+          <Link to="/catalogo?formato=Conto">contos</Link>.
         </div>
       </section>
-      <div className="container">
-        <DiscoveryShelves />
-      </div>
-      <section className="container section showcase">
+      <section
+        className="container section showcase"
+        aria-labelledby="home-recent-title"
+      >
         <div className="section-heading">
           <div>
-            <span className="eyebrow">DESTAQUE DA EQUIPA EDITORIAL</span>
-            <h2>Abre uma nova possibilidade.</h2>
+            <span className="eyebrow">NOVAS VOZES, NOVAS LEITURAS</span>
+            <h2 id="home-recent-title">Publicadas recentemente</h2>
           </div>
-          <Link className="text-link" to="/catalogo">
+          <Link className="text-link" to="/catalogo?ordem=recentes">
             Explorar catálogo <ArrowRight size={16} />
           </Link>
         </div>
-        <p className="demo-notice">
-          Peças originais criadas para o projeto, disponíveis nesta versão
-          local.
+        <div aria-live="polite">
+          {home.loading && (
+            <p role="status">A descobrir publicações recentes…</p>
+          )}
+          {home.error && (
+            <>
+              <p role="alert">{home.error}</p>
+              <Button onClick={home.retry}>Tentar novamente</Button>
+            </>
+          )}
+          {!home.loading && !home.error && !works.length && (
+            <p role="status">
+              O próximo capítulo do Arquivo ainda está por chegar. Quando houver
+              publicações elegíveis, este espaço será delas.
+            </p>
+          )}
+        </div>
+        <p>
+          Mais leituras por descobrir, ordenadas pela primeira publicação. Os
+          destaques automáticos não incluem obras +18 ou com avisos de conteúdo.
         </p>
         <div className="work-grid">
-          {featured.map((work) => (
+          {works.slice(5).map((work) => (
             <WorkCard key={work.id} work={work} />
           ))}
         </div>
       </section>
-      <section className="container section home-pathways">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">DEIXA A CURIOSIDADE ESCOLHER</span>
-            <h2>Uma pista para a próxima leitura.</h2>
+      {works.length > 0 && (
+        <section className="container section home-pathways">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">DEIXA A CURIOSIDADE ESCOLHER</span>
+              <h2>Uma pista para a próxima leitura.</h2>
+            </div>
+            <Link className="text-link" to="/explorar">
+              Explorar todos os caminhos <ArrowRight size={16} />
+            </Link>
           </div>
-          <Link className="text-link" to="/explorar">
-            Explorar todos os caminhos <ArrowRight size={16} />
-          </Link>
-        </div>
-        <div className="home-genre-grid">
-          {getGenres(works)
-            .slice(0, 3)
-            .map((genre) => (
-              <Link
-                className="home-genre"
-                key={genre.slug}
-                to={catalogUrl({ genero: genre.name })}
-              >
-                <span className="eyebrow">
-                  EXPLORAR {genre.name.toLocaleUpperCase("pt")}
-                </span>
-                <h3>{genre.description}</h3>
-                <span className="text-link">
-                  Conhecer as obras <ArrowRight size={15} />
-                </span>
-              </Link>
-            ))}
-        </div>
-        <div className="home-tag-row">
-          <span className="eyebrow">OU SEGUE UMA PALAVRA</span>
-          <TagLinks
-            works={works}
-            names={getTags(works)
-              .slice(0, 4)
-              .map((tag) => tag.name)}
-          />
-          <Link className="text-link" to="/tags">
-            Todas as tags →
-          </Link>
-        </div>
-      </section>
+          <div className="home-genre-grid">
+            {getGenres(works)
+              .slice(0, 3)
+              .map((genre) => (
+                <Link
+                  className="home-genre"
+                  key={genre.slug}
+                  to={catalogUrl({ genero: genre.name })}
+                >
+                  <span className="eyebrow">
+                    EXPLORAR {genre.name.toLocaleUpperCase("pt")}
+                  </span>
+                  <h3>{genre.description}</h3>
+                  <span className="text-link">
+                    Conhecer as obras <ArrowRight size={15} />
+                  </span>
+                </Link>
+              ))}
+          </div>
+          <div className="home-tag-row">
+            <span className="eyebrow">OU SEGUE UMA PALAVRA</span>
+            <TagLinks
+              works={works}
+              names={getTags(works)
+                .slice(0, 4)
+                .map((tag) => tag.name)}
+            />
+            <Link className="text-link" to="/tags">
+              Todas as tags →
+            </Link>
+          </div>
+        </section>
+      )}
       <section className="container section community-intro">
         <div>
           <span className="eyebrow">UM ARQUIVO, MUITAS VOZES</span>
@@ -284,9 +276,9 @@ export default function Home() {
               tem lugar aqui.
             </h2>
             <p>
-              Um arquivo aberto, feito de vozes diferentes. Escreve e organiza
-              os teus rascunhos locais; a publicação remota será integrada numa
-              fase futura.
+              Um arquivo aberto, feito de vozes diferentes. Escreve no Studio,
+              organiza as tuas obras e confirma quando estiverem prontas para os
+              leitores.
             </p>
             <div className="actions">
               <ActionLink to="/estudio">Conhecer o Estúdio</ActionLink>
@@ -294,7 +286,9 @@ export default function Home() {
                 Conhecer as regras <ArrowRight size={16} />
               </Link>
             </div>
-            <small>Publicação de obras disponível numa próxima etapa.</small>
+            <small>
+              Tu decides quando publicar e quando retirar a tua obra.
+            </small>
           </div>
         </div>
       </section>

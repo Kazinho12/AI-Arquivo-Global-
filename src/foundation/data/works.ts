@@ -1,3 +1,4 @@
+import type { CoverStyle } from "./covers";
 export const formats = [
   "Romance",
   "Conto",
@@ -23,7 +24,8 @@ export interface Work {
   createdAt: string;
   cover: number;
   coverAccentColor?: string;
-  coverStyle?: string;
+  coverStyle?: CoverStyle;
+  coverSeed?: number;
   /** Legacy consumers may still hold demo records; the inaugural catalog does not use this flag. */
   demo?: true;
 }

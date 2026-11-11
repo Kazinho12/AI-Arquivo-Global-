@@ -12,7 +12,13 @@ export interface GenreDefinition {
   id: string;
   name: string;
   description?: string;
-  category: "ficcao" | "poesia" | "especulativo" | "visual" | "drama" | "outros";
+  category:
+    | "ficcao"
+    | "poesia"
+    | "especulativo"
+    | "visual"
+    | "drama"
+    | "outros";
   recommendedFormats?: WorkFormat[];
 }
 
@@ -33,49 +39,68 @@ export const GENRE_CATALOG: GenreDefinition[] = [
     id: "ficcao-especulativa",
     name: "Ficção especulativa",
     category: "especulativo",
-    description: "Narrativas que exploram realidades alternativas, futuros possíveis ou regras não canónicas do mundo.",
+    description:
+      "Narrativas que exploram realidades alternativas, futuros possíveis ou regras não canónicas do mundo.",
     recommendedFormats: ["Romance", "Conto", "Série literária", "HQ / Comic"],
   },
   {
     id: "ficcao-urbana",
     name: "Ficção urbana",
     category: "ficcao",
-    description: "Histórias ambientadas no pulsar contemporâneo ou marginal das metrópoles.",
+    description:
+      "Histórias ambientadas no pulsar contemporâneo ou marginal das metrópoles.",
     recommendedFormats: ["Romance", "Conto", "HQ / Comic"],
   },
   {
     id: "poesia-contemporanea",
     name: "Poesia contemporânea",
     category: "poesia",
-    description: "Versos livres, explorações da linguagem, do corpo e da vida contemporânea.",
+    description:
+      "Versos livres, explorações da linguagem, do corpo e da vida contemporânea.",
     recommendedFormats: ["Poesia"],
   },
   {
     id: "fantasia",
     name: "Fantasia",
     category: "especulativo",
-    description: "Mundos com magia, mitologias ancestrais ou sistemas fantásticos de poder.",
-    recommendedFormats: ["Romance", "Conto", "Série literária", "HQ / Comic", "Mangá"],
+    description:
+      "Mundos com magia, mitologias ancestrais ou sistemas fantásticos de poder.",
+    recommendedFormats: [
+      "Romance",
+      "Conto",
+      "Série literária",
+      "HQ / Comic",
+      "Mangá",
+    ],
   },
   {
     id: "ficcao-cientifica",
     name: "Ficção científica",
     category: "especulativo",
-    description: "Tecnologia, viagens espaciais, inteligência artificial, distopias e futuros humanos.",
-    recommendedFormats: ["Romance", "Conto", "Série literária", "HQ / Comic", "Mangá"],
+    description:
+      "Tecnologia, viagens espaciais, inteligência artificial, distopias e futuros humanos.",
+    recommendedFormats: [
+      "Romance",
+      "Conto",
+      "Série literária",
+      "HQ / Comic",
+      "Mangá",
+    ],
   },
   {
     id: "misterio-enigma",
     name: "Mistério / Enigma",
     category: "drama",
-    description: "Investigações, segredos, crimes insolúveis e quebra-cabeças narrativos.",
+    description:
+      "Investigações, segredos, crimes insolúveis e quebra-cabeças narrativos.",
     recommendedFormats: ["Romance", "Conto", "HQ / Comic", "Mangá"],
   },
   {
     id: "realismo-magico",
     name: "Realismo mágico",
     category: "especulativo",
-    description: "O extraordinário e o fantástico entrelaçados com a naturalidade do quotidiano.",
+    description:
+      "O extraordinário e o fantástico entrelaçados com a naturalidade do quotidiano.",
     recommendedFormats: ["Romance", "Conto"],
   },
 
@@ -84,14 +109,16 @@ export const GENRE_CATALOG: GenreDefinition[] = [
     id: "drama-psicologico",
     name: "Drama psicológico",
     category: "drama",
-    description: "Foco profundo na psique, conflitos morais e relações humanas complexas.",
+    description:
+      "Foco profundo na psique, conflitos morais e relações humanas complexas.",
     recommendedFormats: ["Romance", "Conto"],
   },
   {
     id: "romance-historico",
     name: "Romance histórico",
     category: "ficcao",
-    description: "Recriação rigorosa ou imaginada de períodos e contextos históricos.",
+    description:
+      "Recriação rigorosa ou imaginada de períodos e contextos históricos.",
     recommendedFormats: ["Romance", "Série literária"],
   },
   {
@@ -112,21 +139,24 @@ export const GENRE_CATALOG: GenreDefinition[] = [
     id: "cronica",
     name: "Crónica / Fragmentos",
     category: "ficcao",
-    description: "Impressões do quotidiano, memórias, ensaios breves e vinhetas poéticas.",
+    description:
+      "Impressões do quotidiano, memórias, ensaios breves e vinhetas poéticas.",
     recommendedFormats: ["Conto", "Poesia"],
   },
   {
     id: "afrofuturismo",
     name: "Afrofuturismo & Mitologia Africana",
     category: "especulativo",
-    description: "Ficção científica e fantasia enraizadas nas cosmologias, memórias e futuros africanos.",
+    description:
+      "Ficção científica e fantasia enraizadas nas cosmologias, memórias e futuros africanos.",
     recommendedFormats: ["Romance", "Conto", "HQ / Comic", "Mangá"],
   },
   {
     id: "distopia-posapocaliptico",
     name: "Distopia / Pós-apocalítico",
     category: "especulativo",
-    description: "Sociedades opressivas, colapsos ecológicos e sobrevivência pós-catástrofe.",
+    description:
+      "Sociedades opressivas, colapsos ecológicos e sobrevivência pós-catástrofe.",
     recommendedFormats: ["Romance", "HQ / Comic", "Mangá"],
   },
 
@@ -135,7 +165,8 @@ export const GENRE_CATALOG: GenreDefinition[] = [
     id: "poesia-lirica",
     name: "Lírica & Intimista",
     category: "poesia",
-    description: "Sentimento, afeto, melancolia, confissões e contemplação interior.",
+    description:
+      "Sentimento, afeto, melancolia, confissões e contemplação interior.",
     recommendedFormats: ["Poesia"],
   },
   {
@@ -149,7 +180,8 @@ export const GENRE_CATALOG: GenreDefinition[] = [
     id: "poesia-visual-haiku",
     name: "Haiku & Formas Concisas",
     category: "poesia",
-    description: "Poemas breves de métrica rigorosa, contemplação da natureza e do instante.",
+    description:
+      "Poemas breves de métrica rigorosa, contemplação da natureza e do instante.",
     recommendedFormats: ["Poesia"],
   },
 
@@ -158,42 +190,48 @@ export const GENRE_CATALOG: GenreDefinition[] = [
     id: "shonen-acao",
     name: "Ação & Aventura (Shonen)",
     category: "visual",
-    description: "Jornadas heróicas, superação, batalhas épicas e laços de amizade.",
+    description:
+      "Jornadas heróicas, superação, batalhas épicas e laços de amizade.",
     recommendedFormats: ["Mangá", "HQ / Comic"],
   },
   {
     id: "seinen-maduro",
     name: "Seinen / Narrativa Madura",
     category: "visual",
-    description: "Enredos profundos de tom adulto, política, psicologia e temas complexos.",
+    description:
+      "Enredos profundos de tom adulto, política, psicologia e temas complexos.",
     recommendedFormats: ["Mangá", "HQ / Comic"],
   },
   {
     id: "sobrenatural-oculto",
     name: "Sobrenatural & Oculto",
     category: "visual",
-    description: "Espíritos, entidades ancestrais, poderes místicos e ocultismo.",
+    description:
+      "Espíritos, entidades ancestrais, poderes místicos e ocultismo.",
     recommendedFormats: ["Mangá", "HQ / Comic"],
   },
   {
     id: "slice-of-life",
     name: "Slice of Life / Quotidiano",
     category: "visual",
-    description: "Narrativas intimistas sobre o dia a dia, trabalho, escola e laços humanos.",
+    description:
+      "Narrativas intimistas sobre o dia a dia, trabalho, escola e laços humanos.",
     recommendedFormats: ["Mangá", "HQ / Comic", "Conto"],
   },
   {
     id: "isekai-fantasia-mundos",
     name: "Isekai / Outros Mundos",
     category: "visual",
-    description: "Transição de personagens para universos fantásticos ou paralelos.",
+    description:
+      "Transição de personagens para universos fantásticos ou paralelos.",
     recommendedFormats: ["Mangá", "Romance", "Fanfiction"],
   },
   {
     id: "cyberpunk-mecha",
     name: "Cyberpunk & Mecha",
     category: "visual",
-    description: "Alta tecnologia com baixa qualidade de vida, androides, robôs gigantes e redes neurais.",
+    description:
+      "Alta tecnologia com baixa qualidade de vida, androides, robôs gigantes e redes neurais.",
     recommendedFormats: ["Mangá", "HQ / Comic", "Ficção científica" as never],
   },
 ];

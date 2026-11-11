@@ -1,3 +1,16 @@
+import {
+  coverStylePersistenceEnabled,
+  coverStudioV2Enabled,
+  type CoverStyleOptions,
+} from "../covers/config";
+import {
+  isCoverStyle,
+  isOriginalCoverStyle,
+  isCoverSeed,
+  readCoverSeed,
+  readCoverStyle,
+  type CoverStyle,
+} from "../../data/covers";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StudioWork, WorkFormat, AgeRating } from "./types";
 
@@ -12,6 +25,8 @@ export interface DraftMetadata {
   ageRating: AgeRating;
   contentWarnings: string[];
   coverAccentColor: string;
+  coverStyle?: CoverStyle;
+  coverSeed?: number;
 }
 export type EditorialAction =
   | "duplicate_work"
@@ -53,7 +68,28 @@ export const modeForFormat = (format: WorkFormat): StudioWork["mode"] =>
         ? "manga"
         : "prose";
 
-export function metadataPayload(input: DraftMetadata) {
+export function metadataPayload(
+  input: DraftMetadata,
+  styleEnabled = coverStylePersistenceEnabled,
+  v2Enabled = coverStudioV2Enabled,
+) {
+  if (input.coverStyle !== undefined && !isCoverStyle(input.coverStyle))
+    throw new WorksError("Estilo de capa inválido.");
+  if (!styleEnabled && input.coverStyle !== undefined)
+    throw new WorksError(
+      "A persistência do estilo ainda não está ativada neste ambiente.",
+    );
+  if (input.coverSeed !== undefined && !isCoverSeed(input.coverSeed))
+    throw new WorksError("Variação de capa inválida.");
+  if (
+    (!styleEnabled || !v2Enabled) &&
+    (input.coverSeed !== undefined ||
+      (input.coverStyle !== undefined &&
+        !isOriginalCoverStyle(input.coverStyle)))
+  )
+    throw new WorksError(
+      "Os novos estilos e variações estão disponíveis apenas para pré-visualização até à ativação do Estúdio de Capas 2.0.",
+    );
   const title = input.title.trim();
   const language = input.language.trim();
   const lists = [input.tags, input.contentWarnings];
@@ -95,9 +131,20 @@ export function metadataPayload(input: DraftMetadata) {
       .map((s) => s.trim())
       .filter(Boolean),
     cover_accent_color: input.coverAccentColor,
+    ...(styleEnabled && input.coverStyle !== undefined
+      ? { cover_style: input.coverStyle }
+      : {}),
+    ...(styleEnabled && v2Enabled && input.coverSeed !== undefined
+      ? { cover_seed: input.coverSeed }
+      : {}),
   };
 }
-function mapRow(row: Record<string, any>, ownerId: string): StudioWork {
+function mapRow(
+  row: Record<string, any>,
+  ownerId: string,
+  styleEnabled = false,
+  v2Enabled = false,
+): StudioWork {
   if (
     row.owner_id !== ownerId ||
     !(
@@ -130,6 +177,18 @@ function mapRow(row: Record<string, any>, ownerId: string): StudioWork {
     ageRating: row.age_rating,
     contentWarnings: row.content_warnings,
     coverAccentColor: row.cover_accent_color,
+    coverStyle:
+      styleEnabled && (v2Enabled || isOriginalCoverStyle(row.cover_style))
+        ? readCoverStyle(row.cover_style)
+        : "legacy",
+    coverSeed: styleEnabled && v2Enabled ? readCoverSeed(row.cover_seed) : 0,
+    ...(styleEnabled &&
+    !v2Enabled &&
+    isCoverStyle(row.cover_style) &&
+    (!isOriginalCoverStyle(row.cover_style) ||
+      readCoverSeed(row.cover_seed) !== 0)
+      ? { coverAppearanceLocked: true }
+      : {}),
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -188,7 +247,16 @@ function failure(error: { code?: string } | null): never {
 export function createWorksRepository(
   client: SupabaseClient | null,
   ownerId: string,
+  options: CoverStyleOptions = {},
 ): WorksRepository {
+  const styleEnabled =
+    options.coverStyleEnabled ?? coverStylePersistenceEnabled;
+  const v2Enabled =
+    styleEnabled && (options.coverStudioV2Enabled ?? coverStudioV2Enabled);
+  const selectedColumns =
+    columns +
+    (styleEnabled ? ",cover_style" : "") +
+    (v2Enabled ? ",cover_seed" : "");
   async function authenticated() {
     if (!client)
       throw new WorksError("O serviço de obras não está configurado.");
@@ -239,7 +307,7 @@ export function createWorksRepository(
         .rpc("read_private_work", { p_work_id: id })
         .setHeader("Authorization", `Bearer ${token}`),
     );
-    return row ? mapRow(row, ownerId) : null;
+    return row ? mapRow(row, ownerId, styleEnabled, v2Enabled) : null;
   }
   async function editorial(
     work: StudioWork,
@@ -267,7 +335,7 @@ export function createWorksRepository(
     if (!response) failure(null);
     if (response.work) {
       pendingOperations.delete(key);
-      return { work: mapRow(response.work, ownerId) };
+      return { work: mapRow(response.work, ownerId, styleEnabled, v2Enabled) };
     }
     if (response.deleted_id) {
       pendingOperations.delete(key);
@@ -286,7 +354,7 @@ export function createWorksRepository(
         const rows = await request(() =>
           db
             .from("works")
-            .select(columns)
+            .select<string, Record<string, any>>(selectedColumns)
             .eq("owner_id", ownerId)
             .order("created_at")
             .order("id")
@@ -306,7 +374,7 @@ export function createWorksRepository(
       return read(id, db, token);
     },
     async create(input) {
-      const payload = metadataPayload(input);
+      const payload = metadataPayload(input, styleEnabled, v2Enabled);
       const { db, token } = await authenticated();
       const base =
         payload.title
@@ -322,16 +390,23 @@ export function createWorksRepository(
         db
           .from("works")
           .insert({ ...payload, slug })
-          .select(columns)
+          .select<string, Record<string, any>>(selectedColumns)
           .single()
           .setHeader("Authorization", `Bearer ${token}`),
       );
       if (!row) failure(null);
-      return mapRow(row, ownerId);
+      return mapRow(row, ownerId, styleEnabled, v2Enabled);
     },
     async update(work, input) {
+      if (
+        work.coverAppearanceLocked &&
+        (input.coverStyle !== undefined || input.coverSeed !== undefined)
+      )
+        throw new WorksError(
+          "A capa guardada usa uma versão mais recente. Mantém a capa atual até ativar o Estúdio de Capas 2.0.",
+        );
       owned(work);
-      const payload = metadataPayload(input);
+      const payload = metadataPayload(input, styleEnabled, v2Enabled);
       const { db, token } = await authenticated();
       const row = await request(() =>
         db
@@ -340,7 +415,7 @@ export function createWorksRepository(
           .eq("owner_id", ownerId)
           .eq("id", work.id)
           .eq("revision", work.revision!)
-          .select(columns)
+          .select<string, Record<string, any>>(selectedColumns)
           .maybeSingle()
           .setHeader("Authorization", `Bearer ${token}`),
       );
@@ -364,6 +439,8 @@ export function createWorksRepository(
           })),
         },
         ownerId,
+        styleEnabled,
+        v2Enabled,
       );
     },
     async remove(work) {

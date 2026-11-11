@@ -68,13 +68,30 @@ for (const scenario of [
         "utf8",
       ),
     );
-    if (process.env.AG_SQL_PUBLICATION === "1")
+    if (
+      process.env.AG_SQL_PUBLICATION === "1" ||
+      process.env.AG_SQL_COVER_STYLE === "1"
+    )
       await db.exec(
         await readFile(
           "supabase/migrations/20261111020000_publication_catalog.sql",
           "utf8",
         ),
       );
+    if (process.env.AG_SQL_COVER_STYLE === "1") {
+      await db.exec(
+        await readFile(
+          "supabase/migrations/20261111030000_public_discovery.sql",
+          "utf8",
+        ),
+      );
+      await db.exec(
+        await readFile(
+          "supabase/migrations/20261111040000_persist_cover_styles.sql",
+          "utf8",
+        ),
+      );
+    }
     const triggers = (
       await db.query(`SELECT tgname,tgenabled,tgfoid::regprocedure::text AS function_name,
     pg_get_triggerdef(oid) AS definition FROM pg_trigger

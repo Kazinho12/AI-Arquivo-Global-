@@ -1,3 +1,4 @@
+import { readCoverStyle } from "../data/covers";
 import { slugify } from "../lib/discovery";
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
@@ -31,9 +32,7 @@ export function Cover({
   }
 
   const accentColor =
-    work.coverAccentColor ||
-    (work as any).cover_accent_color ||
-    "#14243B";
+    work.coverAccentColor || (work as any).cover_accent_color || "#14243B";
 
   return (
     <div
@@ -45,7 +44,8 @@ export function Cover({
         author={work.author}
         subtitle={work.subtitle}
         color={accentColor}
-        style="legacy"
+        style={readCoverStyle(work.coverStyle)}
+        seed={work.coverSeed}
         format={work.format}
         editionLabel={
           work.origin === "user-publication"

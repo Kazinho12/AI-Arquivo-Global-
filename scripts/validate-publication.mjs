@@ -73,6 +73,20 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon,aut
       "utf8",
     ),
   );
+  if (process.env.AG_SQL_COVER_STYLE === "1") {
+    await db.exec(
+      await readFile(
+        "supabase/migrations/20261111030000_public_discovery.sql",
+        "utf8",
+      ),
+    );
+    await db.exec(
+      await readFile(
+        "supabase/migrations/20261111040000_persist_cover_styles.sql",
+        "utf8",
+      ),
+    );
+  }
   await role(a);
   w = await read(w.id);
   for (const key of Object.keys(original).filter((k) => k !== "entries"))

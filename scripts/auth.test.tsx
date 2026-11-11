@@ -16,6 +16,7 @@ import { authClientOptions } from "../src/foundation/features/auth/client";
 import { readAuthConfig } from "../src/foundation/features/auth/config";
 import {
   authErrorMessage,
+  isInvalidSession,
   callbackUrl,
   readCallback,
   safeDestination,
@@ -668,4 +669,81 @@ test("password success cannot resurrect a session ended during the service reque
   assert.equal(f.controller.getSnapshot().session, null);
   assert.equal(f.controller.getSnapshot().status, "unauthenticated");
   f.controller.stop();
+});
+
+for (const error of [
+  { status: 403 },
+  { code: "42501" },
+  { status: 403, code: "42501" },
+  { status: 403, code: "insufficient_privilege" },
+  { status: 500 },
+  { name: "AuthRetryableFetchError" },
+  { name: "TypeError" },
+]) {
+  test(`stabilization: ${JSON.stringify(error)} preserves a valid session without logout`, async () => {
+    const f = fixture(undefined, session);
+    await f.controller.start();
+    let logouts = 0;
+    f.auth.signOut = async () => {
+      logouts++;
+      return { error: null };
+    };
+    f.auth.updateUser = async () => ({ data: { user: null }, error }) as any;
+    const result = await f.controller.updatePassword(
+      "New-Password-123!",
+      "New-Password-123!",
+    );
+    assert.equal(result.ok, false);
+    assert.equal(isInvalidSession(error), false);
+    assert.deepEqual(f.controller.getSnapshot().session, session);
+    assert.equal(f.controller.getSnapshot().user?.id, user.id);
+    assert.equal(logouts, 0);
+    assert.ok(
+      !("message" in result && result.message.includes("sessão expirou")),
+    );
+    f.controller.stop();
+  });
+}
+for (const code of [
+  "bad_jwt",
+  "invalid_jwt",
+  "session_expired",
+  "refresh_token_not_found",
+  "session_not_found",
+]) {
+  test(`stabilization: explicit ${code} still invalidates an expired session`, async () => {
+    const f = fixture(undefined, session);
+    await f.controller.start();
+    f.auth.updateUser = async () =>
+      ({ data: { user: null }, error: { status: 403, code } }) as any;
+    await f.controller.updatePassword("New-Password-123!", "New-Password-123!");
+    assert.equal(f.controller.getSnapshot().session, null);
+    assert.equal(f.controller.getSnapshot().status, "unauthenticated");
+    f.controller.stop();
+  });
+}
+test("stabilization: permission failures on getUser do not sign out stored credentials", async () => {
+  const f = fixture(undefined, session);
+  let logouts = 0;
+  f.auth.getUser = async () =>
+    ({ data: { user: null }, error: { status: 403, code: "42501" } }) as any;
+  f.auth.signOut = async () => {
+    logouts++;
+    return { error: null };
+  };
+  await f.controller.start();
+  assert.equal(logouts, 0);
+  assert.equal((await f.auth.getSession()).data.session, session);
+  assert.equal(f.controller.getSnapshot().status, "operational-error");
+  f.controller.stop();
+});
+test("stabilization: permission, internal and network errors have distinct messages", () => {
+  assert.match(authErrorMessage({ status: 403 }), /permissão/);
+  assert.match(authErrorMessage({ code: "42501" }), /permissão/);
+  assert.match(authErrorMessage({ status: 500 }), /erro interno/);
+  assert.match(authErrorMessage({ name: "TypeError" }), /ligação/);
+  assert.match(
+    authErrorMessage({ status: 403, code: "bad_jwt" }),
+    /sessão expirou/,
+  );
 });

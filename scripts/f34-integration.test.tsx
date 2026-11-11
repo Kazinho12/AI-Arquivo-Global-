@@ -6,7 +6,11 @@ import React from "react";
 
 import { Cover, WorkCard } from "../src/foundation/components/WorkCard";
 import { WorkCover } from "../src/foundation/components/WorkCover";
-import { EDITORIAL_COVER_PALETTE, COVER_STYLES, getCoverContrastTheme } from "../src/foundation/data/covers";
+import {
+  EDITORIAL_COVER_PALETTE,
+  COVER_STYLES,
+  getCoverContrastTheme,
+} from "../src/foundation/data/covers";
 import { getGenresForFormat } from "../src/foundation/data/genres";
 import { inauguralWorks } from "../src/foundation/data/inaugural";
 import { WorkMetadataForm } from "../src/foundation/features/studio/WorkMetadataForm";
@@ -50,8 +54,14 @@ test("public covers: Cover renders inaugural artwork for inaugural works", async
   };
 
   const html = await renderComponent(<Cover work={work} />);
-  assert.ok(html.includes("editorial-cover-asset"), "Must render editorial asset for inaugural works");
-  assert.ok(html.includes(inaugural.coverAsset), "Must include the original inaugural asset src");
+  assert.ok(
+    html.includes("editorial-cover-asset"),
+    "Must render editorial asset for inaugural works",
+  );
+  assert.ok(
+    html.includes(inaugural.coverAsset),
+    "Must include the original inaugural asset src",
+  );
 });
 
 test("public covers: Cover renders WorkCover with real coverAccentColor and legacy style for user publications", async () => {
@@ -76,7 +86,10 @@ test("public covers: Cover renders WorkCover with real coverAccentColor and lega
   assert.ok(html.includes("Mia Couto"), "Must render author");
   assert.ok(html.includes("Contos Fluviais"), "Must render subtitle");
   assert.ok(html.includes("#064E3B"), "Must use real coverAccentColor");
-  assert.ok(html.includes("OBRA PUBLICADA"), "Must show published edition label");
+  assert.ok(
+    html.includes("OBRA PUBLICADA"),
+    "Must show published edition label",
+  );
 });
 
 import { MemoryRouter } from "react-router-dom";
@@ -109,15 +122,28 @@ test("public covers: WorkCard integrates Cover seamlessly", async () => {
 
 test("creation and editing: getGenresForFormat provides contextual suggestions without losing all genres", () => {
   const mangaGenres = getGenresForFormat("Mangá");
-  assert.ok(mangaGenres.recommended.some((g) => g.toLowerCase().includes("shonen") || g.toLowerCase().includes("visual") || g.toLowerCase().includes("fantasia")));
+  assert.ok(
+    mangaGenres.recommended.some(
+      (g) =>
+        g.toLowerCase().includes("shonen") ||
+        g.toLowerCase().includes("visual") ||
+        g.toLowerCase().includes("fantasia"),
+    ),
+  );
   assert.ok(mangaGenres.all.length > mangaGenres.recommended.length);
 
   const poetryGenres = getGenresForFormat("Poesia");
-  assert.ok(poetryGenres.recommended.some((g) => g.toLowerCase().includes("poesia")));
+  assert.ok(
+    poetryGenres.recommended.some((g) => g.toLowerCase().includes("poesia")),
+  );
 });
 
 test("palette: 28 editorial colors cover diverse groups and validate WCAG AA contrast", () => {
-  assert.equal(EDITORIAL_COVER_PALETTE.length, 28, "Must contain exactly 28 editorial colors");
+  assert.equal(
+    EDITORIAL_COVER_PALETTE.length,
+    28,
+    "Must contain exactly 28 editorial colors",
+  );
 
   const lightColors = EDITORIAL_COVER_PALETTE.filter(
     (c) => getCoverContrastTheme(c.hex) === "light",
@@ -126,7 +152,10 @@ test("palette: 28 editorial colors cover diverse groups and validate WCAG AA con
     (c) => getCoverContrastTheme(c.hex) === "dark",
   );
 
-  assert.ok(lightColors.length >= 3, "Must have accessible light background colors");
+  assert.ok(
+    lightColors.length >= 3,
+    "Must have accessible light background colors",
+  );
   assert.ok(darkColors.length >= 20, "Must have dark background colors");
 });
 
@@ -160,22 +189,43 @@ test("WorkMetadataForm: renders LanguageCombobox, contextual genres, 28-color pa
   // Accessible inputs
   assert.ok(html.includes("Editar metadados"), "Must have form heading");
   assert.ok(html.includes("O Luar de Sofala"), "Must display initial title");
-  assert.ok(html.includes("role=\"combobox\""), "Must render accessible LanguageCombobox");
+  assert.ok(
+    html.includes('role="combobox"'),
+    "Must render accessible LanguageCombobox",
+  );
   assert.ok(html.includes("Português"), "Must have selected language");
 
   // Contextual genres
-  assert.ok(html.includes("Sugeridos para Romance"), "Must group recommended genres for format");
-  assert.ok(html.includes("Todos os géneros"), "Must keep all genres accessible");
+  assert.ok(
+    html.includes("Sugeridos para Romance"),
+    "Must group recommended genres for format",
+  );
+  assert.ok(
+    html.includes("Todos os géneros"),
+    "Must keep all genres accessible",
+  );
 
   // 28 colors
-  assert.ok(html.includes("Cor da Capa (28 Cores ou Personalizada)"), "Must render 28-color palette section");
+  assert.ok(
+    html.includes("Cor da Capa (28 Cores ou Personalizada)"),
+    "Must render 28-color palette section",
+  );
   assert.ok(html.includes("#14243B"), "Must reflect selected color");
 
   // Style experimenter and persistence disclaimer
-  assert.ok(html.includes("Experimentar Estilos Gráficos"), "Must render style experimenter");
-  assert.ok(html.includes("Persistência de estilo na próxima fase"), "Must clearly identify persistence limitation");
+  assert.ok(
+    html.includes("Experimentar Estilos Gráficos"),
+    "Must render style experimenter",
+  );
+  assert.ok(
+    html.includes("Persistência de estilo na próxima fase"),
+    "Must clearly identify persistence limitation",
+  );
 
   // Live cover preview
   assert.ok(html.includes("Pré-visualização Viva"), "Must render live preview");
-  assert.ok(html.includes("Memórias da Baía"), "Live preview must reflect subtitle");
+  assert.ok(
+    html.includes("Memórias da Baía"),
+    "Live preview must reflect subtitle",
+  );
 });

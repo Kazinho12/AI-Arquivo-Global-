@@ -1,13 +1,16 @@
+import { AvatarEditor, ProfileAvatar } from "../features/profile/AvatarEditor";
+import {
+  FollowerCount,
+  ProfilePublications,
+} from "../features/profile/PublicProfileData";
 import { editorialIdentity } from "../data/inaugural";
 import { useEffect, useState, useId, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Calendar,
   PenLine,
-  UserCheck,
   UserRound,
   UserX,
-  BookOpen,
   ArrowLeft,
   CircleAlert,
   CheckCircle2,
@@ -27,9 +30,7 @@ import {
   validateUsername,
   type UserProfile,
 } from "../features/profile/types";
-import { WorkCard } from "../components/WorkCard";
-import { ActionLink, Button, LoadingState, EmptyState } from "../components/ui";
-import type { Work } from "../data/works";
+import { ActionLink, Button, LoadingState } from "../components/ui";
 
 function formatJoinDate(isoDate: string): string {
   try {
@@ -43,23 +44,11 @@ function formatJoinDate(isoDate: string): string {
   }
 }
 
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "AG";
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
 export function PublicProfilePage() {
   const { username } = useParams<{ username: string }>();
   const { state: authState } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(() => {
     return username ? resolveDemoProfile(username.toLowerCase()) : null;
-  });
-  const [works, setWorks] = useState<Work[]>(() => {
-    if (!username) return [];
-    const initial = resolveDemoProfile(username.toLowerCase());
-    return initial ? findAuthorWorks(initial.id) : [];
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,12 +68,6 @@ export function PublicProfilePage() {
         setTableMissing(Boolean(res.tableMissing));
         if (res.error && !res.profile) {
           setError(res.error);
-        }
-        if (res.profile) {
-          const authorWorks = findAuthorWorks(res.profile.id);
-          setWorks(authorWorks);
-        } else {
-          setWorks([]);
         }
       })
       .catch((err: unknown) => {
@@ -171,21 +154,11 @@ export function PublicProfilePage() {
 
       <header className="profile-header">
         <div className="profile-avatar-area">
-          {profile.avatarUrl ? (
-            <img
-              src={profile.avatarUrl}
-              alt={profile.displayName}
-              className="profile-avatar-img"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div
-              className="profile-avatar-monogram"
-              aria-label={`Avatar de ${profile.displayName}`}
-            >
-              <span>{getInitials(profile.displayName)}</span>
-            </div>
-          )}
+          <ProfileAvatar
+            name={profile.displayName}
+            url={profile.avatarUrl}
+            publicProfile
+          />
         </div>
 
         <div className="profile-details">
@@ -215,13 +188,11 @@ export function PublicProfilePage() {
             <span className="meta-separator" aria-hidden="true">
               ·
             </span>
-            <Link
-              to={`/utilizadores/${profile.username}/seguidores`}
-              className="profile-followers-link"
-            >
-              <UserCheck size={13} aria-hidden="true" />
-              <span>Seguidores</span>
-            </Link>
+            <FollowerCount
+              key={profile.id}
+              id={profile.id}
+              editorial={profile.id === editorialIdentity.id}
+            />
           </div>
 
           <div className="profile-bio-box">
@@ -236,34 +207,15 @@ export function PublicProfilePage() {
         </div>
       </header>
 
-      <section
-        className="profile-works-section"
-        aria-labelledby="obras-heading"
-      >
-        <div className="profile-works-header">
-          <h2 id="obras-heading">
-            Obras no catálogo local{" "}
-            <span className="profile-works-count">({works.length})</span>
-          </h2>
-          <span className="eyebrow">CATÁLOGO DO AUTOR</span>
-        </div>
-
-        {works.length > 0 ? (
-          <div className="work-grid">
-            {works.map((work) => (
-              <WorkCard key={work.id} work={work} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState title="Nenhuma obra publicada">
-            <p>
-              Este autor ainda não publicou nenhuma história no catálogo aberto
-              do Arquivo Global.
-            </p>
-            <ActionLink to="/catalogo">Explorar outras histórias</ActionLink>
-          </EmptyState>
-        )}
-      </section>
+      <ProfilePublications
+        key={profile.id}
+        id={profile.id}
+        editorialWorks={
+          profile.id === editorialIdentity.id
+            ? findAuthorWorks(profile.id)
+            : undefined
+        }
+      />
     </div>
   );
 }
@@ -280,6 +232,7 @@ export function EditProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [savedHandle, setSavedHandle] = useState<string | null>(null);
+  const [avatarProfile, setAvatarProfile] = useState<UserProfile | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const nameId = useId();
@@ -300,6 +253,7 @@ export function EditProfilePage() {
       .then((res) => {
         if (!active) return;
         if (res.profile) {
+          setAvatarProfile(res.profile);
           setDisplayName(res.profile.displayName);
           setUsername(res.profile.username);
           setBio(res.profile.bio);
@@ -402,6 +356,7 @@ export function EditProfilePage() {
     if (!result.ok) {
       setError(result.message || "Erro ao gravar perfil.");
     } else {
+      if (result.profile) setAvatarProfile(result.profile);
       setSuccess("Perfil atualizado com sucesso.");
       setSavedHandle(username.trim().toLowerCase());
     }
@@ -509,21 +464,18 @@ export function EditProfilePage() {
           />
         </div>
 
-        <div className="avatar-info-panel">
-          <div className="avatar-preview">
-            <div className="profile-avatar-monogram small">
-              <span>{getInitials(displayName || username || "AG")}</span>
-            </div>
-            <div>
-              <strong>Avatar de autor</strong>
-              <p>
-                O teu avatar é gerado a partir do teu monograma autoral. O
-                carregamento direto de imagens para armazenamento R2 estará
-                disponível quando a API segura de ficheiros for concluída.
-              </p>
-            </div>
-          </div>
-        </div>
+        {avatarProfile && avatarProfile.id === authState.user.id ? (
+          <AvatarEditor
+            key={avatarProfile.id}
+            profile={avatarProfile}
+            onChange={setAvatarProfile}
+          />
+        ) : (
+          <p role="status">
+            A fotografia só pode ser gerida depois de carregar o perfil
+            persistido.
+          </p>
+        )}
 
         <div className="profile-edit-actions">
           <Button type="submit" disabled={saving}>

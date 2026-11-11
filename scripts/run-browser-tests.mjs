@@ -19,6 +19,12 @@ const server = await createServer({
     ],
   },
   define: {
+    "import.meta.env.VITE_ENABLE_COVER_STUDIO_V2": JSON.stringify(
+      process.env.AG_TEST_COVER_STUDIO_V2 === "1" ? "true" : "false",
+    ),
+    "import.meta.env.VITE_ENABLE_COVER_STYLE": JSON.stringify(
+      process.env.AG_TEST_COVER_STYLE_ENABLED === "1" ? "true" : "false",
+    ),
     "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(""),
     "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(""),
   },

@@ -128,7 +128,7 @@ test("profile: render /utilizadores/equipa-editorial delivers author profile wit
   assert.ok(html.includes("Arquivo Global — Equipa Editorial"));
   assert.ok(html.includes("@equipa-editorial"));
   assert.ok(html.includes("Carta de abertura"));
-  assert.ok(html.includes("Obras no catálogo local"));
+  assert.ok(html.includes("Obras editoriais inaugurais"));
   // Must NOT expose emails or tokens
   assert.ok(!html.includes("@example."));
   assert.ok(!html.includes("access_token"));

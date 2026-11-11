@@ -1,3 +1,9 @@
+import { CoverStudioGallery } from "../../components/CoverStudioGallery";
+import {
+  coverStylePersistenceEnabled,
+  coverStudioV2Enabled,
+} from "../covers/config";
+import { readCoverStyle } from "../../data/covers";
 import { useEffect, useState, useMemo, type FormEvent } from "react";
 import { Button, Field, Select, Modal } from "../../components/ui";
 import type { StudioWork, WorkFormat, AgeRating } from "./types";
@@ -6,8 +12,8 @@ import { LanguageCombobox } from "../../components/LanguageCombobox";
 import { WorkCover } from "../../components/WorkCover";
 import {
   EDITORIAL_COVER_PALETTE,
-  COVER_STYLES,
   coverStyleDefinitions,
+  readCoverSeed,
   type CoverStyle,
   isValidHexColor,
   normalizeHexColor,
@@ -36,7 +42,14 @@ export function WorkMetadataForm({
   const [warnings, setWarnings] = useState(work.contentWarnings.join(", "));
   const [color, setColor] = useState(work.coverAccentColor);
   const [customHex, setCustomHex] = useState(work.coverAccentColor);
-  const [coverStyle, setCoverStyle] = useState<CoverStyle>("geometric");
+  const [coverStyle, setCoverStyle] = useState<CoverStyle>(() =>
+    coverStylePersistenceEnabled
+      ? readCoverStyle(work.coverStyle)
+      : "geometric",
+  );
+  const [coverSeed, setCoverSeed] = useState(() =>
+    readCoverSeed(work.coverSeed),
+  );
   const [saved, setSaved] = useState(false);
 
   const formatGenres = useMemo(() => getGenresForFormat(format), [format]);
@@ -61,6 +74,12 @@ export function WorkMetadataForm({
       ageRating,
       contentWarnings: split(warnings),
       coverAccentColor: color,
+      ...(coverStylePersistenceEnabled && !baseline.coverAppearanceLocked
+        ? {
+            coverStyle,
+            ...(coverStudioV2Enabled || coverSeed !== 0 ? { coverSeed } : {}),
+          }
+        : {}),
     });
     if (result) {
       apply(result);
@@ -78,7 +97,11 @@ export function WorkMetadataForm({
     tags !== baseline.tags.join(", ") ||
     ageRating !== baseline.ageRating ||
     warnings !== baseline.contentWarnings.join(", ") ||
-    color !== baseline.coverAccentColor;
+    color !== baseline.coverAccentColor ||
+    (coverStylePersistenceEnabled &&
+      !baseline.coverAppearanceLocked &&
+      (coverStyle !== readCoverStyle(baseline.coverStyle) ||
+        coverSeed !== readCoverSeed(baseline.coverSeed)));
 
   function apply(latest: StudioWork) {
     setBaseline(latest);
@@ -93,6 +116,9 @@ export function WorkMetadataForm({
     setWarnings(latest.contentWarnings.join(", "));
     setColor(latest.coverAccentColor);
     setCustomHex(latest.coverAccentColor);
+    if (coverStylePersistenceEnabled)
+      setCoverStyle(readCoverStyle(latest.coverStyle));
+    setCoverSeed(readCoverSeed(latest.coverSeed));
   }
 
   useEffect(() => {
@@ -306,29 +332,34 @@ export function WorkMetadataForm({
                 Experimentar Estilos Gráficos de Capa
               </span>
               <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
-                Persistência de estilo na próxima fase
+                {coverStylePersistenceEnabled
+                  ? "Estilo guardado ao confirmar alterações"
+                  : "Persistência de estilo na próxima fase"}
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 mb-4">
-              {COVER_STYLES.map((st) => (
-                <button
-                  key={st}
-                  type="button"
-                  onClick={() => setCoverStyle(st)}
-                  className={`px-2 py-1.5 text-xs font-medium rounded-lg border text-left transition-colors ${
-                    coverStyle === st
-                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-transparent shadow-sm"
-                      : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
-                  }`}
-                >
-                  <div className="font-semibold truncate">
-                    {coverStyleDefinitions[st]?.label.split(" ")[0]}
-                  </div>
-                  <div className="text-[10px] opacity-75 truncate">{st}</div>
-                </button>
-              ))}
-            </div>
+            {baseline.coverAppearanceLocked && (
+              <p role="status">
+                Pré-visualização apenas: a capa guardada será preservada ao
+                editar os restantes metadados.
+              </p>
+            )}
+            <CoverStudioGallery
+              title={title}
+              subtitle={subtitle}
+              color={color}
+              format={format}
+              style={coverStyle}
+              seed={coverSeed}
+              onStyle={(value) => {
+                setCoverStyle(value);
+                setSaved(false);
+              }}
+              onSeed={(value) => {
+                setCoverSeed(value);
+                setSaved(false);
+              }}
+            />
 
             <div className="flex flex-col sm:flex-row items-center gap-6 pt-2 border-t border-slate-200 dark:border-slate-800">
               <div className="w-[150px] flex-shrink-0">
@@ -338,6 +369,7 @@ export function WorkMetadataForm({
                   subtitle={subtitle}
                   color={color}
                   style={coverStyle}
+                  seed={coverSeed}
                   format={format}
                   size="responsive"
                 />
@@ -347,10 +379,13 @@ export function WorkMetadataForm({
                   Pré-visualização Viva da Edição
                 </div>
                 <p className="text-slate-500 dark:text-slate-400">
-                  Estilo selecionado: <strong>{coverStyleDefinitions[coverStyle]?.label}</strong>
+                  Estilo selecionado:{" "}
+                  <strong>{coverStyleDefinitions[coverStyle]?.label}</strong>
                 </p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">
-                  * O estilo da capa pode ser experimentado livremente em pré-visualização. A persistência do estilo gráfico será ativada na próxima etapa de migração da base de dados; a cor personalizada e todos os demais metadados são gravados de imediato na tua conta.
+                  {coverStylePersistenceEnabled
+                    ? "A pré-visualização não é uma gravação. O estilo e os metadados ficam guardados apenas após confirmação do servidor. A edição pública só muda quando atualizares explicitamente a publicação."
+                    : "O estilo é apenas uma pré-visualização neste ambiente. A cor e os restantes metadados são guardados quando confirmares as alterações."}
                 </p>
               </div>
             </div>
@@ -360,7 +395,9 @@ export function WorkMetadataForm({
             {remote.saving ? "A guardar…" : "Guardar alterações"}
           </Button>
         </fieldset>
-        {saved && <p role="status">Alterações guardadas na tua conta.</p>}
+        {saved && !dirty && (
+          <p role="status">Alterações guardadas na tua conta.</p>
+        )}
         <p className="text-muted">
           Rascunho privado. A propriedade técnica não define autoria pública nem
           publicação editorial.

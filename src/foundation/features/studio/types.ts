@@ -1,3 +1,4 @@
+import type { CoverStyle } from "../../data/covers";
 import type { Chapter } from "../reader/types";
 
 export type WorkFormat =
@@ -34,7 +35,10 @@ export interface StudioWork {
   contentWarnings: string[];
   status: WorkStatus;
   coverAccentColor: string;
-  coverStyle?: string;
+  coverStyle?: CoverStyle;
+  coverSeed?: number;
+  /** Server appearance cannot be edited by an older compatibility mode. */
+  coverAppearanceLocked?: boolean;
   createdAt: string;
   updatedAt: string;
   chapters: Chapter[];

@@ -250,8 +250,7 @@ export class AuthController {
     } catch (error) {
       const message = authErrorMessage(error);
       const statusNum = (error as { status?: number })?.status;
-      if (statusNum === 429)
-        this.set({ resendAt: this.env.now() + 60000 });
+      if (statusNum === 429) this.set({ resendAt: this.env.now() + 60000 });
       const isClientError = Boolean(
         statusNum && statusNum >= 400 && statusNum < 500,
       );

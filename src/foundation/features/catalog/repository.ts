@@ -1,3 +1,13 @@
+import {
+  coverStylePersistenceEnabled,
+  coverStudioV2Enabled,
+  type CoverStyleOptions,
+} from "../covers/config";
+import {
+  readCoverStyle,
+  isOriginalCoverStyle,
+  readCoverSeed,
+} from "../../data/covers";
 import type {
   DiscoveryQuery,
   DiscoveryPage,
@@ -37,6 +47,17 @@ export function getPublicClient() {
   }));
 }
 export function mapPublishedWork(row: Record<string, any>): PublishedWork {
+  return mapPublishedRow(
+    row,
+    coverStylePersistenceEnabled,
+    coverStudioV2Enabled,
+  );
+}
+function mapPublishedRow(
+  row: Record<string, any>,
+  styleEnabled: boolean,
+  v2Enabled = false,
+): PublishedWork {
   if (
     !row.id ||
     !row.title ||
@@ -59,6 +80,11 @@ export function mapPublishedWork(row: Record<string, any>): PublishedWork {
     createdAt: row.last_published_at,
     cover: 1,
     coverAccentColor: row.cover_accent_color || undefined,
+    coverStyle:
+      styleEnabled && (v2Enabled || isOriginalCoverStyle(row.cover_style))
+        ? readCoverStyle(row.cover_style)
+        : "legacy",
+    coverSeed: styleEnabled && v2Enabled ? readCoverSeed(row.cover_seed) : 0,
     origin: "user-publication",
     language: row.language,
     ageRating: row.age_rating,
@@ -84,7 +110,16 @@ export function mapPublishedWork(row: Record<string, any>): PublishedWork {
 }
 export function createPublicWorksRepository(
   client: SupabaseClient | null,
+  options: CoverStyleOptions = {},
 ): PublicWorksRepository {
+  const styleEnabled =
+    options.coverStyleEnabled ?? coverStylePersistenceEnabled;
+  const v2Enabled =
+    styleEnabled && (options.coverStudioV2Enabled ?? coverStudioV2Enabled);
+  const selectedColumns =
+    publicColumns +
+    (styleEnabled ? ",cover_style" : "") +
+    (v2Enabled ? ",cover_seed" : "");
   const db = () => {
     if (!client)
       throw new Error(
@@ -109,12 +144,14 @@ export function createPublicWorksRepository(
       const rows = await request(
         client
           .from("published_works")
-          .select(publicColumns)
+          .select<string, Record<string, any>>(selectedColumns)
           .order("last_published_at", { ascending: false })
           .order("id")
           .limit(12),
       );
-      return (rows ?? []).map(mapPublishedWork);
+      return (rows ?? []).map((row) =>
+        mapPublishedRow(row, styleEnabled, v2Enabled),
+      );
     },
     async search(query) {
       const result = await request(
@@ -128,7 +165,9 @@ export function createPublicWorksRepository(
         throw Error("Resposta inválida da pesquisa pública.");
       return {
         ...result,
-        items: result.items.map(mapPublishedWork),
+        items: result.items.map((row: Record<string, any>) =>
+          mapPublishedRow(row, styleEnabled, v2Enabled),
+        ),
       } as DiscoveryPage;
     },
     async facets(query = "") {
@@ -161,7 +200,7 @@ export function createPublicWorksRepository(
       const row = await request(
         db().rpc("read_public_work", { p_public_id: publicId }),
       );
-      return row ? mapPublishedWork(row) : null;
+      return row ? mapPublishedRow(row, styleEnabled, v2Enabled) : null;
     },
   };
 }

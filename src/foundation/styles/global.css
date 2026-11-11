@@ -1,4 +1,5 @@
 @import "tailwindcss" source("../");
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 :root {
   font-family: Inter, "Segoe UI", Arial, sans-serif;
   color-scheme: dark;
@@ -6325,4 +6326,160 @@ dialog p {
   .prose-paragraph {
     text-align: start;
   }
+}
+
+/* Public Home highlights reuse the existing hero and editorial cover system. */
+.home-editorial-state {
+  margin-block: 24px;
+  max-width: 48ch;
+}
+.home-editorial-state p + p {
+  margin-block: 12px 20px;
+}
+.hero-copy .home-hero-byline {
+  margin-block: 20px 0;
+  color: var(--muted);
+}
+.home-empty-symbol {
+  min-height: 360px;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+}
+.home-age {
+  color: var(--muted);
+  font-size: 12px;
+}
+.hero h1 {
+  overflow-wrap: anywhere;
+}
+.hero-book .cover-container {
+  height: 100%;
+}
+
+/* Institutional hero: two leading books, three quieter layers, no carousel. */
+.home-cover-stack .hero-book {
+  aspect-ratio: 3 / 4;
+  display: block;
+}
+.home-cover-stack .hero-book-front {
+  z-index: 5;
+  left: 43%;
+  top: 65px;
+}
+.home-cover-stack .hero-book-back {
+  z-index: 4;
+  left: 10%;
+  top: 32px;
+}
+.home-cover-stack .hero-book-depth-one {
+  z-index: 1;
+  width: 125px;
+  left: 0;
+  top: 150px;
+  transform: rotate(-19deg);
+  filter: saturate(0.6);
+}
+.home-cover-stack .hero-book-depth-two {
+  z-index: 2;
+  width: 120px;
+  left: 44%;
+  top: 0;
+  transform: rotate(4deg);
+  filter: saturate(0.6);
+}
+.home-cover-stack .hero-book-depth-three {
+  z-index: 1;
+  width: 105px;
+  right: 0;
+  top: 145px;
+  transform: rotate(22deg);
+  filter: saturate(0.6);
+}
+.home-cover-stack a:focus-visible {
+  outline: 4px solid var(--accent);
+  outline-offset: 5px;
+  z-index: 10;
+  transform: none;
+}
+.hero-book-neutral {
+  background: var(--elevated);
+  color: var(--border);
+  border: 1px solid var(--border);
+}
+.hero-book-neutral svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.home-cover-stack .visual-caption {
+  z-index: 6;
+}
+@media (max-width: 767px) {
+  .home-cover-stack .hero-book-front {
+    left: 42%;
+    width: 165px;
+  }
+  .home-cover-stack .hero-book-back {
+    left: 5%;
+    width: 165px;
+  }
+  .home-cover-stack .hero-book-depth-one {
+    width: 105px;
+  }
+  .home-cover-stack .hero-book-depth-two {
+    width: 100px;
+  }
+  .home-cover-stack .hero-book-depth-three {
+    width: 90px;
+  }
+}
+
+.cover-style-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+  max-height: 560px;
+  overflow: auto;
+  padding: 8px;
+  scrollbar-gutter: stable;
+}
+.cover-style-option {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px;
+  text-align: left;
+  background: var(--surface);
+  color: var(--text);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.cover-style-option[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.cover-style-option:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.cover-style-option > span {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.cover-style-option .ag-work-cover {
+  box-shadow: none !important;
+}
+.cover-variation-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-block: 16px;
+  font-size: 12px;
+}
+.ag-cover-v2 p {
+  margin-block: 0;
 }

@@ -17,7 +17,14 @@ export interface LanguageDefinition {
   code: string; // Código BCP-47 / ISO 639-1 ou ISO 639-3
   name: string; // Nome canónico em português (apresentação na UI e gravação na DB)
   nativeName?: string; // Nome nativo / autónimo na própria língua e alfabeto
-  region: "África" | "Américas" | "Ásia" | "Europa" | "Oceânia" | "Global" | "Especial";
+  region:
+    | "África"
+    | "Américas"
+    | "Ásia"
+    | "Europa"
+    | "Oceânia"
+    | "Global"
+    | "Especial";
   direction?: "ltr" | "rtl"; // Direção da escrita (padrão ltr)
   isPopular?: boolean; // Idiomas frequentemente utilizados na plataforma (destaque inicial)
   family?: string; // Família linguística
@@ -42,7 +49,8 @@ export const LANGUAGE_CATALOG: LanguageDefinition[] = [
     nativeName: "Multilingual",
     region: "Especial",
     isPopular: true,
-    notes: "Obras que utilizam intencionalmente múltiplos idiomas ao longo do texto.",
+    notes:
+      "Obras que utilizam intencionalmente múltiplos idiomas ao longo do texto.",
   },
   {
     code: "zxx",
@@ -50,7 +58,8 @@ export const LANGUAGE_CATALOG: LanguageDefinition[] = [
     nativeName: "No linguistic content",
     region: "Especial",
     isPopular: true,
-    notes: "Para HQs mudas, pranchas gráficas, livros de fotografia ou ilustrações puras.",
+    notes:
+      "Para HQs mudas, pranchas gráficas, livros de fotografia ou ilustrações puras.",
   },
   {
     code: "eo",
@@ -97,7 +106,8 @@ export const LANGUAGE_CATALOG: LanguageDefinition[] = [
     nativeName: "Português",
     region: "Global",
     isPopular: true,
-    notes: "Moçambique, Angola, Portugal, Brasil, Cabo Verde, São Tomé e Príncipe, Guiné-Bissau, Timor-Leste, Macau.",
+    notes:
+      "Moçambique, Angola, Portugal, Brasil, Cabo Verde, São Tomé e Príncipe, Guiné-Bissau, Timor-Leste, Macau.",
   },
   {
     code: "gl",
@@ -1323,7 +1333,10 @@ export const LANGUAGE_CATALOG: LanguageDefinition[] = [
 
 /** Remove marcas diacríticas para pesquisa textual insensível a acentos. */
 function stripDiacritics(str: string): string {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }
 
 /** Retorna a lista completa com todos os nomes de idiomas em português. */
@@ -1340,7 +1353,10 @@ export function getPopularLanguages(): LanguageDefinition[] {
  * Pesquisa no catálogo por nome em português, nome nativo ou código ISO/BCP-47.
  * Tolerante a acentos e maiúsculas.
  */
-export function searchLanguages(query: string, limit = 50): LanguageDefinition[] {
+export function searchLanguages(
+  query: string,
+  limit = 50,
+): LanguageDefinition[] {
   if (!query || !query.trim()) {
     return LANGUAGE_CATALOG.slice(0, limit);
   }
@@ -1368,7 +1384,9 @@ export function searchLanguages(query: string, limit = 50): LanguageDefinition[]
 }
 
 /** Localiza a definição completa de um idioma pelo seu código ou nome. */
-export function findLanguage(codeOrName: string): LanguageDefinition | undefined {
+export function findLanguage(
+  codeOrName: string,
+): LanguageDefinition | undefined {
   if (!codeOrName || typeof codeOrName !== "string") return undefined;
   const clean = codeOrName.trim().toLowerCase();
   const cleanNoDiacritics = stripDiacritics(clean);
@@ -1377,7 +1395,10 @@ export function findLanguage(codeOrName: string): LanguageDefinition | undefined
     if (lang.code.toLowerCase() === clean) return true;
     if (lang.name.toLowerCase() === clean) return true;
     if (stripDiacritics(lang.name) === cleanNoDiacritics) return true;
-    if (lang.nativeName && stripDiacritics(lang.nativeName) === cleanNoDiacritics)
+    if (
+      lang.nativeName &&
+      stripDiacritics(lang.nativeName) === cleanNoDiacritics
+    )
       return true;
     return false;
   });
@@ -1387,7 +1408,10 @@ export function findLanguage(codeOrName: string): LanguageDefinition | undefined
  * Valida e normaliza o idioma para o valor canónico registado na base de dados.
  * Preserva compatibilidade total com obras já guardadas.
  */
-export function normalizeLanguageName(name: string, fallback = "Português"): string {
+export function normalizeLanguageName(
+  name: string,
+  fallback = "Português",
+): string {
   if (!name || typeof name !== "string") return fallback;
   const found = findLanguage(name);
   return found ? found.name : name.trim();

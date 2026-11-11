@@ -180,18 +180,16 @@ export function authErrorMessage(error: unknown): string {
     e?.code === "flow_state_not_found"
   )
     return "Este link é inválido ou expirou. Solicita um novo link e abre-o no mesmo navegador.";
-  if (
-    e?.status === 401 ||
-    e?.status === 403 ||
-    e?.code === "bad_jwt" ||
-    e?.code === "invalid_jwt" ||
-    e?.code === "session_expired" ||
-    e?.code === "refresh_token_not_found" ||
-    e?.code === "refresh_token_already_used" ||
-    e?.code === "session_not_found" ||
-    e?.code === "user_not_found"
-  )
+  if (isInvalidSession(error))
     return "A sessão expirou ou foi revogada. Inicia sessão novamente.";
+  if (
+    e?.status === 403 ||
+    e?.code === "42501" ||
+    e?.code === "insufficient_privilege"
+  )
+    return "Não tens permissão para esta operação. A tua sessão foi preservada.";
+  if (e?.status && e.status >= 500)
+    return "O serviço encontrou um erro interno. Tenta novamente mais tarde.";
   if (e?.name === "AuthRetryableFetchError" || e?.name === "TypeError")
     return "Não foi possível comunicar com o serviço. Verifica a ligação e tenta novamente.";
   return "Não foi possível concluir o pedido. Tenta novamente ou solicita um novo link.";
@@ -200,7 +198,6 @@ export function isInvalidSession(error: unknown): boolean {
   const e = error as { status?: number; code?: string } | null;
   return (
     e?.status === 401 ||
-    e?.status === 403 ||
     [
       "bad_jwt",
       "invalid_jwt",

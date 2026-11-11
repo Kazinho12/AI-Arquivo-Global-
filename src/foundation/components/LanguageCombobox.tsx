@@ -182,8 +182,15 @@ export function LanguageCombobox({
     }
   };
 
+  useEffect(() => {
+    if (!isOpen || activeIndex < 0) return;
+    document
+      .getElementById(`${listboxId}-opt-${activeIndex}`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [isOpen, activeIndex, listboxId, filteredLanguages]);
+
   const activeOptionId =
-    activeIndex >= 0 && activeIndex < filteredLanguages.length
+    isOpen && activeIndex >= 0 && activeIndex < filteredLanguages.length
       ? `${listboxId}-opt-${activeIndex}`
       : undefined;
 
@@ -192,6 +199,12 @@ export function LanguageCombobox({
   return (
     <div
       ref={containerRef}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setIsOpen(false);
+          setActiveIndex(-1);
+        }
+      }}
       className={`relative w-full text-left font-sans ${className}`}
     >
       {/* Rótulo Acessível */}
@@ -237,10 +250,11 @@ export function LanguageCombobox({
             if (!isOpen) setIsOpen(true);
             setActiveIndex(0);
           }}
-          onFocus={() => {
-            if (!disabled) {
+          onClick={() => {
+            if (!disabled && !isOpen) {
               setIsOpen(true);
               setQuery("");
+              setActiveIndex(-1);
             }
           }}
           onKeyDown={handleKeyDown}
@@ -314,7 +328,9 @@ export function LanguageCombobox({
                   onClick={() => {
                     setSelectedRegion(region);
                     setActiveIndex(0);
+                    inputRef.current?.focus();
                   }}
+                  aria-pressed={selectedRegion === region}
                   className={`px-2 py-1 rounded-md font-medium whitespace-nowrap transition-colors ${
                     selectedRegion === region
                       ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-sm"
@@ -397,6 +413,7 @@ export function LanguageCombobox({
                     key={lang.code}
                     id={`${listboxId}-opt-${index}`}
                     role="option"
+                    onMouseDown={(event) => event.preventDefault()}
                     aria-selected={isSelected}
                     onClick={() => handleSelect(lang)}
                     onMouseEnter={() => setActiveIndex(index)}

@@ -153,7 +153,10 @@ test("genres: preserves all 7 legacy genres with exact names", () => {
       all.includes(legacy),
       `Legacy genre missing from catalog: ${legacy}`,
     );
-    assert.ok(isKnownGenre(legacy), `Legacy genre must be recognized: ${legacy}`);
+    assert.ok(
+      isKnownGenre(legacy),
+      `Legacy genre must be recognized: ${legacy}`,
+    );
   }
 });
 
@@ -185,15 +188,22 @@ test("genres: format-specific recommendations are tailored without losing all op
 test("languages: preserves all 4 legacy languages and includes African languages", () => {
   const allNames = getAllLanguageNames();
   for (const legacy of LEGACY_LANGUAGES) {
-    assert.ok(
-      allNames.includes(legacy),
-      `Legacy language missing: ${legacy}`,
-    );
+    assert.ok(allNames.includes(legacy), `Legacy language missing: ${legacy}`);
     assert.ok(findLanguage(legacy) !== undefined);
   }
 
   // African languages presence check
-  const africanCodes = ["tsc", "vmw", "seh", "kmb", "umb", "kea", "cri", "sw", "yo"];
+  const africanCodes = [
+    "tsc",
+    "vmw",
+    "seh",
+    "kmb",
+    "umb",
+    "kea",
+    "cri",
+    "sw",
+    "yo",
+  ];
   for (const code of africanCodes) {
     const lang = findLanguage(code);
     assert.ok(lang !== undefined, `African language code missing: ${code}`);
@@ -230,16 +240,26 @@ test("WorkCover: renders correctly for all 5 styles and legacy fallback", async 
       />,
     );
 
-    assert.ok(html.includes("O Canto das Marés"), `Title missing in style ${style}`);
+    assert.ok(
+      html.includes("O Canto das Marés"),
+      `Title missing in style ${style}`,
+    );
     assert.ok(html.includes("Mia Couto"), `Author missing in style ${style}`);
-    assert.ok(html.includes("Crónicas do Índico"), `Subtitle missing in style ${style}`);
+    assert.ok(
+      html.includes("Crónicas do Índico"),
+      `Subtitle missing in style ${style}`,
+    );
     assert.ok(html.includes("<svg"), `SVG missing in style ${style}`);
-    assert.ok(html.includes("AG · Romance"), `Format tag missing in style ${style}`);
+    assert.ok(
+      html.includes("AG · Romance"),
+      `Format tag missing in style ${style}`,
+    );
   }
 });
 
 test("WorkCover: handles long titles and accessible light color contrast", async () => {
-  const longTitle = "Memórias Póstumas e Intermináveis de um Explorador dos Espaços Siderais e das Terras Altas";
+  const longTitle =
+    "Memórias Póstumas e Intermináveis de um Explorador dos Espaços Siderais e das Terras Altas";
   const htmlLight = await renderComponent(
     <WorkCover
       title={longTitle}

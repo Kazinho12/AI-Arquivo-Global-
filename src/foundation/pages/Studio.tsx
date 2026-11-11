@@ -1,3 +1,8 @@
+import { CoverStudioGallery } from "../components/CoverStudioGallery";
+import {
+  coverStylePersistenceEnabled,
+  coverStudioV2Enabled,
+} from "../features/covers/config";
 import { PublicationControls } from "../features/studio/PublicationControls";
 import {
   RemoteEntryEditor,
@@ -51,8 +56,8 @@ import { LanguageCombobox } from "../components/LanguageCombobox";
 import { WorkCover } from "../components/WorkCover";
 import {
   EDITORIAL_COVER_PALETTE,
-  COVER_STYLES,
   coverStyleDefinitions,
+  readCoverSeed,
   type CoverStyle,
   isValidHexColor,
   normalizeHexColor,
@@ -359,13 +364,16 @@ export function NewWorkWizardPage() {
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [synopsis, setSynopsis] = useState("");
-  const [genre, setGenre] = useState("Ficção geral");
+  const [genre, setGenre] = useState(
+    () => getGenresForFormat("Romance").recommended[0],
+  );
   const [language, setLanguage] = useState("Português");
   const [tagsInput, setTagsInput] = useState("");
   const [ageRating, setAgeRating] = useState<AgeRating>("Livre");
   const [contentWarnings, setContentWarnings] = useState<string[]>([]);
   const [coverAccentColor, setCoverAccentColor] = useState("#14243B");
   const [coverStyle, setCoverStyle] = useState<CoverStyle>("geometric");
+  const [coverSeed, setCoverSeed] = useState(0);
   const [customHex, setCustomHex] = useState("#14243B");
 
   const formatGenres = useMemo(() => getGenresForFormat(format), [format]);
@@ -399,6 +407,12 @@ export function NewWorkWizardPage() {
       ageRating,
       contentWarnings,
       coverAccentColor,
+      ...(coverStylePersistenceEnabled
+        ? {
+            coverStyle,
+            ...(coverStudioV2Enabled || coverSeed !== 0 ? { coverSeed } : {}),
+          }
+        : {}),
     });
 
     if (created && active.current) navigate(`/estudio/obras/${created.id}`);
@@ -581,6 +595,9 @@ export function NewWorkWizardPage() {
                   onChange={(e) => setGenre(e.target.value)}
                   className="filter-select w-full"
                 >
+                  {!formatGenres.all.includes(genre) && (
+                    <option value={genre}>{genre}</option>
+                  )}
                   <optgroup label={`Sugeridos para ${format}`}>
                     {formatGenres.recommended.map((g) => (
                       <option key={g} value={g}>
@@ -722,35 +739,26 @@ export function NewWorkWizardPage() {
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="field-label">Estilo Gráfico da Capa</label>
                   <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
-                    Persistência de estilo na próxima fase
+                    {coverStylePersistenceEnabled
+                      ? "Estilo guardado ao criar a obra"
+                      : "Persistência de estilo na próxima fase"}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {COVER_STYLES.map((st) => {
-                    const isSelected = coverStyle === st;
-                    return (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => setCoverStyle(st)}
-                        className={`px-3 py-2 text-xs font-medium rounded-lg border text-left transition-colors ${
-                          isSelected
-                            ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-transparent shadow-sm"
-                            : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
-                        }`}
-                      >
-                        <div className="font-semibold truncate">
-                          {coverStyleDefinitions[st]?.label.split(" ")[0]}
-                        </div>
-                        <div className="text-[10px] opacity-75 truncate">
-                          {st}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                <CoverStudioGallery
+                  title={title}
+                  subtitle={subtitle}
+                  color={coverAccentColor}
+                  format={format}
+                  style={coverStyle}
+                  seed={coverSeed}
+                  onStyle={setCoverStyle}
+                  onSeed={setCoverSeed}
+                />
+
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
-                  A cor selecionada é gravada de imediato na tua conta. A persistência dos estilos gráficos personalizados será ativada na próxima migração da base de dados.
+                  {coverStylePersistenceEnabled
+                    ? "A capa é uma pré-visualização. O estilo e a cor serão guardados apenas quando criares a obra e o servidor confirmar."
+                    : "A cor será guardada ao criares a obra. O estilo é apenas uma pré-visualização neste ambiente; ainda não será guardado."}
                 </p>
               </div>
 
@@ -764,6 +772,7 @@ export function NewWorkWizardPage() {
                       subtitle={subtitle}
                       color={coverAccentColor}
                       style={coverStyle}
+                      seed={coverSeed}
                       format={format}
                       size="responsive"
                     />
@@ -786,10 +795,13 @@ export function NewWorkWizardPage() {
                       </p>
                     )}
                     <p className="text-xs text-slate-600 dark:text-slate-300">
-                      Formato: <strong>{format}</strong> · Género: <strong>{genre}</strong> · Idioma: <strong>{language}</strong>
+                      Formato: <strong>{format}</strong> · Género:{" "}
+                      <strong>{genre}</strong> · Idioma:{" "}
+                      <strong>{language}</strong>
                     </p>
                     <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
-                      ✓ Contraste tipográfico acessível calculado automaticamente segundo as normas WCAG AA.
+                      ✓ Contraste tipográfico acessível calculado
+                      automaticamente segundo as normas WCAG AA.
                     </p>
                   </div>
                 </div>
@@ -846,6 +858,7 @@ export function NewWorkWizardPage() {
                   subtitle={subtitle}
                   color={coverAccentColor}
                   style={coverStyle}
+                  seed={coverSeed}
                   format={format}
                   size="md"
                 />

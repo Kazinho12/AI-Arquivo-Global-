@@ -54,16 +54,28 @@ test("languages: catalog contains over 130 standardized contemporary and world l
     );
     seenCodes.add(codeLower);
 
-    assert.ok(lang.name.trim().length > 0, "Language must have a Portuguese name");
+    assert.ok(
+      lang.name.trim().length > 0,
+      "Language must have a Portuguese name",
+    );
     assert.ok(
       lang.name.length <= 60,
       `Language name "${lang.name}" exceeds 60 characters database limit`,
     );
-    assert.ok(lang.code.length >= 2 && lang.code.length <= 8, "Code must be valid BCP-47 / ISO");
     assert.ok(
-      ["África", "Américas", "Ásia", "Europa", "Oceânia", "Global", "Especial"].includes(
-        lang.region,
-      ),
+      lang.code.length >= 2 && lang.code.length <= 8,
+      "Code must be valid BCP-47 / ISO",
+    );
+    assert.ok(
+      [
+        "África",
+        "Américas",
+        "Ásia",
+        "Europa",
+        "Oceânia",
+        "Global",
+        "Especial",
+      ].includes(lang.region),
       `Invalid region for ${lang.name}: ${lang.region}`,
     );
   }
@@ -84,7 +96,21 @@ test("languages: strictly preserves all 4 legacy languages", () => {
 
 test("languages: comprehensive African languages representation", () => {
   // Mozambique
-  const mozambiqueCodes = ["tsc", "vmw", "seh", "ndc", "ts", "cce", "bto", "ngl", "rng", "nyu", "chw", "yao", "xsm"];
+  const mozambiqueCodes = [
+    "tsc",
+    "vmw",
+    "seh",
+    "ndc",
+    "ts",
+    "cce",
+    "bto",
+    "ngl",
+    "rng",
+    "nyu",
+    "chw",
+    "yao",
+    "xsm",
+  ];
   for (const code of mozambiqueCodes) {
     const lang = findLanguage(code);
     assert.ok(lang, `Mozambican language missing: ${code}`);
@@ -92,7 +118,18 @@ test("languages: comprehensive African languages representation", () => {
   }
 
   // Angola & CPLP Africa
-  const angolaAndCplpCodes = ["kmb", "umb", "kg", "cjk", "kua", "kea", "pov", "cri", "aoa", "pre"];
+  const angolaAndCplpCodes = [
+    "kmb",
+    "umb",
+    "kg",
+    "cjk",
+    "kua",
+    "kea",
+    "pov",
+    "cri",
+    "aoa",
+    "pre",
+  ];
   for (const code of angolaAndCplpCodes) {
     const lang = findLanguage(code);
     assert.ok(lang, `Angola/CPLP language missing: ${code}`);
@@ -100,7 +137,22 @@ test("languages: comprehensive African languages representation", () => {
   }
 
   // Continental Africa
-  const continentalCodes = ["sw", "yo", "ha", "ig", "am", "om", "so", "ln", "zu", "xh", "rw", "rn", "wo", "ff"];
+  const continentalCodes = [
+    "sw",
+    "yo",
+    "ha",
+    "ig",
+    "am",
+    "om",
+    "so",
+    "ln",
+    "zu",
+    "xh",
+    "rw",
+    "rn",
+    "wo",
+    "ff",
+  ];
   for (const code of continentalCodes) {
     const lang = findLanguage(code);
     assert.ok(lang, `Continental African language missing: ${code}`);
@@ -116,7 +168,18 @@ test("languages: indigenous Americas, Asia, Europe, Oceania and special codes ar
   }
 
   // Asia & Oceania
-  const asiaOceania = ["zh", "ja", "ko", "vi", "hi", "bn", "ta", "mi", "haw", "tet"];
+  const asiaOceania = [
+    "zh",
+    "ja",
+    "ko",
+    "vi",
+    "hi",
+    "bn",
+    "ta",
+    "mi",
+    "haw",
+    "tet",
+  ];
   for (const code of asiaOceania) {
     assert.ok(findLanguage(code), `Asia/Oceania language missing: ${code}`);
   }
@@ -129,13 +192,32 @@ test("languages: indigenous Americas, Asia, Europe, Oceania and special codes ar
 });
 
 test("languages: RTL (right-to-left) direction detection", () => {
-  const rtlCodes = ["ar", "fa", "ur", "he", "ckb", "ps", "ug", "yi", "sd", "dv"];
+  const rtlCodes = [
+    "ar",
+    "fa",
+    "ur",
+    "he",
+    "ckb",
+    "ps",
+    "ug",
+    "yi",
+    "sd",
+    "dv",
+  ];
   for (const code of rtlCodes) {
     const lang = findLanguage(code);
     assert.ok(lang, `RTL language missing: ${code}`);
     assert.equal(lang.direction, "rtl", `Expected RTL for code: ${code}`);
-    assert.equal(isRtlLanguage(code), true, `isRtlLanguage should be true for ${code}`);
-    assert.equal(isRtlLanguage(lang.name), true, `isRtlLanguage should be true for name ${lang.name}`);
+    assert.equal(
+      isRtlLanguage(code),
+      true,
+      `isRtlLanguage should be true for ${code}`,
+    );
+    assert.equal(
+      isRtlLanguage(lang.name),
+      true,
+      `isRtlLanguage should be true for name ${lang.name}`,
+    );
   }
 
   // LTR languages must return false
@@ -197,21 +279,23 @@ test("LanguageCombobox: renders accessible combobox and controls", async () => {
     />,
   );
 
-  assert.ok(html.includes("role=\"combobox\""), "Must have combobox role");
+  assert.ok(html.includes('role="combobox"'), "Must have combobox role");
   assert.ok(html.includes("Idioma Principal"), "Must display custom label");
   assert.ok(html.includes("Português"), "Must reflect current value");
-  assert.ok(html.includes("aria-expanded=\"false\""), "Must start closed");
-  assert.ok(html.includes("Selecione o idioma original"), "Must display helper text");
+  assert.ok(html.includes('aria-expanded="false"'), "Must start closed");
+  assert.ok(
+    html.includes("Selecione o idioma original"),
+    "Must display helper text",
+  );
 });
 
 test("LanguageCombobox: displays RTL badge when selected language is RTL", async () => {
   const html = await renderComponent(
-    <LanguageCombobox
-      value="Árabe"
-      onChange={() => {}}
-      label="Idioma"
-    />,
+    <LanguageCombobox value="Árabe" onChange={() => {}} label="Idioma" />,
   );
 
-  assert.ok(html.includes("Escrita RTL ⇄"), "Must indicate RTL writing direction");
+  assert.ok(
+    html.includes("Escrita RTL ⇄"),
+    "Must indicate RTL writing direction",
+  );
 });

@@ -94,7 +94,8 @@ function EmailField({
           opacity: 0.8,
         }}
       >
-        Inicia sessão com o teu endereço de e-mail (não com o nome de utilizador).
+        Inicia sessão com o teu endereço de e-mail (não com o nome de
+        utilizador).
       </p>
     </div>
   );
