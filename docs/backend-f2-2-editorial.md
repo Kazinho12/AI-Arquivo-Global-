@@ -2,6 +2,8 @@
 
 ## Estado e evidência
 
+**Pendência antes da instalação remota:** a migration F2.2 ainda exige revisão final e autorização explícita do proprietário. A validação local, a correção da ligação da trigger e o backup no GitHub não autorizam a sua execução no Supabase. Esta operação de encerramento não executa SQL nem deploy; o estado aplicado no servidor não foi consultado.
+
 Implementação local sobre a F2.1, sem aplicação de SQL remoto, db reset, commit, push ou deploy. O projeto de destino informado pelo proprietário é `dlwsjfqijrsmwejsmuts`. O estado remoto não foi inspecionado nesta tarefa. As alterações anteriores de perfis e documentação foram preservadas; nenhum ficheiro de Auth ou perfis foi modificado nesta fase.
 
 As operações da aplicação usam o repositório Supabase real por omissão. Os testes de navegador usam um serviço de teste; os testes HTTP usam o SDK real com HTTP simulado; os testes SQL executam as migrações num PostgreSQL/PGlite descartável, com Auth simulado. Não constituem prova de instalação ou execução no Supabase real.
