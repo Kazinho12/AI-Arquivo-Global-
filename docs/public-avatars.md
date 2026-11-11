@@ -17,3 +17,11 @@ Sem cache positivo ou negativo no Worker/browser/CDN (`no-store`); cada GET veri
 Frontend: perfis públicos utilizam a nova rota sem Bearer; editor/upload e verificação pré-gravação continuam privados. Enquanto o trecho não estiver aplicado, visitantes mantêm iniciais e o proprietário pode usar o fallback privado. Fotografias antigas já descarregadas por terceiros não podem ser revogadas retroativamente.
 
 Não foi feito deploy nem SQL remoto. Não é necessária migration. Validar manualmente, após aplicar o trecho: janela anónima mostra avatar atual; chave antiga/removida, perfil invisível, outro namespace e outro proprietário devolvem 404; POST de upload e GET privado continuam a exigir sessão.
+
+## Correção v0.5.1
+
+No `handleAgPublicAvatar`, substituir somente `redirect: "error"` por `redirect: "manual"` na consulta REST. Workers não implementa o modo `error`: lança TypeError antes do HTTP e o catch devolve 503. O `if (!response.ok)` existente rejeita 3xx sem seguir Location nem transmitir a chave para outro host. Manter `apikey` com `SUPABASE_PUBLISHABLE_KEY`, sem Bearer publishable e sem service_role. O ficheiro JS contém a versão corrigida. Referência: https://developers.cloudflare.com/workers/runtime-apis/request/ (redirect).
+
+Diagnóstico de leitura: a consulta anónima real a `profiles.id,avatar_url` respondeu HTTP 200. As migrations locais habilitam RLS e SELECT público; nenhuma política foi modificada. Configuração/bindings e o código efetivamente instalado no painel continuam sujeitos a confirmação: se persistir 503, verificar no log do Worker se falhou validação de chave/URL, HTTP REST ou R2, sem registar valores de credenciais.
+
+Auth: inicialização do SDK movida para o efeito do provider; uma instância por projeto permanece no mesmo separador mesmo com HMR. Web Locks e BroadcastChannel do SDK continuam ativos entre separadores. Após atualizar, recarregar completamente os separadores antigos para terminar instâncias da versão anterior; não apagar sessões/localStorage. A disputa transitória de lock pelo auto-refresh entre separadores é tratada pelo SDK instalado, não é motivo para logout.

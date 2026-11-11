@@ -52,6 +52,7 @@ function fixture() {
     assert.equal(url.searchParams.get("select"), "id,avatar_url");
     assert.equal(url.searchParams.get("id"), "eq." + owner);
     assert.equal(init.cache, "no-store");
+    assert.equal(init.redirect, "manual");
     assert.equal(
       new Headers(init.headers).get("apikey"),
       env.SUPABASE_PUBLISHABLE_KEY,
@@ -225,4 +226,22 @@ test("public avatar: profile rendering uses a public route without session, edit
     <ProfileAvatar name="Autora Real" url={null} publicProfile />,
   );
   assert.ok(empty.includes("AR"));
+});
+
+test("public avatar: Workers-compatible manual redirect never follows credentials to another host", async () => {
+  const f = fixture();
+  const runtimeFetch: typeof fetch = async (_input, init) => {
+    if (init?.redirect === "error")
+      throw new TypeError("Unsupported redirect mode: error");
+    assert.equal(init?.redirect, "manual");
+    return new Response(null, {
+      status: 302,
+      headers: { Location: "https://other.invalid/profiles" },
+    });
+  };
+  assert.equal(
+    (await handler(new Request(route()), f.env, runtimeFetch))?.status,
+    503,
+  );
+  assert.equal(f.gets.length, 0);
 });

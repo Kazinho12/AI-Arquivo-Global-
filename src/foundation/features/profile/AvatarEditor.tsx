@@ -19,7 +19,7 @@ export function ProfileAvatar({
   url,
   small = false,
   publicProfile = false,
-  client = getAuthClient(),
+  client,
   onLoadError,
 }: {
   name: string;
@@ -54,7 +54,12 @@ export function ProfileAvatar({
     let active = true,
       objectUrl = "";
     const abort = new AbortController();
-    readPrivateAvatar(url, client, fetch, abort.signal).then(
+    readPrivateAvatar(
+      url,
+      client === undefined ? getAuthClient() : client,
+      fetch,
+      abort.signal,
+    ).then(
       (blob) => {
         if (!active) return;
         objectUrl = URL.createObjectURL(blob);
@@ -115,7 +120,7 @@ export function ProfileAvatar({
 export function AvatarEditor({
   profile,
   onChange,
-  client = getAuthClient(),
+  client,
 }: {
   profile: UserProfile;
   onChange: (profile: UserProfile) => void;
@@ -219,7 +224,11 @@ export function AvatarEditor({
                 setMessage("");
                 const current = generation.current;
                 try {
-                  const next = await uploadAvatar(profile, selected, client);
+                  const next = await uploadAvatar(
+                    profile,
+                    selected,
+                    client === undefined ? getAuthClient() : client,
+                  );
                   if (current !== generation.current) return;
                   setSelected(null);
                   setPreview("");
@@ -278,7 +287,10 @@ export function AvatarEditor({
             setBusy(true);
             setError("");
             try {
-              const next = await removeAvatar(profile, client);
+              const next = await removeAvatar(
+                profile,
+                client === undefined ? getAuthClient() : client,
+              );
               generation.current++;
               setPreview("");
               setSelected(null);

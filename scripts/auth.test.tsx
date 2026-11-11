@@ -747,3 +747,36 @@ test("stabilization: permission, internal and network errors have distinct messa
     /sessão expirou/,
   );
 });
+test("auth: SDK is shared across module/HMR consumers without disabling Web Locks or persistence", async () => {
+  const { sharedAuthClient } = await import(
+    "../src/foundation/features/auth/client"
+  );
+  const registry = Object.create(null);
+  let creates = 0;
+  const config = {
+    ready: true as const,
+    url: "https://fixture.supabase.co",
+    key: "sb_publishable_fixture_for_test",
+    legacyAnon: false,
+  };
+  const sdk = { auth: {} } as any;
+  const factory = ((_url: string, _key: string, options: any) => {
+    creates++;
+    assert.equal(options.auth.persistSession, true);
+    assert.equal(options.auth.autoRefreshToken, true);
+    assert.equal(options.auth.flowType, "pkce");
+    assert.equal(options.auth.detectSessionInUrl, false);
+    assert.equal(options.auth.lock, undefined);
+    return sdk;
+  }) as typeof createClient;
+  assert.equal(sharedAuthClient(registry, config, factory), sdk);
+  assert.equal(sharedAuthClient(registry, config, factory), sdk);
+  assert.equal(
+    sharedAuthClient(registry, { ...config, url: config.url + "/" }, factory),
+    sdk,
+  );
+  assert.equal(creates, 1);
+  const anotherTab = Object.create(null);
+  sharedAuthClient(anotherTab, config, factory);
+  assert.equal(creates, 2);
+});

@@ -69,7 +69,8 @@ async function handleAgPublicAvatar(request, env, fetcher = fetch) {
       headers: { apikey: key, Accept: "application/json" },
       cache: "no-store",
       credentials: "omit",
-      redirect: "error",
+      // Workers supports manual/follow only; error throws before the HTTP request.
+      redirect: "manual",
     });
     if (!response.ok) return fail(503);
     const rows = await response.json();

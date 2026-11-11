@@ -8,7 +8,7 @@ import {
 } from "react";
 import { AuthController, initialAuthState, type AuthState } from "./controller";
 import { authConfig, getAuthClient } from "./client";
-let browserController: AuthController | null = null;
+const controllerKey = Symbol.for("arquivo-global.auth-controller");
 function getController(): AuthController {
   const origin =
     typeof window === "undefined" ? "http://localhost" : window.location.origin;
@@ -27,9 +27,9 @@ function getController(): AuthController {
       env,
       authConfig.ready ? undefined : authConfig.message,
     );
-  return typeof window === "undefined"
-    ? create()
-    : (browserController ??= create());
+  if (typeof window === "undefined") return create();
+  const scope = window as typeof window & { [controllerKey]?: AuthController };
+  return (scope[controllerKey] ??= create());
 }
 export interface AuthContextValue {
   state: AuthState;
@@ -44,6 +44,15 @@ const fallback: AuthContextValue = {
   actions: null,
 };
 const AuthContext = createContext<AuthContextValue>(fallback);
+const subscribeEmpty = () => () => {};
+const bootState: AuthState = authConfig.ready
+  ? initialAuthState
+  : {
+      ...initialAuthState,
+      status: "configuration-error",
+      error: authConfig.message,
+    };
+const getBootState = () => bootState;
 export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({
   children,
@@ -52,16 +61,21 @@ export function AuthProvider({
   children: ReactNode;
   controller?: AuthController;
 }) {
-  const [store] = useState(() => controller ?? getController());
+  const [store, setStore] = useState<AuthController | null>(
+    () => controller ?? null,
+  );
   const state = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    controller ? store.getSnapshot : () => initialAuthState,
+    store?.subscribe ?? subscribeEmpty,
+    store?.getSnapshot ?? getBootState,
+    controller ? controller.getSnapshot : getBootState,
   );
   useEffect(() => {
-    void store.start();
-    return store.stop;
-  }, [store]);
+    // SDK construction starts recovery/timers. Never do it during render.
+    const active = controller ?? getController();
+    setStore(active);
+    void active.start();
+    return active.stop;
+  }, [controller]);
   return (
     <AuthContext.Provider value={{ state, actions: store }}>
       {children}
