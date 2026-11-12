@@ -1,3 +1,4 @@
+import { entryText } from "../writing/document";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, Modal } from "../../components/ui";
@@ -24,7 +25,9 @@ export function PublicationControls({
     work.synopsis.trim() &&
     work.synopsis.trim().toLowerCase() !== "sem sinopse definida." &&
     work.language.trim() &&
-    work.chapters.some((entry) => entry.title.trim() && entry.content?.trim());
+    work.chapters.some(
+      (entry) => entry.title.trim() && entryText(entry.content ?? "").trim(),
+    );
   async function confirm() {
     if (!action) return;
     const result = await remote.controller?.editorial(work, action);

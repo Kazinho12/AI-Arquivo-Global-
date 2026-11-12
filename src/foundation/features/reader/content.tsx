@@ -1,3 +1,5 @@
+import { decodeRich } from "../writing/document";
+import { RichContent } from "../writing/RichContent";
 import { Fragment, memo, type ReactNode } from "react";
 /** AG text v1: toolbar markup only. Unknown HTML remains literal escaped text. */
 export function InlineContent({
@@ -46,6 +48,8 @@ export const ProseContent = memo(function ProseContent({
 }: {
   text: string;
 }) {
+  const rich = decodeRich(text);
+  if (rich) return <RichContent document={rich} />;
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
   const blocks: ReactNode[] = [];
   let index = 0;

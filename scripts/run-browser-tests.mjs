@@ -16,6 +16,12 @@ const server = await createServer({
       "react-router-dom",
       "lucide-react",
       "@supabase/supabase-js",
+      "@tiptap/react",
+      "@tiptap/starter-kit",
+      "@tiptap/extension-text-align",
+      "dompurify",
+      "use-sync-external-store/shim",
+      "use-sync-external-store/shim/with-selector",
     ],
   },
   define: {

@@ -1,9 +1,30 @@
-import { useEffect, useState } from "react";
+import { RichContent } from "../writing/RichContent";
+import {
+  entryText,
+  maxEntryBytes,
+  decodeRich,
+  legacyDocument,
+  richPrefix,
+} from "../writing/document";
+import { ProseContent } from "../reader/content";
+import {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Field, Modal } from "../../components/ui";
 import type { StudioWork } from "./types";
 import type { Chapter } from "../reader/types";
 import { useRemoteWorks } from "./RemoteWorksProvider";
+const RichEditor = lazy(() =>
+  import("../writing/RichEditor").then((module) => ({
+    default: module.RichEditor,
+  })),
+);
 export const entryLabel = (work: StudioWork) =>
   work.mode === "poetry"
     ? "poema"
@@ -35,6 +56,26 @@ export function RemoteEntryEditor({
     null,
   );
   const [saved, setSaved] = useState(false);
+  const [focus, setFocus] = useState(false),
+    [preview, setPreview] = useState(false),
+    [fullscreen, setFullscreen] = useState(false),
+    [saveError, setSaveError] = useState("");
+  const [modeError, setModeError] = useState("");
+  const root = useRef<HTMLDivElement>(null),
+    alive = useRef(true),
+    saving = useRef(false);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    const update = () =>
+      setFullscreen(document.fullscreenElement === root.current);
+    document.addEventListener("fullscreenchange", update);
+    return () => document.removeEventListener("fullscreenchange", update);
+  }, []);
   const [deleteError, setDeleteError] = useState("");
   const original = base.chapters.find((item) => item.id === entry.id)!;
   const dirty =
@@ -42,7 +83,8 @@ export function RemoteEntryEditor({
     content !== (original.content ?? "") ||
     alignment !== (original.alignment ?? "left");
   const archived = Boolean(work.archivedAt);
-  const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+  const text = entryText(content);
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
   const clearBuffer = () => remote.controller?.editorBuffers.delete(entry.id);
   useEffect(() => {
     if (dirty)
@@ -62,7 +104,12 @@ export function RemoteEntryEditor({
     };
     const links = (event: MouseEvent) => {
       const anchor = (event.target as Element)?.closest?.("a[href]");
-      if (!anchor || event.defaultPrevented) return;
+      if (
+        !anchor ||
+        event.defaultPrevented ||
+        anchor.closest("[contenteditable=true]")
+      )
+        return;
       if (
         remote.saving ||
         !window.confirm(
@@ -80,21 +127,87 @@ export function RemoteEntryEditor({
       document.removeEventListener("click", links, true);
     };
   }, [dirty, remote.saving, entry.id, remote.controller]);
-  async function save() {
-    setSaved(false);
-    const result = await remote.controller?.editorial(base, "save_entry", {
-      entry_id: entry.id,
-      entry_revision: original.revision,
+  const save = useCallback(
+    async (automatic = false) => {
+      const controller = remote.controller;
+      if (
+        !controller ||
+        saving.current ||
+        controller.getSnapshot().saving ||
+        archived ||
+        !dirty ||
+        !title.trim()
+      )
+        return;
+      if (new TextEncoder().encode(content).length > maxEntryBytes) {
+        setSaveError(
+          "O conteúdo excede o limite de 1 MB. Reduz o texto antes de guardar.",
+        );
+        return;
+      }
+      if (content.startsWith(richPrefix) && !decodeRich(content)) {
+        setSaveError(
+          "O documento contém uma estrutura demasiado complexa ou não suportada. Simplifica o texto antes de guardar; o buffer foi preservado.",
+        );
+        return;
+      }
+      saving.current = true;
+      setSaved(false);
+      if (!automatic) setSaveError("");
+      const snapshot = { title, content, alignment };
+      try {
+        const result = await controller.editorial(base, "save_entry", {
+          entry_id: entry.id,
+          entry_revision: original.revision,
+          ...snapshot,
+        });
+        if (result?.work) {
+          const pending = controller.editorBuffers.get(entry.id);
+          if (pending && pending.work.revision === base.revision) {
+            if (
+              pending.title === title &&
+              pending.content === content &&
+              pending.alignment === alignment
+            )
+              controller.editorBuffers.delete(entry.id);
+            else
+              controller.editorBuffers.set(entry.id, {
+                ...pending,
+                work: result.work,
+              });
+          }
+          if (alive.current) {
+            setBase(result.work);
+            setSaved(true);
+            setSaveError("");
+          }
+        } else if (alive.current)
+          setSaveError(
+            controller.getSnapshot().error ||
+              "Não foi possível guardar. As alterações foram preservadas; tenta novamente.",
+          );
+      } finally {
+        saving.current = false;
+      }
+    },
+    [
+      remote.controller,
+      archived,
+      dirty,
       title,
       content,
       alignment,
-    });
-    if (result?.work) {
-      setBase(result.work);
-      setSaved(true);
-      clearBuffer();
-    }
-  }
+      base,
+      original.revision,
+      entry.id,
+    ],
+  );
+  useEffect(() => {
+    if (!dirty || archived || remote.saving || confirmation || saveError)
+      return;
+    const timer = window.setTimeout(() => void save(true), 1500);
+    return () => window.clearTimeout(timer);
+  }, [dirty, archived, remote.saving, confirmation, saveError, save]);
   async function recover() {
     const latest = await remote.controller?.recover(work.id);
     const fresh = latest?.chapters.find((item) => item.id === entry.id);
@@ -104,6 +217,7 @@ export function RemoteEntryEditor({
       setContent(fresh.content ?? "");
       setAlignment(fresh.alignment ?? "left");
       setSaved(false);
+      setSaveError("");
       clearBuffer();
       setConfirmation(null);
     } else if (latest) {
@@ -155,32 +269,79 @@ export function RemoteEntryEditor({
   const disabled = remote.saving || archived;
   const entryPayload = { entry_id: entry.id, entry_revision: entry.revision };
   return (
-    <div className="container studio-page">
+    <div
+      ref={root}
+      className={`container studio-page writing-studio ${focus ? "writing-focus" : ""} ${fullscreen ? "writing-fullscreen" : ""}`}
+    >
       <header className="editor-top-bar">
         <Link to={`/estudio/obras/${work.id}`} className="editor-back-link">
           ← {work.title}
         </Link>
         <span>
-          {entryLabel(work)} {entry.number} · {wordCount} palavras
+          {entryLabel(work)} {entry.number} · {wordCount} palavras ·{" "}
+          {Array.from(text).length} caracteres
         </span>
       </header>
+      <div className="writing-modes" role="group" aria-label="Modo de escrita">
+        <Button
+          variant="secondary"
+          aria-pressed={focus}
+          onClick={() => setFocus((value) => !value)}
+        >
+          {focus ? "Sair do modo foco" : "Modo foco"}
+        </Button>
+        <Button
+          variant="secondary"
+          aria-pressed={preview}
+          onClick={() => setPreview((value) => !value)}
+        >
+          {preview ? "Voltar à edição" : "Pré-visualizar capítulo"}
+        </Button>
+        <Button
+          variant="ghost"
+          aria-pressed={fullscreen}
+          onClick={async () => {
+            try {
+              if (document.fullscreenElement === root.current)
+                await document.exitFullscreen();
+              else if (root.current?.requestFullscreen)
+                await root.current.requestFullscreen();
+              else
+                setModeError(
+                  "O ecrã inteiro não está disponível neste navegador.",
+                );
+            } catch {
+              setModeError(
+                "Não foi possível abrir o ecrã inteiro neste navegador.",
+              );
+            }
+          }}
+        >
+          {fullscreen ? "Sair do ecrã inteiro" : "Ecrã inteiro"}
+        </Button>
+      </div>
       <h1>
         Editar {entryLabel(work)} — {entry.title}
       </h1>
       <p role="status">
         {remote.saving
           ? "A guardar…"
-          : dirty
-            ? "Alterações não guardadas"
-            : saved
-              ? "Guardado na conta"
-              : "Última versão persistida"}
+          : saveError
+            ? "Erro ao guardar"
+            : dirty
+              ? "Alterações não guardadas"
+              : saved
+                ? "Guardado na conta"
+                : "Última versão persistida"}
       </p>
+      {modeError && <p role="alert">{modeError}</p>}
       {restoredBuffer && dirty && (
         <p>Alterações não guardadas recuperadas deste separador.</p>
       )}
-      {remote.error && (
-        <p role="alert">{remote.error} O texto em edição foi preservado.</p>
+      {(saveError || remote.error) && (
+        <p role="alert">
+          {saveError || remote.error} O texto em edição foi preservado.
+        </p>
       )}
       {archived && (
         <p>Obra arquivada: desarquiva-a na gestão para continuar a escrever.</p>
@@ -243,7 +404,7 @@ export function RemoteEntryEditor({
           style={{ flex: 1, minWidth: 0 }}
           aria-label="Conteúdo da entrada"
         >
-          <fieldset disabled={disabled}>
+          <fieldset disabled={archived}>
             <Field
               label={`Título do ${entryLabel(work)}`}
               value={title}
@@ -253,25 +414,53 @@ export function RemoteEntryEditor({
                 setSaved(false);
               }}
             />
-            <label className="field">
-              <span>
+            <div className="field">
+              <span id="writing-content-label">
                 {work.mode === "poetry"
                   ? "Texto do poema"
                   : work.mode === "prose"
                     ? "Texto do capítulo"
                     : "Guião e descrição editorial"}
               </span>
-              <textarea
-                value={content}
-                rows={22}
-                maxLength={1048576}
-                style={{ width: "100%", textAlign: alignment }}
-                onChange={(e) => {
-                  setContent(e.target.value);
-                  setSaved(false);
-                }}
-              />
-            </label>
+            </div>
+            {preview ? (
+              <article
+                className="writing-preview"
+                aria-label="Pré-visualização do capítulo"
+                style={{ textAlign: alignment }}
+              >
+                <h2>{title}</h2>
+                {work.mode === "poetry" ? (
+                  <RichContent
+                    document={
+                      decodeRich(content) ?? legacyDocument(content, true)
+                    }
+                  />
+                ) : (
+                  <ProseContent text={content} />
+                )}
+              </article>
+            ) : (
+              <Suspense fallback={<p role="status">A preparar o editor…</p>}>
+                <RichEditor
+                  label={
+                    work.mode === "poetry"
+                      ? "Texto do poema"
+                      : work.mode === "prose"
+                        ? "Texto do capítulo"
+                        : "Guião e descrição editorial"
+                  }
+                  value={content}
+                  alignment={alignment}
+                  onChange={(value) => {
+                    setContent(value);
+                    setSaved(false);
+                  }}
+                  disabled={archived}
+                  poetry={work.mode === "poetry"}
+                />
+              </Suspense>
+            )}
             {work.mode === "poetry" && (
               <label className="field">
                 <span>Alinhamento</span>
@@ -289,7 +478,7 @@ export function RemoteEntryEditor({
             )}
             <Button
               disabled={disabled || !dirty || !title.trim()}
-              onClick={() => void save()}
+              onClick={() => void save(false)}
             >
               Guardar alterações
             </Button>
@@ -319,7 +508,9 @@ export function RemoteEntryEditor({
             Recuperar última versão persistida
           </Button>
           <p className="text-muted">
-            Gravação manual. Guarda antes de reorganizar. O texto não guardado é
+            Gravação automática após uma pausa de 1,5 segundos e confirmação do
+            servidor. Em caso de erro, usa Guardar alterações para tentar
+            novamente. Guarda antes de reorganizar. O texto não guardado é
             conservado em memória neste separador durante a navegação, até
             terminares a sessão.
           </p>

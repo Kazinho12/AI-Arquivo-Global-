@@ -1,3 +1,4 @@
+import { entryWords } from "../writing/document";
 import { useMemo } from "react";
 import { useRemoteWorks } from "./RemoteWorksProvider";
 import { localId } from "../local/id";
@@ -544,9 +545,7 @@ export function useStudio() {
     (sum, work) =>
       sum +
       work.chapters.reduce(
-        (count, entry) =>
-          count +
-          (entry.content ?? "").trim().split(/\s+/).filter(Boolean).length,
+        (count, entry) => count + entryWords(entry.content ?? ""),
         0,
       ),
     0,

@@ -1,3 +1,5 @@
+import { decodeRich } from "../writing/document";
+import { RichContent } from "../writing/RichContent";
 import {
   ReaderSettings,
   ReaderIndex,
@@ -61,6 +63,7 @@ export function PoetryReader({
     currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
 
   // Stanzas: array of string[] representing lines of verse
+  const rich = decodeRich(currentChapter.content ?? "");
   const stanzas: string[][] =
     currentChapter.content !== undefined
       ? poetryStanzas(currentChapter.content)
@@ -167,20 +170,24 @@ export function PoetryReader({
           style={{ textAlign: currentChapter.alignment ?? "left" }}
           className="poetry-stanzas-container reader-preferred-text"
         >
-          {stanzas.map((stanza, sIdx) => (
-            <div
-              key={sIdx}
-              className="poetry-stanza"
-              role="group"
-              aria-label={`Estrofe ${sIdx + 1}`}
-            >
-              {stanza.map((verse, vIdx) => (
-                <div key={vIdx} className="poetry-verse">
-                  <InlineContent text={verse || "\u00A0"} />
-                </div>
-              ))}
-            </div>
-          ))}
+          {rich ? (
+            <RichContent document={rich} />
+          ) : (
+            stanzas.map((stanza, sIdx) => (
+              <div
+                key={sIdx}
+                className="poetry-stanza"
+                role="group"
+                aria-label={`Estrofe ${sIdx + 1}`}
+              >
+                {stanza.map((verse, vIdx) => (
+                  <div key={vIdx} className="poetry-verse">
+                    <InlineContent text={verse || "\u00A0"} />
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
         </div>
 
         {/* Quiet Navigation */}

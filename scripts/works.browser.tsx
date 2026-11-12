@@ -1,3 +1,8 @@
+import type { Editor } from "@tiptap/react";
+import {
+  plainDocument,
+  entryText,
+} from "../src/foundation/features/writing/document";
 import { PublicCatalogProvider } from "../src/foundation/features/catalog/PublicCatalog";
 import type {
   PublishedWork,
@@ -291,6 +296,16 @@ async function click(text: string) {
   });
 }
 async function field(label: string, value: string) {
+  const rich = fixture.querySelector<HTMLElement>(
+    `[contenteditable][aria-label="${label}"]`,
+  ) as (HTMLElement & { editor: Editor }) | null;
+  if (rich) {
+    await act(async () => {
+      rich.editor.commands.setContent(plainDocument(value));
+    });
+    return;
+  }
+
   const labelElement = [...fixture.querySelectorAll("label")].find(
     (item) =>
       (item.querySelector("span")?.textContent?.trim() ??
@@ -519,7 +534,7 @@ await run(
     await mount(`/estudio/obras/${book.id}`);
     await click("Adicionar capítulo");
     await waitFor(
-      () => fixture.querySelector(".editor-workspace-body textarea"),
+      () => fixture.querySelector(".editor-workspace-body [contenteditable]"),
       "Editor não abriu",
     );
     await field("Texto do capítulo", "Três palavras reais");
@@ -539,8 +554,11 @@ await run(
     const entry = rows.get(book.id)!.chapters[0];
     await mount(`/estudio/obras/${book.id}/capitulos/${entry.id}/editar`);
     check(
-      (fixture.querySelector("textarea") as HTMLTextAreaElement).value ===
-        "Três palavras reais",
+      (
+        fixture.querySelector("[contenteditable]") as HTMLElement & {
+          editor: Editor;
+        }
+      ).editor.getText() === "Três palavras reais",
       "Conteúdo não recuperado",
     );
     networkError = true;
@@ -548,17 +566,24 @@ await run(
     await click("Guardar alterações");
     check(fixture.querySelector("[role=alert]"), "Erro não apresentado");
     check(
-      (fixture.querySelector("textarea") as HTMLTextAreaElement).value.includes(
-        "não se pode perder",
-      ),
+      (
+        fixture.querySelector("[contenteditable]") as HTMLElement & {
+          editor: Editor;
+        }
+      ).editor
+        .getText()
+        .includes("não se pode perder"),
       "Texto perdido",
     );
     networkError = false;
     await click("Recuperar última versão persistida");
     await click("Confirmar recuperação");
     check(
-      (fixture.querySelector("textarea") as HTMLTextAreaElement).value ===
-        "Três palavras reais",
+      (
+        fixture.querySelector("[contenteditable]") as HTMLElement & {
+          editor: Editor;
+        }
+      ).editor.getText() === "Três palavras reais",
       "Recuperação não substituiu pela versão persistida",
     );
   },
@@ -652,7 +677,10 @@ await run(
         work.chapters.reduce(
           (total, entry) =>
             total +
-            (entry.content ?? "").trim().split(/\s+/).filter(Boolean).length,
+            entryText(entry.content ?? "")
+              .trim()
+              .split(/\s+/)
+              .filter(Boolean).length,
           0,
         ),
       0,
@@ -675,7 +703,7 @@ await run(
       await mount(`/estudio/obras/${book.id}`);
       await click(format === "Poesia" ? "Adicionar poema" : "Adicionar ato");
       await waitFor(
-        () => fixture.querySelector(".editor-workspace-body textarea"),
+        () => fixture.querySelector(".editor-workspace-body [contenteditable]"),
         "Editor não abriu",
       );
       check(
@@ -751,15 +779,15 @@ await run(
       await router.navigate(path);
     });
     await waitFor(
-      () => fixture.querySelector(".editor-workspace-body textarea"),
+      () => fixture.querySelector(".editor-workspace-body [contenteditable]"),
       "Editor não reabriu",
     );
     check(
       (
-        fixture.querySelector(
-          ".editor-workspace-body textarea",
-        ) as HTMLTextAreaElement
-      ).value === "Rascunho ainda não guardado",
+        fixture.querySelector("[contenteditable]") as HTMLElement & {
+          editor: Editor;
+        }
+      ).editor.getText() === "Rascunho ainda não guardado",
       "Navegação perdeu o rascunho em memória",
     );
   },

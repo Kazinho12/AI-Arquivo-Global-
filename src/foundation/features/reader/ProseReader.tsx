@@ -1,3 +1,4 @@
+import { entryWords } from "../writing/document";
 import {
   ReaderSettings,
   ReaderIndex,
@@ -77,12 +78,7 @@ export function ProseReader({
   const nextChapter =
     currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
 
-  const paragraphs = (currentChapter.content || "")
-    .split("\n\n")
-    .filter(Boolean);
-
-  // Approximate word count and read time
-  const wordCount = (currentChapter.content || "").trim().split(/\s+/).length;
+  const wordCount = entryWords(currentChapter.content ?? "");
   const readTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
 
   const appearance = useReaderAppearance(prefs);

@@ -1,3 +1,4 @@
+import { entryWords } from "../features/writing/document";
 import { CoverStudioGallery } from "../components/CoverStudioGallery";
 import {
   coverStylePersistenceEnabled,
@@ -1226,9 +1227,7 @@ export function WorkManagePage() {
               ? `/estudio/obras/${work.id}/paginas/${chap.id}/editar`
               : `/estudio/obras/${work.id}/capitulos/${chap.id}/editar`;
 
-            const wordCount = chap.content
-              ? chap.content.trim().split(/\s+/).filter(Boolean).length
-              : 0;
+            const wordCount = chap.content ? entryWords(chap.content) : 0;
             const verseCount = chap.stanzas
               ? chap.stanzas.reduce(
                   (acc, st) => acc + st.filter((verse) => verse.trim()).length,
