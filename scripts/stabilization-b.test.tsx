@@ -68,6 +68,7 @@ import {
   fetchUserProfile,
   findAuthorWorks,
 } from "../src/foundation/features/profile/service";
+import type { Work } from "../src/foundation/data/works";
 import type { SupabaseClient } from "@supabase/supabase-js";
 test("AG-11/14: lookup exato com underscore e associação apenas por ID estável", async () => {
   let compared = "";
@@ -101,9 +102,28 @@ test("AG-11/14: lookup exato com underscore e associação apenas por ID estáve
   const result = await fetchUserProfile(" Alice_B ", client);
   assert.equal(compared, "alice_b");
   assert.equal(result.profile?.username, "alice_b");
-  assert.deepEqual(findAuthorWorks("real-author"), []);
-  assert.deepEqual(findAuthorWorks("Arquivo Global — Equipa Editorial"), []);
-  assert.ok(findAuthorWorks("ag-editorial-team").length > 0);
+
+  const isolatedWorks: Work[] = [
+    {
+      id: "w-isolated-1",
+      title: "Obra de Teste Isolada",
+      author: "Arquivo Global — Equipa Editorial",
+      authorId: "real-author",
+      format: "Romance",
+      genre: "Ficção",
+      tags: ["teste"],
+      synopsis: "Sinopse de teste",
+      createdAt: "2026-01-01",
+      cover: 1,
+    },
+  ];
+  // Associação deve ser estritamente por ID estável (authorId), nunca por display_name
+  assert.equal(findAuthorWorks("real-author", isolatedWorks).length, 1);
+  assert.equal(findAuthorWorks("real-author", isolatedWorks)[0].id, "w-isolated-1");
+  assert.deepEqual(findAuthorWorks("Arquivo Global — Equipa Editorial", isolatedWorks), []);
+  assert.deepEqual(findAuthorWorks("outro-autor", isolatedWorks), []);
+  // Sem dataset explícito, catálogo de produção não possui obras fictícias
+  assert.deepEqual(findAuthorWorks("ag-editorial-team"), []);
 });
 
 import {

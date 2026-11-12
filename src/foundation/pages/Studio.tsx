@@ -1679,15 +1679,7 @@ export function PublicationsPage() {
       ) : viewMode === "grid" ? (
         <div className="studio-works-grid">
           {filtered.map((work) => {
-            const firstChapterId = work.chapters[0]?.id || "cap-1";
-            const editUrl =
-              work.persistence === "supabase"
-                ? work.chapters[0]
-                  ? entryPath(work, work.chapters[0])
-                  : `/estudio/obras/${work.id}`
-                : work.mode === "comic" || work.mode === "manga"
-                  ? `/estudio/obras/${work.id}/paginas/${firstChapterId}/editar`
-                  : `/estudio/obras/${work.id}/capitulos/${firstChapterId}/editar`;
+            const editUrl = `/estudio/obras/${work.id}`;
 
             return (
               <article key={work.id} className="studio-work-card">
@@ -1803,15 +1795,7 @@ export function PublicationsPage() {
             </thead>
             <tbody>
               {filtered.map((work) => {
-                const firstChapterId = work.chapters[0]?.id || "cap-1";
-                const editUrl =
-                  work.persistence === "supabase"
-                    ? work.chapters[0]
-                      ? entryPath(work, work.chapters[0])
-                      : `/estudio/obras/${work.id}`
-                    : work.mode === "comic" || work.mode === "manga"
-                      ? `/estudio/obras/${work.id}/paginas/${firstChapterId}/editar`
-                      : `/estudio/obras/${work.id}/capitulos/${firstChapterId}/editar`;
+                const editUrl = `/estudio/obras/${work.id}`;
 
                 return (
                   <tr key={work.id}>

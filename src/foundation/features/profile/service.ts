@@ -1,5 +1,5 @@
 import { getAuthClient } from "../auth/client";
-import type { Work } from "../../data/works";
+import { demoWorks, type Work } from "../../data/works";
 import { publishProfile, profileVersion, cachedProfile } from "./cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -23,8 +23,12 @@ export interface SaveProfileResult {
   message?: string;
 }
 
-export function findAuthorWorks(authorId: string): Work[] {
-  return [];
+export function findAuthorWorks(
+  authorId: string,
+  works: Work[] = demoWorks,
+): Work[] {
+  if (!authorId) return [];
+  return works.filter((work) => work.authorId === authorId);
 }
 export async function fetchUserProfile(
   username: string,
