@@ -54,6 +54,7 @@ const expected = [
   "/definicoes/acessibilidade",
   "/denunciar",
   "/ajuda",
+  "/contacto",
   "/regras",
   "/privacidade",
   "/moderacao",
@@ -66,9 +67,9 @@ const expected = [
   "/sistema/informacoes",
   "/sistema/testes",
 ];
-test("all 57 requested product routes exist, without duplicates", () => {
-  assert.equal(productRoutes.length, 57);
-  assert.equal(new Set(productRoutes.map((r) => r.path)).size, 57);
+test("all product routes including institutional contact exist, without duplicates", () => {
+  assert.equal(productRoutes.length, expected.length);
+  assert.equal(new Set(productRoutes.map((r) => r.path)).size, expected.length);
   assert.deepEqual(productRoutes.map((r) => r.path).sort(), expected.sort());
 });
 for (const path of expected)

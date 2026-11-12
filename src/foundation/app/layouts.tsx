@@ -123,12 +123,16 @@ function Footer() {
           <span className="eyebrow">FAZER PARTE</span>
           <Link to="/registar">Criar conta</Link>
           <Link to="/estudio">Estúdio de criação</Link>
-          <Link to="/ajuda">Centro de ajuda</Link>
+          <Link to="/ajuda">Central de Ajuda</Link>
         </div>
         <div>
           <span className="eyebrow">ARQUIVO GLOBAL</span>
           <Link to="/regras">Regras da comunidade</Link>
           <Link to="/privacidade">Privacidade</Link>
+          <Link to="/contacto">Contacto Institucional</Link>
+          <a href="mailto:arquivoglobal.org@gmail.com">
+            arquivoglobal.org@gmail.com
+          </a>
         </div>
       </div>
       <div className="container footer-bottom">

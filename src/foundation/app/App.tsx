@@ -207,6 +207,11 @@ const studioPages = {
   ),
 };
 const completionPages = {
+  "/contacto": lazy(() =>
+    import("../pages/Information").then((module) => ({
+      default: module.ContactPage,
+    })),
+  ),
   "/atividade": lazy(() =>
     import("../pages/Community").then((module) => ({
       default: module.ActivityPage,

@@ -17,9 +17,10 @@ const pages = [
   ["/colecoes", "Coleções que abrem caminhos"],
   ["/notificacoes", "Notificações"],
   ["/denunciar", "Sinalizar um problema"],
-  ["/ajuda", "Como podemos ajudar?"],
-  ["/regras", "Regras da comunidade"],
-  ["/privacidade", "Privacidade e dados"],
+  ["/ajuda", "Central de Ajuda"],
+  ["/contacto", "Contacto Institucional"],
+  ["/regras", "Regras da Comunidade"],
+  ["/privacidade", "Política de Privacidade"],
   ["/moderacao", "Moderação"],
   ["/moderacao/denuncias", "Gestão de denúncias"],
   ["/sistema", "Visão geral do sistema"],
@@ -166,4 +167,21 @@ test("D/E: loading, errors, empty and denied states hide content appropriately",
   assert.match(denied, /Acesso não autorizado/);
   assert.ok(!denied.includes("Conteúdo privado"));
   assert.equal(filterText("Coleções de poesia", "colecoes"), true);
+});
+
+test("institutional: official contact has encoded subjects and reports retain their limitation", async () => {
+  const contact = await renderRoute("/contacto");
+  assert.ok(
+    contact.includes(
+      "mailto:arquivoglobal.org@gmail.com?subject=Privacidade%20e%20dados%20pessoais",
+    ),
+  );
+  assert.ok(contact.includes("Direitos de autor"));
+  const report = await renderRoute("/denunciar");
+  assert.ok(report.includes("O formulário abaixo não envia pedidos"));
+  assert.ok(
+    report.includes(
+      "mailto:arquivoglobal.org@gmail.com?subject=Den%C3%BAncias%20de%20conte%C3%BAdo",
+    ),
+  );
 });

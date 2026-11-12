@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { contactHref, institutionalEmail } from "./Information";
 import { Link, useSearchParams } from "react-router-dom";
 import { Bell, CircleCheck, Flag } from "lucide-react";
 import { Button, Field, Select } from "../components/ui";
@@ -144,6 +145,16 @@ export function ReportPage() {
       title="Sinalizar um problema"
       description="Identifica o conteúdo e explica a situação com clareza, sem incluir dados pessoais sensíveis."
     >
+      <div className="notice">
+        <p>
+          Para comunicar um problema, escreve para{" "}
+          <a className="text-link" href={contactHref("Denúncias de conteúdo")}>
+            {institutionalEmail}
+          </a>
+          . Inclui a ligação do conteúdo e o motivo. O formulário abaixo não
+          envia pedidos.
+        </p>
+      </div>
       <div className="completion-two-columns">
         <form
           className="completion-card completion-form"
@@ -270,10 +281,10 @@ export function ReportPage() {
             </li>
           </ul>
           <Link className="text-link" to="/regras">
-            Consultar rascunho das regras →
+            Consultar regras da comunidade →
           </Link>
           <Link className="text-link" to="/ajuda">
-            Abrir centro de ajuda →
+            Abrir Central de Ajuda →
           </Link>
         </aside>
       </div>
