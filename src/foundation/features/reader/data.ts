@@ -1,12 +1,10 @@
-import { inauguralReading } from "../../data/inaugural";
 import type { WorkReadingData } from "./types";
-/** Compatibility export; all content is canonical editorial data, not fabricated fallback. */
-export const demoReadingLibrary = inauguralReading;
+export const demoReadingLibrary: Record<string, WorkReadingData> = {};
 export function getWorkReadingData(
-  workId: string,
+  _workId: string,
   _format?: string,
   _title?: string,
   _author?: string,
 ): WorkReadingData | undefined {
-  return inauguralReading[workId];
+  return undefined;
 }

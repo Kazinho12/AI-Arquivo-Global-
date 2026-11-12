@@ -12,7 +12,7 @@ import {
   getCoverContrastTheme,
 } from "../src/foundation/data/covers";
 import { getGenresForFormat } from "../src/foundation/data/genres";
-import { inauguralWorks } from "../src/foundation/data/inaugural";
+import { inauguralWorks } from "./fixtures/editorial-fixture";
 import { WorkMetadataForm } from "../src/foundation/features/studio/WorkMetadataForm";
 import type { StudioWork } from "../src/foundation/features/studio/types";
 import type { Work } from "../src/foundation/data/works";
@@ -38,7 +38,7 @@ function renderComponent(element: React.ReactElement): Promise<string> {
   });
 }
 
-test("public covers: Cover renders inaugural artwork for inaugural works", async () => {
+test("public covers: Cover never revives artwork for a former editorial ID", async () => {
   const inaugural = inauguralWorks[0];
   const work: Work = {
     id: inaugural.id,
@@ -54,14 +54,9 @@ test("public covers: Cover renders inaugural artwork for inaugural works", async
   };
 
   const html = await renderComponent(<Cover work={work} />);
-  assert.ok(
-    html.includes("editorial-cover-asset"),
-    "Must render editorial asset for inaugural works",
-  );
-  assert.ok(
-    html.includes(inaugural.coverAsset),
-    "Must include the original inaugural asset src",
-  );
+  assert.ok(!html.includes("editorial-cover-asset"));
+  assert.ok(!html.includes(inaugural.coverAsset));
+  assert.ok(html.includes("ag-work-cover"));
 });
 
 test("public covers: Cover renders WorkCover with real coverAccentColor and legacy style for user publications", async () => {

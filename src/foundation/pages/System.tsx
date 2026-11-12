@@ -8,7 +8,6 @@ import {
   useResource,
 } from "../features/completion/ui";
 import { productRoutes } from "../app/routes";
-import { inauguralWorks } from "../data/inaugural";
 function SystemShell({
   title,
   description,
@@ -170,20 +169,19 @@ export function SystemInformationPage() {
             <dt>Interface</dt>
             <dd>React 19, TypeScript e Vite</dd>
             <dt>Navegação</dt>
-            <dd>57 rotas canónicas e sete layouts</dd>
+            <dd>Rotas canónicas e sete layouts</dd>
             <dt>Catálogo</dt>
-            <dd>Conteúdo editorial preparada localmente</dd>
+            <dd>Publicações de utilizadores</dd>
             <dt>Autoria</dt>
-            <dd>Rascunhos locais separados do catálogo editorial</dd>
+            <dd>Rascunhos privados separados das publicações</dd>
           </dl>
         </article>
         <article className="completion-card">
           <h2>Fronteiras dos dados</h2>
           <p>
-            Supabase é utilizado pelo código Auth/perfis, condicionado à
-            configuração do serviço. Obras e coleções editoriais são dados
-            locais; rascunhos e biblioteca pertencem ao espaço do navegador. R2
-            não está integrado.
+            Supabase gere autenticação, perfis, obras e publicações. Fotografias
+            de perfil utilizam o serviço de media Cloudflare. A biblioteca e
+            preferências podem conter dados locais.
           </p>
           <Link className="text-link" to="/privacidade">
             Consultar descrição técnica dos dados →
@@ -208,21 +206,16 @@ export function SystemTestsPage() {
           onClick={() =>
             setResults([
               {
-                name: "57 rotas únicas no manifesto",
+                name: "Rotas únicas no manifesto",
                 ok:
-                  productRoutes.length === 57 &&
-                  new Set(productRoutes.map((r) => r.path)).size === 57,
+                  new Set(productRoutes.map((r) => r.path)).size ===
+                  productRoutes.length,
               },
               {
                 name: "Sete layouts registados",
                 ok: new Set(productRoutes.map((r) => r.layout)).size === 7,
               },
-              {
-                name: "Obras editoriais com IDs únicos",
-                ok:
-                  new Set(inauguralWorks.map((w) => w.id)).size ===
-                  inauguralWorks.length,
-              },
+
               {
                 name: "Rotas de sistema no layout restrito",
                 ok: productRoutes

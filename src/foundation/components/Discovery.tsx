@@ -1,4 +1,3 @@
-import { institutionalContent } from "../data/inaugural";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { WorkCard } from "./WorkCard";
@@ -26,7 +25,7 @@ export function DemoNotice() {
   return (
     <p className="discovery-demo">
       <span className="status-dot" />
-      {institutionalContent.catalogNotice}
+      Obras publicadas pelos autores do Arquivo Global.
     </p>
   );
 }

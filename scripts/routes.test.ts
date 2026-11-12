@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { matchRoutes } from "react-router-dom";
 import { productRoutes } from "../src/foundation/app/routes";
-import { demoWorks, formats } from "../src/foundation/data/works";
+import { formats } from "../src/foundation/data/works";
+import { inauguralWorks as demoWorks } from "./fixtures/editorial-fixture";
 import {
   filterWorks,
   worksRepository,

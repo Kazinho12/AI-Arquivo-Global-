@@ -13,7 +13,7 @@ import {
 import { WorksController } from "../src/foundation/features/studio/worksController";
 import { createPublicWorksRepository } from "../src/foundation/features/catalog/repository";
 import { Cover } from "../src/foundation/components/WorkCard";
-import { inauguralWorks } from "../src/foundation/data/inaugural";
+import { inauguralWorks } from "./fixtures/editorial-fixture";
 Object.defineProperty(globalThis, "crypto", {
   value: webcrypto,
   configurable: true,
@@ -271,7 +271,7 @@ test("cover styles: public list, detail and search map the snapshot style only a
   assert.equal((await disabled.find(id))?.coverStyle, "legacy");
   assert.ok(!selects[1].includes("cover_style"));
 });
-test("cover styles: public covers use the selected style and keep inaugural images", () => {
+test("cover styles: public covers use the selected style without bundled images", () => {
   const work = {
     id,
     title: "Pública",
@@ -288,10 +288,9 @@ test("cover styles: public covers use the selected style and keep inaugural imag
   const html = renderToStaticMarkup(
     <StaticRouter location="/">
       <Cover work={work} />
-      <Cover work={inauguralWorks[0]} />
     </StaticRouter>,
   );
-  assert.ok(html.includes(inauguralWorks[0].coverAsset));
+  assert.ok(!html.includes("/editorial/"));
   assert.ok(html.includes("ag-work-cover"));
   assert.ok(html.includes('data-cover-style="bold"'));
 });

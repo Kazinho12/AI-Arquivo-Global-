@@ -3,12 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Modal, SearchField } from "../../components/ui";
 import { usePublicCatalog } from "./PublicCatalog";
-import {
-  discoveryQuery,
-  localDiscovery,
-  type DiscoveryPage,
-} from "./discovery";
-import { inauguralWorks } from "../../data/inaugural";
+import { discoveryQuery, type DiscoveryPage } from "./discovery";
 export function QuickSearch() {
   const [open, setOpen] = useState(false),
     [input, setInput] = useState(""),
@@ -91,26 +86,6 @@ export function QuickSearch() {
                       to={`/obras/${work.id}`}
                     >
                       {work.title} — {work.author}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-          {value.trim() && (
-            <>
-              <h3>Conteúdo editorial · local</h3>
-              <ul>
-                {localDiscovery(
-                  inauguralWorks,
-                  discoveryQuery(new URLSearchParams({ q: value })),
-                ).map((work) => (
-                  <li key={work.id}>
-                    <Link
-                      onClick={() => setOpen(false)}
-                      to={`/obras/${work.id}`}
-                    >
-                      {work.title}
                     </Link>
                   </li>
                 ))}

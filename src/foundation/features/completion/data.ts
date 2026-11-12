@@ -1,5 +1,3 @@
-import { inauguralCollections } from "../../data/inaugural";
-
 export type ResourceName =
   | "activity"
   | "collections"
@@ -101,11 +99,7 @@ const restricted = new Set<ResourceName>([
 export const completionService: CompletionService = {
   async read(name) {
     const available: Partial<ResourceMap> = {
-      collections: inauguralCollections.map((c) => ({
-        ...c,
-        visibility: "public",
-        workIds: [...c.workIds],
-      })),
+      collections: [],
     };
     const data = available[name];
     if (data) return { status: "ready", source: "editorial", data };

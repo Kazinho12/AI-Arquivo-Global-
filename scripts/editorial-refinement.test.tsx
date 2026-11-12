@@ -10,7 +10,7 @@ import {
   inauguralCollections,
   editorialIdentity,
   editorialDate,
-} from "../src/foundation/data/inaugural";
+} from "./fixtures/editorial-fixture";
 import {
   worksRepository,
   filterWorks,
@@ -28,86 +28,16 @@ import { studioStore } from "../src/foundation/features/studio/store";
 import { libraryStore } from "../src/foundation/features/library/store";
 import { selectScope } from "../src/foundation/features/local/persistence";
 import { completionService } from "../src/foundation/features/completion/data";
-test("E: canonical catalog has unique stable IDs and serializable import metadata", () => {
-  assert.equal(inauguralWorks.length, 4);
-  assert.equal(new Set(inauguralWorks.map((w) => w.id)).size, 4);
-  assert.deepEqual(worksRepository.list(), inauguralCatalog.works);
-  assert.equal(inauguralCatalog.schemaVersion, 1);
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(inauguralCatalog)).works,
-    inauguralWorks,
-  );
-  for (const w of inauguralWorks) {
-    assert.ok(w.id.startsWith("ag-"));
-    assert.equal(w.originalAuthorId, editorialIdentity.id);
-    assert.equal(w.authorId, editorialIdentity.id);
-    assert.equal(w.publisherId, inauguralCatalog.publishers[0].id);
-    assert.notEqual(w.ownerId, w.authorId);
-    assert.equal(w.origin, "original-created-for-project");
-    assert.equal(w.publicationStatus, "prepared-local");
-    assert.equal(w.publishedAt, null);
-    assert.equal(w.preparedAt, editorialDate);
-    assert.ok(existsSync("public" + w.coverAsset));
-    assert.ok(!w.demo);
-  }
-});
-test("E: every chapter is explicit, ordered and tied to a compatible work; missing content never falls back", () => {
-  for (const work of inauguralWorks) {
-    const data = getWorkReadingData(work.id)!;
-    assert.equal(data.title, work.title);
-    assert.equal(data.author, work.author);
-    assert.equal(data.mode, work.readingMode);
-    assert.ok(data.chapters.length >= 2);
-    assert.equal(
-      new Set(data.chapters.map((c) => c.id)).size,
-      data.chapters.length,
-    );
-    data.chapters.forEach((chapter, i) => {
-      assert.equal(chapter.number, i + 1);
-      if (data.mode === "prose") assert.ok(chapter.content && !chapter.pages);
-      if (data.mode === "poetry") assert.ok(chapter.stanzas?.length);
-      if (["comic", "manga"].includes(data.mode)) {
-        assert.ok(chapter.pages?.length);
-        chapter.pages?.forEach((page, j) => {
-          assert.equal(page.number, j + 1);
-          assert.ok(page.description);
-          assert.ok(page.imageUrl && existsSync("public" + page.imageUrl));
-        });
-      }
-    });
-  }
-  for (const id of ["unknown", "atlas-das-mares", "casa-chuva"])
-    assert.equal(
-      getWorkReadingData(id, "Romance", "Fake", "Fake author"),
-      undefined,
-    );
-});
-test("E: collections, taxonomy and all relations reference only canonical editorial data", () => {
-  for (const c of inauguralCollections) {
-    assert.equal(c.publicationStatus, "prepared-local");
-    assert.equal(c.visibility, "public-preview");
-    assert.ok(c.workIds.every((id) => worksRepository.find(id)));
-    assert.equal(new Set(c.workIds).size, c.workIds.length);
-  }
-  for (const work of inauguralWorks) {
-    assert.ok(inauguralCatalog.taxonomy.genres.includes(work.genre));
-    assert.ok(
-      work.tags.every((tag) => inauguralCatalog.taxonomy.tags.includes(tag)),
-    );
-  }
-});
-test("E: editorial identity is not a real user or privilege; no name-based attribution", () => {
-  assert.equal(
-    resolveDemoProfile("equipa-editorial")?.id,
-    editorialIdentity.id,
-  );
-  assert.equal(resolveDemoProfile("equipa_editorial"), null);
-  assert.deepEqual(findAuthorWorks("a-real-user-id"), []);
-  assert.deepEqual(findAuthorWorks(editorialIdentity.displayName), []);
-  assert.equal(findAuthorWorks(editorialIdentity.id).length, 4);
-  assert.ok(
-    !("role" in editorialIdentity) && !("isAdmin" in editorialIdentity),
-  );
+test("public catalog contains no bundled works, profiles or collections", async () => {
+  assert.deepEqual(worksRepository.list(), []);
+  assert.equal(getWorkReadingData("ag-carta-abertura"), undefined);
+  assert.equal(resolveDemoProfile("equipa-editorial"), null);
+  assert.deepEqual(findAuthorWorks("ag-editorial-team"), []);
+  const collections = await completionService.read("collections", {
+    demo: true,
+    viewerId: null,
+  });
+  assert.ok(collections.status === "ready" && collections.data.length === 0);
 });
 for (const [index, Reader] of [
   ProseReader,

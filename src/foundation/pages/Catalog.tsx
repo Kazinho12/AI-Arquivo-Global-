@@ -19,11 +19,8 @@ export default function Catalog() {
         </Link>
       </div>
       <section aria-label="Publicações de autores">
-        <h2>Publicações de autores e conteúdo editorial</h2>
-        <p>
-          As obras de autores são publicações reais; a conteúdo editorial é
-          conteúdo editorial local, sem proprietário de conta atribuído.
-        </p>
+        <h2>Publicações de autores</h2>
+        <p>Descobre obras publicadas pelos seus autores.</p>
         {catalog.loading && <p role="status">A carregar publicações…</p>}
         {catalog.error && <p role="alert">{catalog.error}</p>}
         {!catalog.repository?.search &&
@@ -44,10 +41,6 @@ export default function Catalog() {
         </button>
       </section>
       <WorkCollection works={catalog.works} />
-      <div className="notice">
-        As obras editoriais mantêm datas de preparação local. Nas obras de
-        autores, a data indica a última publicação confirmada.
-      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import type { Work } from "./works";
-import type { WorkReadingData } from "../features/reader/types";
+import type { Work } from "../../src/foundation/data/works";
+import type { WorkReadingData } from "../../src/foundation/features/reader/types";
 export const editorialDate = "2026-11-10";
 export const editorialIdentity = {
   id: "ag-editorial-team",
@@ -50,7 +50,8 @@ export const inauguralWorks: InauguralWork[] = [
     synopsis:
       "Uma breve carta sobre abrir um lugar para as histórias e guardar espaço para quem ainda está a começar. Texto editorial original em duas partes.",
     cover: 1,
-    coverAsset: "/editorial/capa-carta.svg",
+    coverAsset:
+      "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22800%22%3E%3Crect width=%22600%22 height=%22800%22 fill=%22%2314243b%22/%3E%3C/svg%3E",
     readingMode: "prose",
   },
   {
@@ -63,7 +64,8 @@ export const inauguralWorks: InauguralWork[] = [
     synopsis:
       "Três poemas breves sobre a página em branco, a atenção e aquilo que escolhemos guardar. Um caderno editorial original, sem atribuição a terceiros.",
     cover: 3,
-    coverAsset: "/editorial/capa-linhas.svg",
+    coverAsset:
+      "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22800%22%3E%3Crect width=%22600%22 height=%22800%22 fill=%22%2314243b%22/%3E%3C/svg%3E",
     readingMode: "poetry",
   },
   {
@@ -76,7 +78,8 @@ export const inauguralWorks: InauguralWork[] = [
     synopsis:
       "Uma sequência gráfica original sobre encontrar, ler e guardar. Dois capítulos com composições vetoriais, legendas e descrição textual.",
     cover: 2,
-    coverAsset: "/editorial/capa-gestos.svg",
+    coverAsset:
+      "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22800%22%3E%3Crect width=%22600%22 height=%22800%22 fill=%22%2314243b%22/%3E%3C/svg%3E",
     readingMode: "comic",
   },
   {
@@ -89,7 +92,8 @@ export const inauguralWorks: InauguralWork[] = [
     synopsis:
       "Um ensaio gráfico original para explorar o ritmo da leitura da direita para a esquerda. Uma experiência editorial breve, não uma obra atribuída a um mangaká real.",
     cover: 4,
-    coverAsset: "/editorial/capa-margem.svg",
+    coverAsset:
+      "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22800%22%3E%3Crect width=%22600%22 height=%22800%22 fill=%22%2314243b%22/%3E%3C/svg%3E",
     readingMode: "manga",
   },
 ];
@@ -107,7 +111,8 @@ const visualPage = (
   description,
   aspectRatio: "3/4",
   accentColor: "#19354c",
-  imageUrl: `/editorial/${asset}.svg`,
+  imageUrl:
+    "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22800%22%3E%3Crect width=%22600%22 height=%22800%22 fill=%22%2314243b%22/%3E%3C/svg%3E",
   caption,
 });
 export const inauguralReading: Record<string, WorkReadingData> =

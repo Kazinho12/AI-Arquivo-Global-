@@ -16,7 +16,6 @@ import {
   Info,
 } from "lucide-react";
 import { worksRepository } from "../lib/worksRepository";
-import { getWorkReadingData } from "../features/reader/data";
 import { ProseReader } from "../features/reader/ProseReader";
 import { PoetryReader } from "../features/reader/PoetryReader";
 import { ComicReader } from "../features/reader/ComicReader";
@@ -24,113 +23,13 @@ import { MangaReader } from "../features/reader/MangaReader";
 import { Button } from "../components/ui";
 import { NotFound } from "./States";
 
-// 1. Literary Reader Page: /obras/:id/capitulos/:capituloId
 export function LiteraryReaderPage() {
-  const { id } = useParams();
-  return worksRepository.find(id ?? "") ? (
-    <EditorialLiteraryReader />
-  ) : (
-    <PublishedReaderPage />
-  );
+  return <PublishedReaderPage />;
 }
-function EditorialLiteraryReader() {
-  const { id, capituloId } = useParams<{ id: string; capituloId: string }>();
-  const work = worksRepository.find(id ?? "");
-
-  const readingData = getWorkReadingData(
-    id ?? "",
-    work?.format,
-    work?.title,
-    work?.author,
-  );
-
-  const currentChapter = readingData?.chapters.find((c) => c.id === capituloId);
-
-  if (
-    !readingData ||
-    !currentChapter ||
-    !["prose", "poetry"].includes(readingData.mode)
-  ) {
-    return <NotFound />;
-  }
-
-  if (readingData.mode === "poetry") {
-    return (
-      <PoetryReader
-        key={`${id}:${capituloId}`}
-        trackProgress
-        workId={readingData.workId}
-        workTitle={readingData.title}
-        author={readingData.author}
-        chapters={readingData.chapters}
-        currentChapter={currentChapter}
-      />
-    );
-  }
-
-  return (
-    <ProseReader
-      key={`${id}:${capituloId}`}
-      trackProgress
-      workId={readingData.workId}
-      workTitle={readingData.title}
-      author={readingData.author}
-      chapters={readingData.chapters}
-      currentChapter={currentChapter}
-    />
-  );
-}
-
-// 2. Visual Reader Page: /obras/:id/paginas/:capituloId
 export function VisualReaderPage() {
-  const { id, capituloId } = useParams<{ id: string; capituloId: string }>();
-  const work = worksRepository.find(id ?? "");
-
-  const readingData = getWorkReadingData(
-    id ?? "",
-    work?.format,
-    work?.title,
-    work?.author,
-  );
-
-  const currentChapter = readingData?.chapters.find((c) => c.id === capituloId);
-
-  if (
-    !readingData ||
-    !currentChapter ||
-    !["comic", "manga"].includes(readingData.mode)
-  ) {
-    return <NotFound />;
-  }
-
-  if (readingData.mode === "manga") {
-    return (
-      <MangaReader
-        key={`${id}:${capituloId}`}
-        trackProgress
-        workId={readingData.workId}
-        workTitle={readingData.title}
-        author={readingData.author}
-        chapters={readingData.chapters}
-        currentChapter={currentChapter}
-      />
-    );
-  }
-
-  return (
-    <ComicReader
-      key={`${id}:${capituloId}`}
-      trackProgress
-      workId={readingData.workId}
-      workTitle={readingData.title}
-      author={readingData.author}
-      chapters={readingData.chapters}
-      currentChapter={currentChapter}
-    />
-  );
+  return <PublishedReaderPage />;
 }
 
-// Demo comments structure
 interface CommentItem {
   id: string;
   authorName: string;

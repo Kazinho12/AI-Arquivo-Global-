@@ -9,7 +9,6 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation, useInRouterContext } from "react-router-dom";
-import { inauguralWorks } from "../../data/inaugural";
 import type { Work } from "../../data/works";
 import {
   createPublicWorksRepository,
@@ -126,10 +125,7 @@ export function usePublicCatalog() {
   const state = useContext(Context);
   return {
     ...state,
-    works: useMemo(
-      () => [...inauguralWorks, ...state.published],
-      [state.published],
-    ),
+    works: useMemo(() => state.published, [state.published]),
   };
 }
 export function usePublishedWork(id: string, live = false) {

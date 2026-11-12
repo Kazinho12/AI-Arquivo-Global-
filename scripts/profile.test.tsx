@@ -65,33 +65,12 @@ test("profile: bio validation allows up to 500 characters", () => {
   assert.ok(validateBio("A".repeat(501)) !== null);
 });
 
-test("profile: findAuthorWorks associates published works to author correctly", () => {
-  const liaWorks = findAuthorWorks("ag-editorial-team");
-  assert.ok(liaWorks.length > 0);
-  assert.equal(liaWorks[0].title, "Carta de abertura");
-
-  // Slugified search
-  const tomasWorks = findAuthorWorks("ag-editorial-team");
-  assert.ok(tomasWorks.length > 0);
-  assert.ok(
-    tomasWorks.some((work) => work.title === "Um arquivo em três gestos"),
+test("profile: former editorial identity has no bundled profile or publications", async () => {
+  assert.deepEqual(findAuthorWorks("ag-editorial-team"), []);
+  assert.equal(
+    (await fetchUserProfile("equipa-editorial", null)).profile,
+    null,
   );
-
-  // Unknown author returns empty array
-  const unknownWorks = findAuthorWorks("autor-desconhecido");
-  assert.equal(unknownWorks.length, 0);
-});
-
-test("profile: fetchUserProfile resolves demo author profile gracefully", async () => {
-  const result = await fetchUserProfile("equipa-editorial");
-  assert.ok(result.profile !== null);
-  assert.equal(result.profile.displayName, "Arquivo Global — Equipa Editorial");
-  assert.equal(result.profile.username, "equipa-editorial");
-  assert.ok(result.profile.bio.length > 0);
-
-  // Unknown author returns null profile
-  const missing = await fetchUserProfile("autor-que-nao-existe-xyz");
-  assert.equal(missing.profile, null);
 });
 
 test("profile: saveUserProfile refuses invalid data before touching network", async () => {
@@ -123,16 +102,10 @@ test("profile: saveUserProfile never fakes success when database is unconfigured
   assert.ok(result.message && result.message.length > 0);
 });
 
-test("profile: render /utilizadores/equipa-editorial delivers author profile with published works", async () => {
+test("profile: removed editorial URL does not synthesize an author", async () => {
   const html = await renderRoute("/utilizadores/equipa-editorial");
-  assert.ok(html.includes("Arquivo Global — Equipa Editorial"));
-  assert.ok(html.includes("@equipa-editorial"));
-  assert.ok(html.includes("Carta de abertura"));
-  assert.ok(html.includes("Obras editoriais"));
-  assert.ok(!html.includes("inaugurais"));
-  // Must NOT expose emails or tokens
-  assert.ok(!html.includes("@example."));
-  assert.ok(!html.includes("access_token"));
+  assert.ok(!html.includes("Arquivo Global — Equipa Editorial"));
+  assert.ok(!html.includes("Carta de abertura"));
 });
 
 test("profile: render /utilizadores/autor-desconhecido shows empty / not-found state", async () => {

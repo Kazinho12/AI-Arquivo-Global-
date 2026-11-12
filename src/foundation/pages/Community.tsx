@@ -10,11 +10,7 @@ import {
   Select,
 } from "../components/ui";
 import { useAuth } from "../features/auth/AuthProvider";
-import {
-  inauguralWorks,
-  institutionalContent,
-  editorialIdentity,
-} from "../data/inaugural";
+import { usePublicCatalog } from "../features/catalog/PublicCatalog";
 import { filterText, type Collection } from "../features/completion/data";
 import {
   CompletionPage,
@@ -27,36 +23,17 @@ import {
 import { useLibrary } from "../features/library/store";
 import { LocalDataTools } from "../features/local/LocalDataTools";
 export function ActivityPage() {
-  const announcement = institutionalContent.announcement;
   return (
     <CompletionPage
-      eyebrow="ATUALIZAÇÕES EDITORIAIS"
+      eyebrow="COMUNIDADE"
       title="Histórias em movimento"
-      description="Notícias da preparação do Arquivo Global, sem simular atividade entre leitores."
+      description="Um espaço para acompanhar a comunidade."
     >
       <PortalNav />
-      <article className="completion-card editorial-announcement">
-        <span className="badge">Preparação local · não publicado</span>
-        <DateLabel value={announcement.preparedAt + "T12:00:00Z"} />
-        <h2>{announcement.title}</h2>
-        <p>{announcement.description}</p>
-        <Link
-          className="text-link"
-          to={`/utilizadores/${editorialIdentity.username}`}
-        >
-          {editorialIdentity.displayName}
-        </Link>
-        <div className="completion-links">
-          {inauguralWorks.map((work) => (
-            <Link key={work.id} to={`/obras/${work.id}`}>
-              {work.title} →
-            </Link>
-          ))}
-        </div>
-      </article>
-      <div className="completion-footnote">
-        A atividade da comunidade depende de um serviço remoto. Não há
-        publicações, seguidores ou interações fictícias nesta lista.
+      <div className="empty">
+        <h2>Ainda não há atividade disponível</h2>
+        <p>Explora as obras publicadas no catálogo.</p>
+        <Link to="/catalogo">Abrir catálogo →</Link>
       </div>
     </CompletionPage>
   );
@@ -67,6 +44,7 @@ export function CollectionsPage() {
 }
 function CollectionsContent() {
   const [query, setQuery] = useState("");
+  const { works: publishedWorks } = usePublicCatalog();
   const [scope, setScope] = useState("editorial");
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Collection | null>(null);
@@ -91,7 +69,7 @@ function CollectionsContent() {
     <CompletionPage
       eyebrow="PERCURSOS DE LEITURA"
       title="Coleções que abrem caminhos"
-      description="Seleções editoriais preparadas localmente e as tuas listas privadas, sem publicação comunitária."
+      description="Organiza as tuas listas privadas. As coleções públicas ainda não estão disponíveis."
     >
       <PortalNav />
       <div className="completion-toolbar">
@@ -214,7 +192,7 @@ function CollectionsContent() {
             <p>{selected.description}</p>
             <ul className="completion-list">
               {selected.workIds.map((id) => {
-                const work = inauguralWorks.find((w) => w.id === id);
+                const work = publishedWorks.find((w) => w.id === id);
                 return (
                   <li key={id}>
                     {work ? (

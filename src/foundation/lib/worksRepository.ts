@@ -1,14 +1,14 @@
 import type { Work } from "../data/works";
-import { inauguralWorks } from "../data/inaugural";
+import { demoWorks } from "../data/works";
 import { normalizeText, slugify, type SearchScope } from "./discovery";
-/** Local inaugural editions only. User publications use features/catalog/repository. */
+/** Empty local compatibility repository. Publications use features/catalog/repository. */
 export interface WorksRepository {
   list(): readonly Work[];
   find(id: string): Work | undefined;
 }
 export const worksRepository: WorksRepository = {
-  list: () => inauguralWorks,
-  find: (id) => inauguralWorks.find((work) => work.id === id),
+  list: () => demoWorks,
+  find: (id) => demoWorks.find((work) => work.id === id),
 };
 export interface CatalogFilters {
   query: string;

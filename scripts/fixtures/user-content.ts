@@ -1,7 +1,4 @@
-import {
-  inauguralWorks,
-  inauguralReading,
-} from "../../src/foundation/data/inaugural";
+import { inauguralWorks, inauguralReading } from "./editorial-fixture";
 import {
   saveStoredWorks,
   saveStoredActivities,

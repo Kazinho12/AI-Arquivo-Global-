@@ -4,13 +4,11 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { usePublicCatalog } from "./PublicCatalog";
 import {
   discoveryQuery,
-  localDiscovery,
   emptyFacets,
   discoveryFormats,
   discoveryAges,
   type DiscoveryPage,
 } from "./discovery";
-import { inauguralWorks } from "../../data/inaugural";
 import { WorkGrid } from "../../components/Discovery";
 import { SearchField, Select, Button, Pagination } from "../../components/ui";
 import { slugify } from "../../lib/discovery";
@@ -95,7 +93,6 @@ export function DiscoveryCollection({ fixedTag }: { fixedTag?: string }) {
     next.delete("pagina");
     setParams(next);
   }
-  const local = localDiscovery(inauguralWorks, query);
   const tags = [
     ...facets.tags,
     ...query.tags
@@ -281,14 +278,6 @@ export function DiscoveryCollection({ fixedTag }: { fixedTag?: string }) {
         {!catalog.repository && (
           <p>Pesquisa pública não configurada neste ambiente.</p>
         )}
-      </section>
-      <section aria-label="Resultados da conteúdo editorial">
-        <h2>Conteúdo editorial · conteúdo local</h2>
-        <p>
-          {local.length} obras editoriais correspondem aos filtros. Sem
-          proprietário de conta atribuído.
-        </p>
-        <WorkGrid works={local} />
       </section>
     </div>
   );

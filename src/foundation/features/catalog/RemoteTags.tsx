@@ -4,7 +4,6 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { usePublicCatalog } from "./PublicCatalog";
 import { discoveryQuery, emptyFacets } from "./discovery";
 import { getTags, normalizeText, slugify } from "../../lib/discovery";
-import { inauguralWorks } from "../../data/inaugural";
 import { SearchField, Button } from "../../components/ui";
 import { PageIntro, WorkSection } from "../../components/Discovery";
 import { DiscoveryCollection } from "./DiscoveryCollection";
@@ -84,16 +83,6 @@ export function RemoteTags() {
         ))}
       </div>
       <p>Até 100 tags por pesquisa. Refina o termo para encontrar outras.</p>
-      <h2>Tags da conteúdo editorial · local</h2>
-      <div className="tag-options">
-        {getTags(inauguralWorks)
-          .filter((t) => normalizeText(t.name).includes(normalizeText(q)))
-          .map((tag) => (
-            <Link key={tag.slug} to={`/tags/${encodeURIComponent(tag.slug)}`}>
-              {tag.name} ({tag.count})
-            </Link>
-          ))}
-      </div>
     </div>
   );
 }

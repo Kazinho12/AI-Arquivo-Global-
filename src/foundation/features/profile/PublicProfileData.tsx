@@ -5,13 +5,7 @@ import { WorkCard } from "../../components/WorkCard";
 import { Button, EmptyState, ActionLink } from "../../components/ui";
 import { fetchFollowerCount, fetchProfileWorks } from "./publicData";
 import { publicCatalogEvent } from "../catalog/events";
-export function FollowerCount({
-  id,
-  editorial = false,
-}: {
-  id: string;
-  editorial?: boolean;
-}) {
+export function FollowerCount({ id }: { id: string }) {
   const [count, setCount] = useState<number | null>(null),
     [error, setError] = useState("");
   useEffect(() => {
@@ -19,7 +13,6 @@ export function FollowerCount({
     const refresh = () => {
       setCount(null);
       setError("");
-      if (editorial) return;
       fetchFollowerCount(id).then(
         (value) => {
           if (active) setCount(value);
@@ -35,7 +28,7 @@ export function FollowerCount({
       active = false;
       window.removeEventListener("focus", refresh);
     };
-  }, [id, editorial]);
+  }, [id]);
   return (
     <span
       className="profile-followers-link"
@@ -43,28 +36,18 @@ export function FollowerCount({
       aria-live="polite"
     >
       <UserCheck size={13} aria-hidden="true" />
-      Seguidores (
-      {count !== null ? count : editorial || error ? "indisponível" : "…"})
+      Seguidores ({count !== null ? count : error ? "indisponível" : "…"})
     </span>
   );
 }
-export function ProfilePublications({
-  id,
-  editorialWorks,
-}: {
-  id: string;
-  editorialWorks?: Work[];
-}) {
-  const [works, setWorks] = useState<Work[]>(editorialWorks ?? []),
-    [total, setTotal] = useState<number | null>(
-      editorialWorks ? editorialWorks.length : null,
-    ),
-    [loading, setLoading] = useState(!editorialWorks),
+export function ProfilePublications({ id }: { id: string }) {
+  const [works, setWorks] = useState<Work[]>([]),
+    [total, setTotal] = useState<number | null>(null),
+    [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0);
   const generation = useRef(0);
   useEffect(() => {
-    if (editorialWorks) return;
     const refresh = () => setRetry((value) => value + 1);
     window.addEventListener("focus", refresh);
     window.addEventListener(publicCatalogEvent, refresh);
@@ -72,10 +55,9 @@ export function ProfilePublications({
       window.removeEventListener("focus", refresh);
       window.removeEventListener(publicCatalogEvent, refresh);
     };
-  }, [id, editorialWorks]);
+  }, [id]);
   useEffect(() => {
     const current = ++generation.current;
-    if (editorialWorks) return;
     setWorks([]);
     setTotal(null);
     setLoading(true);
@@ -98,12 +80,12 @@ export function ProfilePublications({
     return () => {
       generation.current++;
     };
-  }, [id, retry, editorialWorks]);
+  }, [id, retry]);
   return (
     <section className="profile-works-section" aria-labelledby="obras-heading">
       <div className="profile-works-header">
         <h2 id="obras-heading">
-          {editorialWorks ? "Obras editoriais" : "Obras publicadas"}{" "}
+          Obras publicadas{" "}
           <span className="profile-works-count">
             ({total ?? (error ? "indisponível" : "…")})
           </span>
@@ -130,7 +112,7 @@ export function ProfilePublications({
           <ActionLink to="/catalogo">Explorar outras histórias</ActionLink>
         </EmptyState>
       )}
-      {!editorialWorks && total !== null && works.length < total && !error && (
+      {total !== null && works.length < total && !error && (
         <Button
           type="button"
           disabled={loading}

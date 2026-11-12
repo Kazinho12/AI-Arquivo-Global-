@@ -21,7 +21,7 @@ import {
   recordReading,
   savedPosition,
 } from "../src/foundation/features/reader/progress";
-import { demoReadingLibrary } from "../src/foundation/features/reader/data";
+import { demoReadingLibrary } from "./fixtures/reading";
 import {
   MAX_IMAGE_BYTES,
   storeImage,

@@ -1,6 +1,5 @@
 import { getAuthClient } from "../auth/client";
 import type { Work } from "../../data/works";
-import { inauguralWorks, editorialIdentity } from "../../data/inaugural";
 import { publishProfile, profileVersion, cachedProfile } from "./cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -25,15 +24,13 @@ export interface SaveProfileResult {
 }
 
 export function findAuthorWorks(authorId: string): Work[] {
-  return inauguralWorks.filter((work) => work.authorId === authorId);
+  return [];
 }
 export async function fetchUserProfile(
   username: string,
   client: SupabaseClient | null = getAuthClient(),
 ): Promise<FetchProfileResult> {
   const clean = normalizeUsername(username);
-  const demo = resolveDemoProfile(clean);
-  if (demo) return { profile: demo };
   if (validateUsername(clean)) return { profile: null };
 
   if (client) {
@@ -55,9 +52,8 @@ export async function fetchUserProfile(
           error.code === "PGRST200"
         ) {
           // Table not yet migrated in Supabase
-          const fallback = resolveDemoProfile(clean);
           return {
-            profile: fallback,
+            profile: null,
             tableMissing: true,
             error: "A tabela de perfis ainda não foi criada no Supabase.",
           };
@@ -85,12 +81,6 @@ export async function fetchUserProfile(
       const message = err instanceof Error ? err.message : String(err);
       return { profile: null, error: message };
     }
-  }
-
-  // Fallback to match demo authors from repository
-  const demoProfile = resolveDemoProfile(clean);
-  if (demoProfile) {
-    return { profile: demoProfile };
   }
 
   return {
@@ -241,7 +231,7 @@ export async function saveUserProfile(
   }
 }
 
-export function resolveDemoProfile(username: string): UserProfile | null {
-  if (normalizeUsername(username) !== editorialIdentity.username) return null;
-  return { ...editorialIdentity, avatarUrl: null };
+/** Compatibility helper: profiles are never synthesized locally. */
+export function resolveDemoProfile(_username: string): UserProfile | null {
+  return null;
 }

@@ -1,5 +1,4 @@
 import type { Work } from "./works";
-import { inauguralCollections } from "./inaugural";
 export interface EditorialSelection {
   id: string;
   label: string;
@@ -7,14 +6,7 @@ export interface EditorialSelection {
   description: string;
   workIds: readonly string[];
 }
-export const editorialSelections: readonly EditorialSelection[] =
-  inauguralCollections.map((c) => ({
-    id: c.id,
-    label: "SELEÇÃO DA EQUIPA EDITORIAL",
-    title: c.title,
-    description: c.description,
-    workIds: c.workIds,
-  }));
+export const editorialSelections: readonly EditorialSelection[] = [];
 export function selectEditorialWorks(
   works: readonly Work[],
   selection: EditorialSelection,

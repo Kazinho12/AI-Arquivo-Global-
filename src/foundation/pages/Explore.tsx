@@ -8,12 +8,10 @@ import {
   TagLinks,
   WorkSection,
 } from "../components/Discovery";
-import { editorialSelections, selectEditorialWorks } from "../data/editorial";
 import { filterWorks } from "../lib/worksRepository";
 import { catalogUrl, getFormatCounts, getGenres } from "../lib/discovery";
 export default function Explore() {
   const works = usePublicCatalog().works;
-  const selection = editorialSelections[0];
   return (
     <div className="container discovery-page">
       <div className="explore-intro">
@@ -62,14 +60,6 @@ export default function Explore() {
           ))}
         </div>
       </section>
-      <WorkSection
-        title={selection.title}
-        eyebrow="PERCURSO EDITORIAL"
-        description={selection.description}
-        works={selectEditorialWorks(works, selection)}
-        to={`/tendencias#${selection.id}`}
-        linkLabel="Conhecer as seleções"
-      />
       <section className="section discovery-section">
         <div className="section-heading">
           <div>
@@ -91,17 +81,14 @@ export default function Explore() {
       </section>
       <WorkSection
         title="As primeiras páginas do Arquivo."
-        eyebrow="CONTEÚDO EDITORIAL"
-        description="Conteúdo original preparado pela Equipa Editorial. A data indica preparação local, não publicação."
-        works={filterWorks(
-          works.filter((work) => work.origin !== "user-publication"),
-          {
-            query: "",
-            format: "",
-            genre: "",
-            sort: "recentes",
-          },
-        ).slice(0, 4)}
+        eyebrow="PUBLICAÇÕES"
+        description="Obras publicadas pelos autores, por ordem de publicação."
+        works={filterWorks(works, {
+          query: "",
+          format: "",
+          genre: "",
+          sort: "recentes",
+        }).slice(0, 4)}
         to="/catalogo?ordem=recentes"
       />
       <section className="section discovery-section">

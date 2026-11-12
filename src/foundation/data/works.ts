@@ -26,12 +26,15 @@ export interface Work {
   coverAccentColor?: string;
   coverStyle?: CoverStyle;
   coverSeed?: number;
-  /** Legacy consumers may still hold demo records; the inaugural catalog does not use this flag. */
+  /** Compatibility marker for local-only records, never a public publication. */
   demo?: true;
 }
-// Compatibility aliases for callers/tests of the previous read-only repository.
-// The only active catalog is defined in inaugural.ts; these are not independent fixtures.
-export {
-  inauguralWorks as demoWorks,
-  editorialAuthors as demoAuthors,
-} from "./inaugural";
+// Legacy local-only consumers have no bundled publications.
+export const demoWorks: Work[] = [];
+export const demoAuthors: {
+  id: string;
+  username: string;
+  displayName: string;
+  bio: string;
+  createdAt: string;
+}[] = [];

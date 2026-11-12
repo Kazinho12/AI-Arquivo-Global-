@@ -3,7 +3,7 @@ import {
   inauguralWorks,
   inauguralReading,
   editorialIdentity,
-} from "../src/foundation/data/inaugural";
+} from "./fixtures/editorial-fixture";
 import { studioStore } from "../src/foundation/features/studio/store";
 import { libraryStore } from "../src/foundation/features/library/store";
 import {
@@ -232,160 +232,57 @@ await run(
     check(!problems.length, problems.join("; "));
   },
 );
-await run(
-  "E: início → pesquisa → detalhes → capítulo → progresso → biblioteca → perfil editorial",
-  async () => {
-    const router = await mount("/");
-    await input(
-      fixture.querySelector<HTMLInputElement>('input[type="search"]')!,
-      "Carta",
-    );
-    await act(async () => {
-      fixture.querySelector<HTMLFormElement>(".hero-search")!.requestSubmit();
-      await pause();
-    });
-    await waitFor(
-      () =>
-        router.state.location.pathname === "/pesquisa" &&
-        fixture.querySelector(".work-card"),
-      "Pesquisa sem resultados",
-    );
-    const link = fixture.querySelector<HTMLAnchorElement>(
-      'a[href="/obras/ag-carta-abertura"]',
-    )!;
-    await act(async () => {
-      link.click();
-      await pause();
-    });
-    await waitFor(
-      () => !!fixture.querySelector(".editorial-chapters"),
-      "Detalhes ausentes",
+await run("Public discovery has no bundled works or author", async () => {
+  for (const url of [
+    "/",
+    "/catalogo",
+    "/pesquisa",
+    "/tendencias",
+    "/utilizadores/equipa-editorial",
+  ]) {
+    await mount(url);
+    check(
+      !fixture.textContent?.includes("Carta de abertura"),
+      "Obra fictícia exposta",
     );
     check(
-      fixture.textContent?.includes("Autor original") &&
-        fixture.textContent?.includes("Publicador editorial"),
-      "Atribuição incompleta",
+      !fixture.textContent?.includes("Arquivo Global — Equipa Editorial"),
+      "Perfil fictício exposto",
     );
-    const read = fixture.querySelector<HTMLAnchorElement>(
-      '.reading-availability a[href$="/cap-1"]',
-    )!;
-    await act(async () => {
-      read.click();
-      await pause();
-    });
-    await waitFor(
-      () =>
-        fixture.querySelector(".prose-reader-container") &&
-        fixture.textContent?.includes("Uma porta entreaberta"),
-      "Leitura ausente",
-    );
-    await click("Marcar capítulo");
-    flushLocal();
+  }
+});
+await run("Removed readers never serve bundled chapters", async () => {
+  for (const work of inauguralWorks) {
+    const data = inauguralReading[work.id];
+    const segment = ["comic", "manga"].includes(data.mode)
+      ? "paginas"
+      : "capitulos";
+    await mount(`/obras/${work.id}/${segment}/cap-1`);
     check(
-      libraryStore.getEntry("ag-carta-abertura")?.progress! > 0,
-      "Progresso não guardado",
-    );
-    await mount("/biblioteca/historico");
-    check(
-      fixture.textContent?.includes("Carta de abertura"),
-      "Histórico não apresenta leitura real",
-    );
-    await mount("/obras/ag-carta-abertura");
-    check(fixture.textContent?.includes("Continuar leitura"), "Retoma ausente");
-    await mount("/utilizadores/equipa-editorial");
-    check(
-      fixture.textContent?.includes("Identidade editorial local"),
-      "Perfil parece conta real",
+      !fixture.textContent?.includes(data.chapters[0].title),
+      "Texto fictício exposto",
     );
     check(
-      !fixture.textContent?.includes("Membro desde"),
-      "Data de conta fictícia",
+      !fixture.querySelector('img[src^="/editorial/"]'),
+      "Imagem retirada exposta",
     );
-  },
-);
-await run(
-  "E: quatro leitores, unidades explícitas, imagens resolvidas e rotas inválidas",
-  async () => {
-    for (const work of inauguralWorks) {
-      const data = inauguralReading[work.id];
-      const segment = ["comic", "manga"].includes(data.mode)
-        ? "paginas"
-        : "capitulos";
-      await mount(`/obras/${work.id}/${segment}/cap-1`);
-      check(
-        fixture.textContent?.includes(data.chapters[0].title),
-        "Unidade ausente",
-      );
-      if (data.mode === "comic" || data.mode === "manga") {
-        await waitFor(
-          () =>
-            [
-              ...fixture.querySelectorAll<HTMLImageElement>(
-                'img[src^="/editorial/"]',
-              ),
-            ].some((img) => img.complete && img.naturalWidth > 0),
-          "Imagem SVG não carregou",
-        );
-      }
-      await mount(`/obras/${work.id}/${segment}/cap-2`);
-      check(
-        fixture.textContent?.includes(data.chapters[1].title),
-        "Segundo capítulo ausente",
-      );
-    }
-    await mount("/obras/ag-carta-abertura/capitulos/ausente");
-    check(fixture.textContent?.includes("404"), "Capítulo falso aceito");
-    await mount("/obras/atlas-das-mares/capitulos/cap-1");
-    check(fixture.textContent?.includes("404"), "ID retirado reutilizado");
-  },
-);
-await run(
-  "E: notas locais começam vazias, mantêm isolamento entre obras e sobrevivem à remontagem",
-  async () => {
-    await mount("/obras/ag-carta-abertura/comentarios");
-    check(!fixture.querySelector(".comment-card"), "Comentários pré-inseridos");
-    await input(
-      fixture.querySelector<HTMLTextAreaElement>("textarea")!,
-      "Nota criada legitimamente pela suite de teste.",
-    );
-    await click("Guardar nota local");
-    check(
-      fixture.textContent?.includes("Nota criada legitimamente"),
-      "Nota não criada",
-    );
-    await mount("/obras/ag-primeiras-linhas/comentarios");
-    check(
-      !fixture.textContent?.includes("Nota criada legitimamente"),
-      "Nota vazou para outra obra",
-    );
-    await mount("/obras/ag-carta-abertura/comentarios");
-    check(
-      fixture.textContent?.includes("Nota criada legitimamente"),
-      "Nota não retomou",
-    );
-    check(
-      !fixture.querySelector(".comment-like-btn"),
-      "Popularidade artificial ativa",
-    );
-  },
-);
+  }
+});
+await run("Removed work has no local notes screen", async () => {
+  await mount("/obras/ag-carta-abertura/comentarios");
+  check(
+    fixture.textContent?.includes("404"),
+    "Obra local retirada ainda existe",
+  );
+});
 await run(
   "E: coleções editoriais coerentes e lista privada persistida sem exposição pública",
   async () => {
     await mount("/colecoes");
     check(
-      fixture.querySelectorAll(".completion-grid article").length === 2,
-      "Coleções incoerentes",
+      fixture.querySelectorAll(".completion-grid article").length === 0,
+      "Coleções fictícias expostas",
     );
-    await click("Ver coleção");
-    check(
-      fixture.querySelector('dialog a[href="/obras/ag-carta-abertura"]'),
-      "Referência errada",
-    );
-    await act(async () => {
-      await drive({ kind: "key", key: "Escape" });
-      await pause();
-    });
     await click("Criar lista privada");
     await input(
       fixture.querySelector<HTMLInputElement>("dialog input")!,

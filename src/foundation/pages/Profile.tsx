@@ -3,7 +3,6 @@ import {
   FollowerCount,
   ProfilePublications,
 } from "../features/profile/PublicProfileData";
-import { editorialIdentity } from "../data/inaugural";
 import { useEffect, useState, useId, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -20,8 +19,6 @@ import { useAuth } from "../features/auth/AuthProvider";
 import {
   fetchUserProfile,
   fetchProfileById,
-  findAuthorWorks,
-  resolveDemoProfile,
   saveUserProfile,
 } from "../features/profile/service";
 import {
@@ -47,9 +44,7 @@ function formatJoinDate(isoDate: string): string {
 export function PublicProfilePage() {
   const { username } = useParams<{ username: string }>();
   const { state: authState } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(() => {
-    return username ? resolveDemoProfile(username.toLowerCase()) : null;
-  });
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tableMissing, setTableMissing] = useState(false);
@@ -179,20 +174,12 @@ export function PublicProfilePage() {
             </span>
             <span className="profile-joined">
               <Calendar size={13} aria-hidden="true" />
-              <span>
-                {profile.id === editorialIdentity.id
-                  ? "Identidade editorial local · sem conta administrativa"
-                  : formatJoinDate(profile.createdAt)}
-              </span>
+              <span>{formatJoinDate(profile.createdAt)}</span>
             </span>
             <span className="meta-separator" aria-hidden="true">
               ·
             </span>
-            <FollowerCount
-              key={profile.id}
-              id={profile.id}
-              editorial={profile.id === editorialIdentity.id}
-            />
+            <FollowerCount key={profile.id} id={profile.id} />
           </div>
 
           <div className="profile-bio-box">
@@ -207,15 +194,7 @@ export function PublicProfilePage() {
         </div>
       </header>
 
-      <ProfilePublications
-        key={profile.id}
-        id={profile.id}
-        editorialWorks={
-          profile.id === editorialIdentity.id
-            ? findAuthorWorks(profile.id)
-            : undefined
-        }
-      />
+      <ProfilePublications key={profile.id} id={profile.id} />
     </div>
   );
 }

@@ -92,20 +92,15 @@ test("D/E: absent social services never return fixtures even when demo is reques
         assert.ok(!("data" in result));
       }
 });
-test("D/E: collections are editorial and detached, never private fixtures", async () => {
-  const one = await completionService.read("collections", {
-    demo: false,
-    viewerId: null,
-  });
-  assert.ok(one.status === "ready" && one.source === "editorial");
-  if (one.status !== "ready") return;
-  assert.ok(one.data.every((c) => c.visibility === "public"));
-  one.data[0].title = "mutation";
-  const two = await completionService.read("collections", {
-    demo: false,
-    viewerId: "other",
-  });
-  assert.ok(two.status === "ready" && two.data[0].title !== "mutation");
+test("collections do not fabricate editorial lists for any viewer", async () => {
+  for (const demo of [true, false]) {
+    const result = await completionService.read("collections", {
+      demo,
+      viewerId: "admin",
+    });
+    assert.ok(result.status === "ready");
+    if (result.status === "ready") assert.deepEqual(result.data, []);
+  }
 });
 test("D/E: report validation still rejects missing fields and external references", () => {
   assert.deepEqual(Object.keys(validateReport("", "", "")).sort(), [

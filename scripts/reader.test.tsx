@@ -4,10 +4,7 @@ import { PassThrough } from "node:stream";
 import { renderToPipeableStream } from "react-dom/server";
 import { StaticRouter } from "react-router-dom/server";
 import { ApplicationRoutes } from "../src/foundation/app/App";
-import {
-  getWorkReadingData,
-  demoReadingLibrary,
-} from "../src/foundation/features/reader/data";
+import { getWorkReadingData, demoReadingLibrary } from "./fixtures/reading";
 import { ProseReader } from "../src/foundation/features/reader/ProseReader";
 import { PoetryReader } from "../src/foundation/features/reader/PoetryReader";
 import { ComicReader } from "../src/foundation/features/reader/ComicReader";
@@ -146,28 +143,16 @@ test("reader: MangaReader displays RTL directional cues and Japanese page count"
   assert.ok(html.includes("manga-reader-container"));
 });
 
-test("reader: route /obras/:id/capitulos/:capituloId renders via SSR", async () => {
-  const html = await renderRoute("/obras/ag-carta-abertura/capitulos/cap-1");
-  assert.ok(html.includes("Uma porta entreaberta"));
-  assert.ok(html.includes("Carta de abertura"));
-});
-
-test("reader: route /obras/:id/paginas/:capituloId renders via SSR", async () => {
-  const html = await renderRoute("/obras/ag-tres-gestos/paginas/cap-1");
-  assert.ok(html.includes("Um arquivo em três gestos"));
-  assert.ok(html.includes("comic-reader-container"));
-});
-
-test("reader: route /obras/:id/comentarios renders comments feed", async () => {
-  const html = await renderRoute("/obras/ag-carta-abertura/comentarios");
-  assert.ok(html.includes("Comentários sobre Carta de abertura"));
-  assert.ok(html.includes("Guardar nota local"));
-});
-
-test("reader: route /obras/:id/avaliacoes renders qualitative reviews", async () => {
-  const html = await renderRoute("/obras/ag-carta-abertura/avaliacoes");
-  assert.ok(html.includes("Avaliações e impressões críticas"));
-  assert.ok(html.includes("Escrever uma avaliação"));
-  assert.ok(!html.includes("Cartografia lírica e precisão atmosférica"));
-  assert.ok(html.includes("Ainda não há avaliações locais"));
+test("reader: former bundled URLs do not expose removed text", async () => {
+  for (const url of [
+    "/obras/ag-carta-abertura/capitulos/cap-1",
+    "/obras/ag-tres-gestos/paginas/cap-1",
+    "/obras/ag-carta-abertura/comentarios",
+    "/obras/ag-carta-abertura/avaliacoes",
+  ]) {
+    const html = await renderRoute(url);
+    assert.ok(!html.includes("Uma porta entreaberta"));
+    assert.ok(!html.includes("comic-reader-container"));
+    assert.ok(!html.includes("Guardar nota local"));
+  }
 });

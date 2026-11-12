@@ -1,7 +1,3 @@
-import {
-  editorialTagDetails,
-  editorialGenreDescriptions,
-} from "../data/inaugural";
 import type { Work, WorkFormat } from "../data/works";
 export const normalizeText = (value: string): string =>
   value
@@ -80,8 +76,7 @@ export function catalogUrl(
   return params.size ? `${base}?${params}` : base;
 }
 export type TagGroup = "Mundos" | "Temas" | "Criação";
-const tagDetails: Record<string, { description: string; group: TagGroup }> =
-  editorialTagDetails;
+const tagDetails: Record<string, { description: string; group: TagGroup }> = {};
 export interface Tag {
   slug: string;
   name: string;
@@ -119,7 +114,7 @@ export const formatFamilies: Record<WorkFormat, "literaria" | "visual"> = {
   Mangá: "visual",
   "Obra ilustrada": "visual",
 };
-export const genreDescriptions = editorialGenreDescriptions;
+export const genreDescriptions: Record<string, string> = {};
 export function getGenres(works: readonly Work[]) {
   return [...new Set(works.map((w) => w.genre))]
     .sort((a, b) => a.localeCompare(b, "pt"))

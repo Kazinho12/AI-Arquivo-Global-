@@ -6,7 +6,7 @@ import { StaticRouter } from "react-router-dom/server";
 import { matchRoutes } from "react-router-dom";
 import { ApplicationRoutes } from "../src/foundation/app/App";
 import { productRoutes } from "../src/foundation/app/routes";
-import { inauguralWorks as works } from "../src/foundation/data/inaugural";
+import { inauguralWorks as works } from "./fixtures/editorial-fixture";
 import {
   editorialSelections,
   selectEditorialWorks,
@@ -49,10 +49,10 @@ for (const [path, title] of [
   ["/catalogo", "Um mundo de histórias."],
   ["/pesquisa", "Pesquisa avançada."],
   ["/tags", "Todas as histórias têm pistas."],
-  ["/tags/memoria", "Memória"],
+  ["/tags/memoria", "memoria"],
   ["/categorias", "Muitas formas. Infinitos mundos."],
   ["/tendencias", "O que nos move a imaginar."],
-  ["/obras/ag-carta-abertura", "Carta de abertura"],
+  ["/obras/ag-carta-abertura", "404"],
 ])
   test(`discovery: actual route ${path} has semantic content and canonical anchors`, async () => {
     const html = await renderRoute(path);
@@ -156,24 +156,21 @@ test("related works share content without mutation or popularity ranking", () =>
   assert.equal(JSON.stringify(works), original);
   assert.equal(relatedWorks(works, works[0], 0).length, 0);
 });
-test("unknown work and tag provide recovery; filters cannot escape tag scope", async () => {
+test("unknown work and tags offer recovery without bundled results", async () => {
   assert.ok((await renderRoute("/obras/missing")).includes("404"));
-  assert.ok((await renderRoute("/tags/unknown")).includes("Tag desconhecida"));
-  assert.ok(
-    (await renderRoute("/tags/memoria?formato=Mang%C3%A1")).includes(
-      "Nenhuma história encontrada",
-    ),
-  );
+  for (const url of ["/tags/unknown", "/tags/memoria?formato=Mang%C3%A1"]) {
+    const html = await renderRoute(url);
+    assert.ok(html.includes("Tag desconhecida"));
+    assert.ok(!html.includes("Carta de abertura"));
+  }
 });
 test("unpopulated formats show empty results without invented works", async () => {
   const html = await renderRoute("/catalogo?formato=Fanfiction");
   assert.ok(html.includes("Nenhuma história encontrada"));
   assert.ok(!html.includes("Autor fictício"));
 });
-test("editorial selection is shareable and dates describe preparation", async () => {
+test("retired selection URLs show an empty state without bundled works", async () => {
   const html = await renderRoute("/tendencias?selecao=ag-colecao-comecar");
-  assert.ok(
-    html.includes("Carta de abertura") && html.includes("Primeiras linhas"),
-  );
-  assert.ok(!html.includes("<h3>Um arquivo em três gestos</h3>"));
+  assert.ok(html.includes("Ainda não há tendências disponíveis"));
+  assert.ok(!html.includes("Carta de abertura"));
 });
