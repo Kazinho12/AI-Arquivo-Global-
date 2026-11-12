@@ -148,7 +148,7 @@ export function PrivacyPage() {
     <DocumentPage
       title="Política de Privacidade"
       description="Queremos que compreendas o que partilhas, o que permanece privado e quais os controlos ao teu alcance."
-      note="A identificação completa do responsável, os fundamentos jurídicos, os prazos de conservação e as condições de transferências de dados ainda requerem revisão humana. Este texto não é uma certificação jurídica."
+      note="Estamos a aperfeiçoar as informações sobre o tratamento e a conservação de dados pessoais. Para esclarecimentos ou pedidos relacionados com a tua privacidade, contacta-nos através de arquivoglobal.org@gmail.com."
       sections={[
         {
           title: "A tua conta e o teu perfil",
