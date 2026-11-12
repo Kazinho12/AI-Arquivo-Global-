@@ -288,7 +288,6 @@ const completionPages = {
     })),
   ),
 };
-const DesignSystem = lazy(() => import("../pages/DesignSystem"));
 const layouts = {
   public: PublicLayout,
   auth: AuthLayout,
@@ -351,7 +350,6 @@ export function ApplicationRoutes() {
           </Route>
         ))}
         <Route element={<PublicLayout />}>
-          <Route path="/dev/design-system" element={<DesignSystem />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

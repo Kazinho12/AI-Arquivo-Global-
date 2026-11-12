@@ -3,16 +3,7 @@ import { LocalDataTools } from "../features/local/LocalDataTools";
 import { AuthHeaderLinks } from "../features/auth/components";
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import {
-  ArrowUpRight,
-  BookOpen,
-  Globe2,
-  Menu,
-  Moon,
-  Sun,
-  X,
-  PenLine,
-} from "lucide-react";
+import { BookOpen, Globe2, Menu, Moon, Sun, X, PenLine } from "lucide-react";
 import { useTheme } from "./providers";
 import { Button } from "../components/ui";
 export function Brand() {
@@ -138,15 +129,11 @@ function Footer() {
           <span className="eyebrow">ARQUIVO GLOBAL</span>
           <Link to="/regras">Regras da comunidade</Link>
           <Link to="/privacidade">Privacidade</Link>
-          <Link to="/dev/design-system">
-            Design system <ArrowUpRight size={12} />
-          </Link>
         </div>
       </div>
       <div className="container footer-bottom">
         <span>© {new Date().getFullYear()} Arquivo Global</span>
         <span>Aberto à imaginação. Livre para criar.</span>
-        <span className="demo-dot">Versão local · edição inaugural</span>
       </div>
     </footer>
   );

@@ -91,7 +91,7 @@ export default function Explore() {
       </section>
       <WorkSection
         title="As primeiras páginas do Arquivo."
-        eyebrow="EDIÇÃO INAUGURAL"
+        eyebrow="CONTEÚDO EDITORIAL"
         description="Conteúdo original preparado pela Equipa Editorial. A data indica preparação local, não publicação."
         works={filterWorks(
           works.filter((work) => work.origin !== "user-publication"),

@@ -84,7 +84,7 @@ export function RemoteTags() {
         ))}
       </div>
       <p>Até 100 tags por pesquisa. Refina o termo para encontrar outras.</p>
-      <h2>Tags da edição inaugural · local</h2>
+      <h2>Tags da conteúdo editorial · local</h2>
       <div className="tag-options">
         {getTags(inauguralWorks)
           .filter((t) => normalizeText(t.name).includes(normalizeText(q)))

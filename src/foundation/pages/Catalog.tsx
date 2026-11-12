@@ -19,9 +19,9 @@ export default function Catalog() {
         </Link>
       </div>
       <section aria-label="Publicações de autores">
-        <h2>Publicações de autores e edição inaugural</h2>
+        <h2>Publicações de autores e conteúdo editorial</h2>
         <p>
-          As obras de autores são publicações reais; a edição inaugural é
+          As obras de autores são publicações reais; a conteúdo editorial é
           conteúdo editorial local, sem proprietário de conta atribuído.
         </p>
         {catalog.loading && <p role="status">A carregar publicações…</p>}
@@ -45,7 +45,7 @@ export default function Catalog() {
       </section>
       <WorkCollection works={catalog.works} />
       <div className="notice">
-        As obras inaugurais mantêm datas de preparação local. Nas obras de
+        As obras editoriais mantêm datas de preparação local. Nas obras de
         autores, a data indica a última publicação confirmada.
       </div>
     </div>

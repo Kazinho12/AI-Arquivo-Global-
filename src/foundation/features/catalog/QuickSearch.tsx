@@ -99,7 +99,7 @@ export function QuickSearch() {
           )}
           {value.trim() && (
             <>
-              <h3>Edição inaugural · local</h3>
+              <h3>Conteúdo editorial · local</h3>
               <ul>
                 {localDiscovery(
                   inauguralWorks,

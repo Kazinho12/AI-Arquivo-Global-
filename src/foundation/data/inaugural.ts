@@ -48,7 +48,7 @@ export const inauguralWorks: InauguralWork[] = [
     genre: "Institucional",
     tags: ["Criação", "Descoberta", "Arquivo"],
     synopsis:
-      "Uma breve carta sobre abrir um lugar para as histórias e guardar espaço para quem ainda está a começar. Texto inaugural original em duas partes.",
+      "Uma breve carta sobre abrir um lugar para as histórias e guardar espaço para quem ainda está a começar. Texto editorial original em duas partes.",
     cover: 1,
     coverAsset: "/editorial/capa-carta.svg",
     readingMode: "prose",
@@ -355,7 +355,7 @@ export const editorialTaxonomy = {
 };
 export const institutionalContent = {
   catalogNotice:
-    "Edição inaugural · conteúdo local da Equipa Editorial, identificado separadamente das publicações de autores.",
+    "Conteúdo editorial · conteúdo local da Equipa Editorial, identificado separadamente das publicações de autores.",
   rulesStatus:
     "Rascunho não publicado · sem aprovação institucional ou jurídica",
   privacyStatus: "Descrição técnica atual; política oficial ainda por aprovar.",

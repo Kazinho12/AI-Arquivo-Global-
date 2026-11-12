@@ -172,7 +172,7 @@ export function SystemInformationPage() {
             <dt>Navegação</dt>
             <dd>57 rotas canónicas e sete layouts</dd>
             <dt>Catálogo</dt>
-            <dd>Edição inaugural preparada localmente</dd>
+            <dd>Conteúdo editorial preparada localmente</dd>
             <dt>Autoria</dt>
             <dd>Rascunhos locais separados do catálogo editorial</dd>
           </dl>

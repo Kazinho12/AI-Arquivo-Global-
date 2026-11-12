@@ -103,7 +103,7 @@ export function ProfilePublications({
     <section className="profile-works-section" aria-labelledby="obras-heading">
       <div className="profile-works-header">
         <h2 id="obras-heading">
-          {editorialWorks ? "Obras editoriais inaugurais" : "Obras publicadas"}{" "}
+          {editorialWorks ? "Obras editoriais" : "Obras publicadas"}{" "}
           <span className="profile-works-count">
             ({total ?? (error ? "indisponível" : "…")})
           </span>

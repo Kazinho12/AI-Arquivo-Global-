@@ -73,7 +73,7 @@ export function WorkCard({ work }: { work: Work }) {
           <span>
             {work.origin === "user-publication"
               ? "Publicada pelo autor"
-              : "Edição inaugural · local"}
+              : "Conteúdo editorial · local"}
           </span>
         </div>
       </Link>

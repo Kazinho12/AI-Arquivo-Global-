@@ -45,7 +45,7 @@ function EditorialWorkDetail() {
         <aside className="work-cover-column">
           <Cover work={work} />
           <p className="cover-caption">
-            Composição gráfica original · edição inaugural
+            Composição gráfica original · conteúdo editorial
           </p>
         </aside>
         <div className="work-information">

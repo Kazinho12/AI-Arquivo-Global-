@@ -282,8 +282,8 @@ export function DiscoveryCollection({ fixedTag }: { fixedTag?: string }) {
           <p>Pesquisa pública não configurada neste ambiente.</p>
         )}
       </section>
-      <section aria-label="Resultados da edição inaugural">
-        <h2>Edição inaugural · conteúdo local</h2>
+      <section aria-label="Resultados da conteúdo editorial">
+        <h2>Conteúdo editorial · conteúdo local</h2>
         <p>
           {local.length} obras editoriais correspondem aos filtros. Sem
           proprietário de conta atribuído.

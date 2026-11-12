@@ -1,4 +1,3 @@
-import { institutionalContent } from "../data/inaugural";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, HelpCircle, PenLine, Shield } from "lucide-react";
@@ -9,14 +8,14 @@ const questions = [
   {
     title: "Onde explorar a comunidade?",
     answer:
-      "A atividade apresenta um anúncio editorial local. As coleções reúnem as peças inaugurais ou as tuas listas privadas do navegador. Não são inventados seguidores ou interações sociais.",
+      "As coleções e a biblioteca ajudam a organizar leituras. Os perfis apresentam as obras publicadas dos autores.",
     to: "/atividade",
     link: "Explorar comunidade",
   },
   {
     title: "Como encontrar uma obra?",
     answer:
-      "Abre o catálogo ou a pesquisa. Podes combinar formato, género e tags; os resultados atuais pertencem ao catálogo inaugural.",
+      "Abre o catálogo ou a pesquisa. Podes combinar formato, género e tags; os resultados incluem obras publicadas e conteúdo editorial identificado.",
     to: "/catalogo",
     link: "Explorar catálogo",
   },
@@ -30,7 +29,7 @@ const questions = [
   {
     title: "Onde ficam os meus rascunhos?",
     answer:
-      "O Estúdio guarda textos localmente e imagens em IndexedDB, separados por conta ou visitante. Não existe sincronização entre dispositivos nem publicação pública.",
+      "As obras e entradas guardadas no Estúdio são persistidas no Supabase na tua conta. A publicação exige confirmação e cria uma versão pública separada; alterações privadas só ficam públicas após nova atualização confirmada. Dados locais antigos permanecem no navegador.",
     to: "/estudio",
     link: "Abrir Estúdio",
   },
@@ -119,11 +118,11 @@ export function HelpPage() {
       </div>
       <aside className="completion-demo">
         <p>
-          Não existe serviço de suporte/contacto integrado. As páginas de regras
-          e privacidade são rascunhos para revisão.
+          Não existe serviço de suporte/contacto integrado. Consulta as regras e
+          a descrição do tratamento de dados disponível nesta versão.
         </p>
         <Link className="text-link" to="/regras">
-          Ver regras propostas →
+          Ver regras da comunidade →
         </Link>
       </aside>
     </CompletionPage>
@@ -132,59 +131,55 @@ export function HelpPage() {
 export function RulesPage() {
   return (
     <CompletionPage
-      eyebrow="DOCUMENTO PARA REVISÃO"
+      eyebrow="CONVIVÊNCIA E CRIAÇÃO"
       title="Regras da comunidade"
-      description="Estrutura editorial proposta para uma comunidade de leitura e criação respeitosa."
+      description="Orientações para partilhar histórias com respeito pela autoria e pelas pessoas."
     >
-      <DraftNotice />
       <div className="completion-document">
-        <nav aria-label="Índice das regras">
-          <h2>Neste rascunho</h2>
-          <a href="#rules-respect">Respeito e convivência</a>
-          <a href="#rules-authorship">Autoria e contexto</a>
-          <a href="#rules-safety">Sinalização de problemas</a>
-          <a href="#rules-review">Revisão e aplicação</a>
-        </nav>
         <article>
-          <section id="rules-respect">
-            <h2>Respeito e convivência</h2>
+          <section>
+            <h2>Respeito e privacidade</h2>
             <p>
-              Proposta: promover diálogo respeitoso e evitar assédio,
-              intimidação ou exposição de informação privada. O objetivo é
-              tornar a descoberta e a criação confortáveis para pessoas com
-              diferentes experiências.
+              Não publiques ameaças, assédio, exposição de dados pessoais de
+              terceiros ou conteúdos que promovam violência contra pessoas.
+              Respeita quem lê e quem cria.
             </p>
           </section>
-          <section id="rules-authorship">
-            <h2>Autoria e contexto</h2>
+          <section>
+            <h2>Autoria e direitos</h2>
             <p>
-              Proposta: identificar a autoria, descrever o contexto da obra e
-              usar os campos de classificação e avisos de conteúdo disponíveis
-              no Estúdio. A verificação de direitos e o processo editorial ainda
-              precisam de definição e aprovação.
+              Partilha apenas textos e imagens que tens direito de publicar.
+              Identifica a autoria com rigor e não te faças passar por outra
+              pessoa. A disponibilização de uma obra não concede, por si só,
+              autorização para a reutilizar.
             </p>
           </section>
-          <section id="rules-safety">
-            <h2>Sinalização de problemas</h2>
+          <section>
+            <h2>Classificação e publicação</h2>
             <p>
-              O formulário de denúncia é demonstrativo e não transmite pedidos.
-              Não há fila de atendimento ativa, prazos de resposta ou sistema de
-              sanções implementado.
+              Preenche título, sinopse, formato, idioma, classificação etária e
+              avisos de conteúdo de forma fiel. A classificação e os filtros
+              ajudam a escolher leituras; não constituem uma verificação
+              independente de cada obra.
             </p>
-            <Link className="text-link" to="/denunciar">
-              Conhecer o formulário →
-            </Link>
-          </section>
-          <section id="rules-review">
-            <h2>Revisão e aplicação</h2>
             <p>
-              Estes princípios não constituem termos oficiais em vigor.
-              Categorias, decisões, revisão de medidas e canais de contacto
-              precisam de aprovação editorial e de suporte técnico antes da
-              publicação.
+              Guardar um rascunho não o publica. Publicar ou atualizar a
+              publicação exige confirmação. Podes retirar a publicação no
+              Estúdio sem eliminar o rascunho. Retirar uma obra impede novas
+              consultas públicas pela aplicação, mas não apaga cópias já obtidas
+              por leitores.
+            </p>
+          </section>
+          <section>
+            <h2>Limites de atendimento</h2>
+            <p>
+              O formulário de denúncia ainda não transmite pedidos. Não existe
+              um canal de atendimento integrado, prazo de resposta ou
+              procedimento automatizado de sanção ou recurso. Não o uses para
+              comunicar uma urgência.
             </p>
             <Link className="text-link" to="/ajuda">
-              Consultar ajuda sobre a versão atual →
+              Consultar ajuda →
             </Link>
           </section>
         </article>
@@ -192,88 +187,86 @@ export function RulesPage() {
     </CompletionPage>
   );
 }
-function DraftNotice() {
-  return (
-    <div className="completion-draft" role="note">
-      <strong>{institutionalContent.rulesStatus}</strong>
-      <p>
-        Esta interface apresenta uma estrutura para revisão. Não constitui
-        política oficial, contrato ou garantia de serviço.
-      </p>
-    </div>
-  );
-}
 export function PrivacyPage() {
   return (
     <CompletionPage
-      eyebrow="TRANSPARÊNCIA · DOCUMENTO PARA REVISÃO"
+      eyebrow="TRANSPARÊNCIA"
       title="Privacidade e dados"
-      description="O comportamento técnico atual e os temas que uma futura política aprovada deverá esclarecer."
+      description="Descrição do tratamento técnico de dados nas funcionalidades atuais do Arquivo Global."
     >
-      <DraftNotice />
       <div className="completion-document">
-        <nav aria-label="Índice de privacidade">
-          <h2>Neste rascunho</h2>
-          <a href="#privacy-local">Dados no navegador</a>
-          <a href="#privacy-account">Conta e serviços externos</a>
-          <a href="#privacy-control">Cópias e controlo</a>
-          <a href="#privacy-pending">Antes de publicar</a>
-        </nav>
         <article>
-          <section id="privacy-local">
-            <h2>Dados no navegador</h2>
+          <section>
+            <h2>Conta e perfil público</h2>
             <p>
-              Rascunhos, biblioteca e imagens são guardados localmente,
-              separados por conta ou visitante. Preferências pertencem ao
-              navegador. Comentários e avaliações são notas locais por obra. Não
-              existe encriptação desses dados pela aplicação nem sincronização
-              entre dispositivos.
-            </p>
-            <p>
-              Limpar o armazenamento ou perder o perfil do navegador pode apagar
-              dados. Quem controla esse perfil pode aceder ao armazenamento
-              diretamente.
+              O Supabase processa a autenticação, a sessão e os dados do perfil.
+              O login Google, quando utilizado, envolve também esse fornecedor.
+              O nome de utilizador, nome apresentado, biografia e fotografia do
+              perfil podem ser consultados publicamente. Não coloques informação
+              confidencial nesses campos.
             </p>
           </section>
-          <section id="privacy-account">
-            <h2>Conta e serviços externos</h2>
+          <section>
+            <h2>Obras e versões públicas</h2>
             <p>
-              Quando configurados e utilizados, Supabase Auth e o serviço de
-              perfis processam operações de conta. O SDK gere a persistência e
-              renovação da sessão. Google OAuth depende da configuração do
-              fornecedor. O Estúdio não faz upload para R2 nem publica obras num
-              backend.
-            </p>
-            <p>
-              Não foram certificados nesta interface os serviços remotos,
-              retenção, localização de processamento ou políticas dos
-              fornecedores.
+              O Estúdio guarda obras, metadados e entradas no Supabase. As
+              regras de acesso distinguem dados privados do proprietário e
+              versões publicadas. A publicação confirmada disponibiliza uma
+              cópia pública; editar o rascunho não atualiza essa cópia
+              automaticamente. A retirada de publicação remove o acesso público
+              pela aplicação, sem garantir a eliminação de cópias feitas por
+              terceiros.
             </p>
           </section>
-          <section id="privacy-control">
-            <h2>Cópias e controlo</h2>
+          <section>
+            <h2>Fotografia e serviços externos</h2>
             <p>
-              As ferramentas locais permitem exportar e recuperar cópias com
-              confirmação. Uma exportação pode conter textos e imagens privados;
-              guarda-a num local apropriado. Terminar a sessão não apaga
-              automaticamente os rascunhos guardados.
+              As fotografias de perfil são enviadas ao serviço de media em
+              Cloudflare Workers e armazenadas no Cloudflare R2. O envio utiliza
+              a sessão autenticada. A rota pública verifica a referência atual
+              do perfil antes de servir a imagem. Substituir ou remover a
+              referência no perfil não significa que o ficheiro anterior seja
+              imediatamente eliminado do armazenamento.
+            </p>
+          </section>
+          <section>
+            <h2>Dados neste navegador</h2>
+            <p>
+              A sessão, preferências e dados de leitura podem persistir no
+              navegador. Preferências do leitor e continuidade de leitura são
+              locais e não exigem login. Dados locais antigos e cópias de
+              recuperação também podem permanecer no dispositivo. Limpar o
+              armazenamento pode eliminá-los; terminar sessão não equivale a
+              apagar todos os dados locais.
+            </p>
+            <p>
+              Quem tem acesso ao perfil do navegador pode ter acesso a esses
+              dados. Uma cópia exportada pode conter textos privados: guarda-a
+              com cuidado.
+            </p>
+          </section>
+          <section>
+            <h2>Controlos e limites</h2>
+            <p>
+              Podes editar o perfil, substituir ou remover a fotografia, gerir
+              rascunhos e retirar publicações através dos controlos disponíveis.
+              Estas ações não representam um processo completo de eliminação da
+              conta ou de todos os registos dos fornecedores.
             </p>
             <Link className="text-link" to="/definicoes/privacidade">
-              Abrir opções e recuperação de dados →
+              Consultar opções de dados locais →
             </Link>
           </section>
-          <section id="privacy-pending">
-            <h2>O que falta aprovar</h2>
+          <section>
+            <h2>Informação institucional pendente</h2>
             <p>
-              Identificação do responsável, contactos, finalidades, fundamentos
-              aplicáveis, retenção, direitos e pedidos, fornecedores e
-              transferências necessitam de revisão pelo responsável antes de uma
-              política oficial. Esta página não inventa compromissos ou
-              garantias sobre esses temas.
+              A identificação e o contacto do responsável pelo tratamento, os
+              fundamentos jurídicos aplicáveis, os prazos de conservação, a
+              localização e as transferências de dados, e os canais para exercer
+              direitos ainda necessitam de definição e revisão humana. Esta
+              descrição técnica não substitui essa informação nem promete prazos
+              ou garantias não implementados.
             </p>
-            <Link className="text-link" to="/ajuda">
-              Consultar capacidades atuais →
-            </Link>
           </section>
         </article>
       </div>

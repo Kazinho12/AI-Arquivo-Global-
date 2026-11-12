@@ -15,7 +15,7 @@ export default function Trends() {
     <div className="container discovery-page">
       <div className="trends-intro">
         <PageIntro
-          eyebrow="SELEÇÕES / EDIÇÃO INAUGURAL"
+          eyebrow="SELEÇÕES / CONTEÚDO EDITORIAL"
           title="O que nos move a imaginar."
           description="Uma montra de afinidades, encontros e possibilidades. Percursos editoriais para descobrir o catálogo com outro olhar."
         />
