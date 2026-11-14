@@ -1,3 +1,4 @@
+import { usePublicationSeo } from "../seo/usePublicationSeo";
 import { useLibrary } from "../library/store";
 import { resumeChapter } from "../reader/progress";
 import { Link, useParams } from "react-router-dom";
@@ -10,6 +11,7 @@ import { NotFound } from "../../pages/States";
 export function PublishedWorkPage() {
   const { id = "" } = useParams();
   const state = usePublishedWork(id);
+  usePublicationSeo(state.error ? null : state.work, state.loading);
   const { entries } = useLibrary();
   const catalog = usePublicCatalog();
   if (state.loading)

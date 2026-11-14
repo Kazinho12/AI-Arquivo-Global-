@@ -1,3 +1,32 @@
 {
-  "rewrites": [{ "source": "/((?!assets/).*)", "destination": "/index.html" }]
+  "functions": {
+    "api/sitemap.ts": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/sitemaps/:file",
+      "destination": "/api/sitemap?file=:file"
+    },
+    {
+      "source": "/((?!api/|assets/|sitemaps/|sitemap\\.xml$|robots\\.txt$|favicon|google[^/]*\\.html$).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/:path(estudio|biblioteca|perfil|definicoes|notificacoes|moderacao|sistema|entrar|registar|recuperar-senha|redefinir-senha|confirmar-email|boas-vindas|auth)(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    }
+  ]
 }

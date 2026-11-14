@@ -12,5 +12,12 @@
     "resolveJsonModule": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src/main.tsx", "src/foundation", "vite.config.ts", "scripts"]
+  "include": [
+    "src/main.tsx",
+    "src/foundation",
+    "vite.config.ts",
+    "scripts",
+    "api",
+    "server"
+  ]
 }

@@ -1,4 +1,9 @@
-import { PublicCatalogProvider } from "../features/catalog/PublicCatalog";
+import { DISCOVERY_PAGES } from "../features/seo/config";
+import { applySeo, routeSeo } from "../features/seo/metadata";
+import {
+  PublicCatalogProvider,
+  usePublicCatalog,
+} from "../features/catalog/PublicCatalog";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import {
   BrowserRouter,
@@ -305,17 +310,47 @@ const layouts = {
 function RouteEffects() {
   const location = useLocation();
   const previous = useRef(location.pathname);
+  const catalog = usePublicCatalog();
   useEffect(() => {
     const route = productRoutes.find((r) =>
       matchPath({ path: r.path, end: true }, location.pathname),
     );
-    document.title = `${route?.title ?? "Arquivo Global"} — Arquivo Global`;
+    applySeo(
+      routeSeo(
+        location.pathname,
+        location.search,
+        `${route?.title ?? "Arquivo Global"} — Arquivo Global`,
+      ),
+    );
     if (previous.current !== location.pathname) {
       window.scrollTo(0, 0);
       document.getElementById("conteudo")?.focus();
       previous.current = location.pathname;
     }
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
+  useEffect(() => {
+    if (
+      !(DISCOVERY_PAGES as readonly string[]).includes(location.pathname) ||
+      catalog.loading
+    )
+      return;
+    const seo = routeSeo(location.pathname, location.search, document.title);
+    applySeo({
+      ...seo,
+      index:
+        seo.index &&
+        Boolean(catalog.repository) &&
+        !catalog.error &&
+        catalog.published.length > 0,
+    });
+  }, [
+    location.pathname,
+    location.search,
+    catalog.loading,
+    catalog.error,
+    catalog.published,
+    catalog.repository,
+  ]);
   return null;
 }
 function renderRoute(route: (typeof productRoutes)[number]) {
