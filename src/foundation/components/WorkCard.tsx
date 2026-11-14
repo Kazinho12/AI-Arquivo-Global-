@@ -1,3 +1,4 @@
+import { CustomCover } from "../features/media/CustomCover";
 import { readCoverStyle } from "../data/covers";
 import { slugify } from "../lib/discovery";
 import { Link } from "react-router-dom";
@@ -20,17 +21,19 @@ export function Cover({
       aria-hidden="true"
       className={`cover-container overflow-hidden rounded ${large ? "cover-large" : ""}`}
     >
-      <WorkCover
-        title={work.title}
-        author={work.author}
-        subtitle={work.subtitle}
-        color={accentColor}
-        style={readCoverStyle(work.coverStyle)}
-        seed={work.coverSeed}
-        format={work.format}
-        editionLabel={"ARQUIVO GLOBAL / OBRA PUBLICADA"}
-        size={large ? "lg" : "responsive"}
-      />
+      <CustomCover image={work.coverImage} publicId={work.id}>
+        <WorkCover
+          title={work.title}
+          author={work.author}
+          subtitle={work.subtitle}
+          color={accentColor}
+          style={readCoverStyle(work.coverStyle)}
+          seed={work.coverSeed}
+          format={work.format}
+          editionLabel={"ARQUIVO GLOBAL / OBRA PUBLICADA"}
+          size={large ? "lg" : "responsive"}
+        />
+      </CustomCover>
     </div>
   );
 }

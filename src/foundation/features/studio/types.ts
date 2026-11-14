@@ -1,3 +1,4 @@
+import type { CoverImage } from "../media/covers";
 import type { CoverStyle } from "../../data/covers";
 import type { Chapter } from "../reader/types";
 
@@ -37,6 +38,7 @@ export interface StudioWork {
   coverAccentColor: string;
   coverStyle?: CoverStyle;
   coverSeed?: number;
+  coverImage?: CoverImage | null;
   /** Server appearance cannot be edited by an older compatibility mode. */
   coverAppearanceLocked?: boolean;
   createdAt: string;

@@ -1,3 +1,4 @@
+import { customCoversEnabled, readCoverImage } from "../media/covers";
 import {
   coverStylePersistenceEnabled,
   coverStudioV2Enabled,
@@ -57,6 +58,7 @@ function mapPublishedRow(
   row: Record<string, any>,
   styleEnabled: boolean,
   v2Enabled = false,
+  imagesEnabled = customCoversEnabled,
 ): PublishedWork {
   if (
     !row.id ||
@@ -80,6 +82,7 @@ function mapPublishedRow(
     createdAt: row.last_published_at,
     cover: 1,
     coverAccentColor: row.cover_accent_color || undefined,
+    ...(imagesEnabled ? { coverImage: readCoverImage(row.cover_image) } : {}),
     coverStyle:
       styleEnabled && (v2Enabled || isOriginalCoverStyle(row.cover_style))
         ? readCoverStyle(row.cover_style)
@@ -112,12 +115,14 @@ export function createPublicWorksRepository(
   client: SupabaseClient | null,
   options: CoverStyleOptions = {},
 ): PublicWorksRepository {
+  const imagesEnabled = options.customCoversEnabled ?? customCoversEnabled;
   const styleEnabled =
     options.coverStyleEnabled ?? coverStylePersistenceEnabled;
   const v2Enabled =
     styleEnabled && (options.coverStudioV2Enabled ?? coverStudioV2Enabled);
   const selectedColumns =
     publicColumns +
+    (imagesEnabled ? ",cover_image" : "") +
     (styleEnabled ? ",cover_style" : "") +
     (v2Enabled ? ",cover_seed" : "");
   const db = () => {
@@ -150,7 +155,7 @@ export function createPublicWorksRepository(
           .limit(12),
       );
       return (rows ?? []).map((row) =>
-        mapPublishedRow(row, styleEnabled, v2Enabled),
+        mapPublishedRow(row, styleEnabled, v2Enabled, imagesEnabled),
       );
     },
     async search(query) {
@@ -166,7 +171,7 @@ export function createPublicWorksRepository(
       return {
         ...result,
         items: result.items.map((row: Record<string, any>) =>
-          mapPublishedRow(row, styleEnabled, v2Enabled),
+          mapPublishedRow(row, styleEnabled, v2Enabled, imagesEnabled),
         ),
       } as DiscoveryPage;
     },
@@ -200,7 +205,9 @@ export function createPublicWorksRepository(
       const row = await request(
         db().rpc("read_public_work", { p_public_id: publicId }),
       );
-      return row ? mapPublishedRow(row, styleEnabled, v2Enabled) : null;
+      return row
+        ? mapPublishedRow(row, styleEnabled, v2Enabled, imagesEnabled)
+        : null;
     },
   };
 }

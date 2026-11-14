@@ -2,6 +2,7 @@
 export const coverStylePersistenceEnabled =
   import.meta.env?.VITE_ENABLE_COVER_STYLE === "true";
 export interface CoverStyleOptions {
+  customCoversEnabled?: boolean;
   coverStyleEnabled?: boolean;
   coverStudioV2Enabled?: boolean;
 }

@@ -1,3 +1,4 @@
+import type { CoverImage } from "../features/media/covers";
 import type { CoverStyle } from "./covers";
 export const formats = [
   "Romance",
@@ -26,6 +27,7 @@ export interface Work {
   coverAccentColor?: string;
   coverStyle?: CoverStyle;
   coverSeed?: number;
+  coverImage?: CoverImage | null;
   /** Compatibility marker for local-only records, never a public publication. */
   demo?: true;
 }

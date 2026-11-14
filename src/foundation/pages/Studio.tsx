@@ -1,3 +1,10 @@
+import { CustomCover } from "../features/media/CustomCover";
+import {
+  CoverPicker,
+  coverDraft,
+  persistCover,
+} from "../features/media/CoverPicker";
+import { customCoversEnabled } from "../features/media/covers";
 import { entryWords } from "../features/writing/document";
 import { CoverStudioGallery } from "../components/CoverStudioGallery";
 import {
@@ -257,6 +264,23 @@ export function StudioDashboardPage() {
 
               return (
                 <article key={work.id} className="studio-work-card">
+                  {work.coverImage && (
+                    <div className="studio-custom-cover">
+                      <CustomCover
+                        image={work.coverImage}
+                        workId={work.id}
+                        ownerId={work.ownerId}
+                      >
+                        <WorkCover
+                          title={work.title}
+                          author=""
+                          color={work.coverAccentColor}
+                          style={work.coverStyle}
+                          seed={work.coverSeed}
+                        />
+                      </CustomCover>
+                    </div>
+                  )}
                   <header className="work-card-top">
                     <span className="work-format-tag">
                       {work.format} ·{" "}
@@ -375,6 +399,10 @@ export function NewWorkWizardPage() {
   const [coverAccentColor, setCoverAccentColor] = useState("#14243B");
   const [coverStyle, setCoverStyle] = useState<CoverStyle>("geometric");
   const [coverSeed, setCoverSeed] = useState(0);
+  const [imageDraft, setImageDraft] = useState(() => coverDraft());
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverError, setCoverError] = useState("");
+  const [createdDraft, setCreatedDraft] = useState<StudioWork | null>(null);
   const [customHex, setCustomHex] = useState("#14243B");
 
   const formatGenres = useMemo(() => getGenresForFormat(format), [format]);
@@ -390,14 +418,16 @@ export function NewWorkWizardPage() {
   const handleFormatSelect = (value: WorkFormat) => setFormat(value);
 
   const handleCreate = async () => {
-    if (!title.trim() || !remote.controller || remote.saving) return;
+    if (!title.trim() || !remote.controller || remote.saving || uploadingCover)
+      return;
+    setCoverError("");
 
     const tags = tagsInput
       .split(",")
       .map((t) => t.trim().toLowerCase())
       .filter(Boolean);
 
-    const created = await remote.controller.create({
+    const metadata = {
       title: title.trim(),
       subtitle: subtitle.trim() || undefined,
       synopsis: synopsis.trim() || "Sem sinopse definida.",
@@ -414,9 +444,46 @@ export function NewWorkWizardPage() {
             ...(coverStudioV2Enabled || coverSeed !== 0 ? { coverSeed } : {}),
           }
         : {}),
-    });
+    };
+    const created = createdDraft ?? (await remote.controller.create(metadata));
 
-    if (created && active.current) navigate(`/estudio/obras/${created.id}`);
+    if (created && active.current) {
+      setCreatedDraft(created);
+      if (
+        customCoversEnabled &&
+        (imageDraft.file || createdDraft) &&
+        created.ownerId
+      ) {
+        setUploadingCover(true);
+        try {
+          const coverImage = await persistCover(
+            imageDraft,
+            created.id,
+            created.ownerId,
+          );
+          const saved = await remote.controller.update(created, {
+            ...metadata,
+            coverImage,
+          });
+          if (!saved) {
+            setCoverError(
+              "O rascunho foi criado, mas a capa não foi guardada. Abre o Estúdio para confirmar a revisão antes de tentar novamente.",
+            );
+            return;
+          }
+        } catch (error) {
+          setCoverError(
+            error instanceof Error
+              ? error.message
+              : "A capa não foi guardada. O rascunho foi preservado.",
+          );
+          return;
+        } finally {
+          setUploadingCover(false);
+        }
+      }
+      navigate(`/estudio/obras/${created.id}`);
+    }
   };
 
   return (
@@ -429,7 +496,7 @@ export function NewWorkWizardPage() {
       </nav>
 
       <fieldset
-        disabled={remote.saving}
+        disabled={remote.saving || uploadingCover}
         style={{ border: 0, padding: 0, minWidth: 0 }}
       >
         <header className="wizard-header">
@@ -851,6 +918,16 @@ export function NewWorkWizardPage() {
               Pré-visualização privada dos metadados. A obra não será publicada.
             </p>
 
+            <CoverPicker value={imageDraft} onChange={setImageDraft} />
+            {coverError && <p role="alert">{coverError}</p>}
+            {createdDraft && (
+              <Link to={`/estudio/obras/${createdDraft.id}`}>
+                Abrir o rascunho criado →
+              </Link>
+            )}
+            {uploadingCover && (
+              <p role="status">A enviar e confirmar a capa…</p>
+            )}
             <article className="work-preview-simulation">
               <aside className="preview-cover-sim flex justify-center p-2 bg-transparent">
                 <WorkCover
@@ -1683,6 +1760,23 @@ export function PublicationsPage() {
 
             return (
               <article key={work.id} className="studio-work-card">
+                {work.coverImage && (
+                  <div className="studio-custom-cover">
+                    <CustomCover
+                      image={work.coverImage}
+                      workId={work.id}
+                      ownerId={work.ownerId}
+                    >
+                      <WorkCover
+                        title={work.title}
+                        author=""
+                        color={work.coverAccentColor}
+                        style={work.coverStyle}
+                        seed={work.coverSeed}
+                      />
+                    </CustomCover>
+                  </div>
+                )}
                 <header className="work-card-top">
                   <span className="work-format-tag">
                     {work.format} ·{" "}

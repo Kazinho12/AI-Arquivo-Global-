@@ -1,3 +1,10 @@
+import {
+  CoverPicker,
+  coverDraft,
+  resolvedCover,
+  persistCover,
+} from "../media/CoverPicker";
+import { customCoversEnabled } from "../media/covers";
 import { CoverStudioGallery } from "../../components/CoverStudioGallery";
 import {
   coverStylePersistenceEnabled,
@@ -51,6 +58,11 @@ export function WorkMetadataForm({
     readCoverSeed(work.coverSeed),
   );
   const [saved, setSaved] = useState(false);
+  const [imageDraft, setImageDraft] = useState(() =>
+    coverDraft(work.coverImage),
+  );
+  const [uploading, setUploading] = useState(false);
+  const [coverError, setCoverError] = useState("");
 
   const formatGenres = useMemo(() => getGenresForFormat(format), [format]);
 
@@ -63,31 +75,61 @@ export function WorkMetadataForm({
   async function submit(event: FormEvent) {
     event.preventDefault();
     setSaved(false);
-    const result = await remote.controller?.update(baseline, {
-      title,
-      subtitle,
-      synopsis,
-      format,
-      language,
-      genre,
-      tags: split(tags),
-      ageRating,
-      contentWarnings: split(warnings),
-      coverAccentColor: color,
-      ...(coverStylePersistenceEnabled && !baseline.coverAppearanceLocked
-        ? {
-            coverStyle,
-            ...(coverStudioV2Enabled || coverSeed !== 0 ? { coverSeed } : {}),
-          }
-        : {}),
-    });
-    if (result) {
-      apply(result);
-      setSaved(true);
+    if (uploading || !remote.controller) return;
+    if (!baseline.ownerId) {
+      setCoverError(
+        "Abre novamente a obra da tua conta para confirmar a propriedade antes de guardar.",
+      );
+      return;
+    }
+    setUploading(true);
+    setCoverError("");
+    try {
+      const coverImage = customCoversEnabled
+        ? await persistCover(imageDraft, baseline.id, baseline.ownerId)
+        : undefined;
+      const result = await remote.controller.update(baseline, {
+        ...(customCoversEnabled ? { coverImage } : {}),
+        title,
+        subtitle,
+        synopsis,
+        format,
+        language,
+        genre,
+        tags: split(tags),
+        ageRating,
+        contentWarnings: split(warnings),
+        coverAccentColor: color,
+        ...(coverStylePersistenceEnabled && !baseline.coverAppearanceLocked
+          ? {
+              coverStyle,
+              ...(coverStudioV2Enabled || coverSeed !== 0 ? { coverSeed } : {}),
+            }
+          : {}),
+      });
+      if (result) {
+        apply(result);
+        setSaved(true);
+      } else {
+        setCoverError(
+          "O servidor não confirmou as alterações. Confirma a revisão antes de tentar novamente; a publicação mantém-se intacta.",
+        );
+      }
+    } catch (error) {
+      setCoverError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível guardar a capa.",
+      );
+    } finally {
+      setUploading(false);
     }
   }
 
   const dirty =
+    Boolean(imageDraft.file) ||
+    JSON.stringify(resolvedCover(imageDraft)) !==
+      JSON.stringify(baseline.coverImage ?? null) ||
     title !== baseline.title ||
     subtitle !== (baseline.subtitle ?? "") ||
     synopsis !== baseline.synopsis ||
@@ -105,6 +147,7 @@ export function WorkMetadataForm({
 
   function apply(latest: StudioWork) {
     setBaseline(latest);
+    setImageDraft(coverDraft(latest.coverImage));
     setTitle(latest.title);
     setSubtitle(latest.subtitle ?? "");
     setSynopsis(latest.synopsis);
@@ -156,7 +199,9 @@ export function WorkMetadataForm({
       <h2>Editar metadados</h2>
       {dirty && <p role="status">Metadados não guardados</p>}
       <form onSubmit={submit} onChange={() => setSaved(false)}>
-        <fieldset disabled={remote.saving || Boolean(work.archivedAt)}>
+        <fieldset
+          disabled={uploading || remote.saving || Boolean(work.archivedAt)}
+        >
           <Field
             label="Título"
             value={title}
@@ -325,6 +370,14 @@ export function WorkMetadataForm({
             </div>
           </div>
 
+          <CoverPicker
+            value={imageDraft}
+            onChange={setImageDraft}
+            workId={baseline.id}
+            ownerId={baseline.ownerId}
+          />
+          {coverError && <p role="alert">{coverError}</p>}
+          {uploading && <p role="status">A enviar e confirmar a capa…</p>}
           {/* Experimentação de Estilos de Capa e Pré-visualização Viva */}
           <div className="mb-5 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 text-left">
             <div className="flex items-center justify-between mb-2">
@@ -391,8 +444,15 @@ export function WorkMetadataForm({
             </div>
           </div>
 
-          <Button type="submit" disabled={remote.saving || !remote.enabled}>
-            {remote.saving ? "A guardar…" : "Guardar alterações"}
+          <Button
+            type="submit"
+            disabled={uploading || remote.saving || !remote.enabled}
+          >
+            {uploading
+              ? "A enviar e guardar…"
+              : remote.saving
+                ? "A guardar…"
+                : "Guardar alterações"}
           </Button>
         </fieldset>
         {saved && !dirty && (

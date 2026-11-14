@@ -1,4 +1,9 @@
 import {
+  customCoversEnabled,
+  readCoverImage,
+  type CoverImage,
+} from "../media/covers";
+import {
   coverStylePersistenceEnabled,
   coverStudioV2Enabled,
   type CoverStyleOptions,
@@ -27,6 +32,7 @@ export interface DraftMetadata {
   coverAccentColor: string;
   coverStyle?: CoverStyle;
   coverSeed?: number;
+  coverImage?: CoverImage | null;
 }
 export type EditorialAction =
   | "duplicate_work"
@@ -72,6 +78,7 @@ export function metadataPayload(
   input: DraftMetadata,
   styleEnabled = coverStylePersistenceEnabled,
   v2Enabled = coverStudioV2Enabled,
+  imagesEnabled = customCoversEnabled,
 ) {
   if (input.coverStyle !== undefined && !isCoverStyle(input.coverStyle))
     throw new WorksError("Estilo de capa inválido.");
@@ -131,6 +138,13 @@ export function metadataPayload(
       .map((s) => s.trim())
       .filter(Boolean),
     cover_accent_color: input.coverAccentColor,
+    ...(input.coverImage !== undefined
+      ? (() => {
+          if (!imagesEnabled)
+            throw new WorksError("O upload de capas ainda não está ativado.");
+          return { cover_image: readCoverImage(input.coverImage) };
+        })()
+      : {}),
     ...(styleEnabled && input.coverStyle !== undefined
       ? { cover_style: input.coverStyle }
       : {}),
@@ -144,6 +158,7 @@ function mapRow(
   ownerId: string,
   styleEnabled = false,
   v2Enabled = false,
+  imagesEnabled = customCoversEnabled,
 ): StudioWork {
   if (
     row.owner_id !== ownerId ||
@@ -177,6 +192,7 @@ function mapRow(
     ageRating: row.age_rating,
     contentWarnings: row.content_warnings,
     coverAccentColor: row.cover_accent_color,
+    ...(imagesEnabled ? { coverImage: readCoverImage(row.cover_image) } : {}),
     coverStyle:
       styleEnabled && (v2Enabled || isOriginalCoverStyle(row.cover_style))
         ? readCoverStyle(row.cover_style)
@@ -249,12 +265,14 @@ export function createWorksRepository(
   ownerId: string,
   options: CoverStyleOptions = {},
 ): WorksRepository {
+  const imagesEnabled = options.customCoversEnabled ?? customCoversEnabled;
   const styleEnabled =
     options.coverStyleEnabled ?? coverStylePersistenceEnabled;
   const v2Enabled =
     styleEnabled && (options.coverStudioV2Enabled ?? coverStudioV2Enabled);
   const selectedColumns =
     columns +
+    (imagesEnabled ? ",cover_image" : "") +
     (styleEnabled ? ",cover_style" : "") +
     (v2Enabled ? ",cover_seed" : "");
   async function authenticated() {
@@ -307,7 +325,9 @@ export function createWorksRepository(
         .rpc("read_private_work", { p_work_id: id })
         .setHeader("Authorization", `Bearer ${token}`),
     );
-    return row ? mapRow(row, ownerId, styleEnabled, v2Enabled) : null;
+    return row
+      ? mapRow(row, ownerId, styleEnabled, v2Enabled, imagesEnabled)
+      : null;
   }
   async function editorial(
     work: StudioWork,
@@ -335,7 +355,15 @@ export function createWorksRepository(
     if (!response) failure(null);
     if (response.work) {
       pendingOperations.delete(key);
-      return { work: mapRow(response.work, ownerId, styleEnabled, v2Enabled) };
+      return {
+        work: mapRow(
+          response.work,
+          ownerId,
+          styleEnabled,
+          v2Enabled,
+          imagesEnabled,
+        ),
+      };
     }
     if (response.deleted_id) {
       pendingOperations.delete(key);
@@ -374,7 +402,12 @@ export function createWorksRepository(
       return read(id, db, token);
     },
     async create(input) {
-      const payload = metadataPayload(input, styleEnabled, v2Enabled);
+      const payload = metadataPayload(
+        input,
+        styleEnabled,
+        v2Enabled,
+        imagesEnabled,
+      );
       const { db, token } = await authenticated();
       const base =
         payload.title
@@ -395,7 +428,7 @@ export function createWorksRepository(
           .setHeader("Authorization", `Bearer ${token}`),
       );
       if (!row) failure(null);
-      return mapRow(row, ownerId, styleEnabled, v2Enabled);
+      return mapRow(row, ownerId, styleEnabled, v2Enabled, imagesEnabled);
     },
     async update(work, input) {
       if (
@@ -406,7 +439,12 @@ export function createWorksRepository(
           "A capa guardada usa uma versão mais recente. Mantém a capa atual até ativar o Estúdio de Capas 2.0.",
         );
       owned(work);
-      const payload = metadataPayload(input, styleEnabled, v2Enabled);
+      const payload = metadataPayload(
+        input,
+        styleEnabled,
+        v2Enabled,
+        imagesEnabled,
+      );
       const { db, token } = await authenticated();
       const row = await request(() =>
         db
@@ -441,6 +479,7 @@ export function createWorksRepository(
         ownerId,
         styleEnabled,
         v2Enabled,
+        imagesEnabled,
       );
     },
     async remove(work) {

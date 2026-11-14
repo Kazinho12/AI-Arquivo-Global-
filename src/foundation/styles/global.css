@@ -6702,3 +6702,55 @@ dialog p {
 .institutional-document a {
   overflow-wrap: anywhere;
 }
+
+.custom-cover-frame {
+  aspect-ratio: 2 / 3;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--surface);
+}
+.custom-cover-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cover-picker {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  margin-block: 1rem;
+}
+.cover-picker-preview {
+  width: min(100%, 240px);
+  aspect-ratio: 2 / 3;
+  margin-block: 1rem;
+  overflow: hidden;
+}
+.cover-picker .actions {
+  flex-wrap: wrap;
+}
+.cover-picker input[type="file"] {
+  max-width: 100%;
+}
+
+.studio-custom-cover {
+  width: 96px;
+  aspect-ratio: 2 / 3;
+  margin-block-end: 1rem;
+}
+
+.cover-picker .actions > label {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  min-width: 0;
+  align-items: flex-start;
+}
+.cover-picker input[type="file"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
